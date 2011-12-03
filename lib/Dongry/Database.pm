@@ -11,6 +11,8 @@ push our @CARP_NOT, qw(
   Dongry::Table Dongry::Table::Row Dongry::Query
 );
 
+# ------ Construction ------
+
 sub new ($;%) {
   my $class = shift;
   return bless {@_}, $class;
@@ -31,34 +33,6 @@ sub load ($$) {
        schema => $def->{schema} || ($def->{get_schema} or sub { undef })->());
 } # load
 
-sub onerror ($) {
-  if (@_ > 1) {
-    $_[0]->{onerror} = $_[1];
-  }
-  return $_[0]->{onerror} || sub {
-    local $Carp::CarpLevel = $Carp::CarpLevel - 1; # Bogus hack (Don't copy!)
-    my ($self, %args) = @_;
-    croak $self->source ($args{source_name})->{dsn} . ': ' . $args{text} . ': ' . $args{sql};
-  }; # onerror default
-} # onerror
-
-sub onconnect ($) {
-  if (@_ > 1) {
-    $_[0]->{onconnect} = $_[1];
-  }
-  return $_[0]->{onconnect} || sub {
-    #my ($self, %args) = @_;
-    #
-  }; # onconnect default
-} # onerror
-
-sub schema ($) {
-  if (@_ > 1) {
-    $_[0]->{schema} = $_[1];
-  }
-  return $_[0]->{schema};
-} # schema
-
 # ------ Connection ------
 
 sub source ($;$$) {
@@ -70,6 +44,27 @@ sub source ($;$$) {
   return $self->{sources}->{$name};
 }
 
+sub onconnect ($) {
+  if (@_ > 1) {
+    $_[0]->{onconnect} = $_[1];
+  }
+  return $_[0]->{onconnect} || sub {
+    #my ($self, %args) = @_;
+    #
+  }; # onconnect default
+} # onerror
+
+sub onerror ($) {
+  if (@_ > 1) {
+    $_[0]->{onerror} = $_[1];
+  }
+  return $_[0]->{onerror} || sub {
+    local $Carp::CarpLevel = $Carp::CarpLevel - 1; # Bogus hack (Don't copy!)
+    my ($self, %args) = @_;
+    croak $self->source ($args{source_name})->{dsn} . ': ' . $args{text} . (defined $args{sql} ? ': ' . $args{sql} : '');
+  }; # onerror default
+} # onerror
+
 sub connect ($$) {
   my $self = shift;
   #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
@@ -80,7 +75,7 @@ sub connect ($$) {
       or croak "Data source |$name| is not defined";
 
   $self->{dbhs}->{$name} = DBI->connect
-      ($source->{dsn}, $self->source->{username}, $source->{password},
+      ($source->{dsn}, $source->{username}, $source->{password},
        {RaiseError => 1, PrintError => 0, HandleError => sub {
           #my ($msg, $dbh, $returned) = @_:
           local $Carp::CarpLevel = $Carp::CarpLevel + 2;
@@ -109,9 +104,9 @@ sub disconnect ($$) {
       delete $self->{in_transaction};
     }
     
-    if ($self->{dbh}->{$name}) {
-      $self->{dbh}->{$name}->disconnect;
-      delete $self->{dbh}->{$name};
+    if ($self->{dbhs}->{$name}) {
+      $self->{dbhs}->{$name}->disconnect;
+      delete $self->{dbhs}->{$name};
     }
   }
 } # disconnect
@@ -309,6 +304,13 @@ $Dongry::Types->{as_ref} = {
     return ${$_[0]};
   },
 }; # as_ref
+
+sub schema ($) {
+  if (@_ > 1) {
+    $_[0]->{schema} = $_[1];
+  }
+  return $_[0]->{schema};
+} # schema
 
 sub table ($$) {
   require Dongry::Table;
