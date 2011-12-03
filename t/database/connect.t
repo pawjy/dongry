@@ -8,6 +8,7 @@ use base qw(Test::Class);
 use Dongry::Database;
 
 my $test_dsn_1 = test_dsn ('hoge');
+my $test_dsn_2 = test_dsn ('fuga');
 
 # ------ |source| ------
 
@@ -39,6 +40,14 @@ sub _source_named : Test(4) {
   eq_or_diff $db->source ('select'), {dsn => 'abc'};
 } # _source_named
 
+sub _source_from_new_default : Test(3) {
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => 1}, fuga => {dsn => 2}});
+  eq_or_diff $db->source ('default'), {dsn => 1};
+  eq_or_diff $db->source ('fuga'), {dsn => 2};
+  eq_or_diff $db->source ('foo'), undef;
+} # _source_from_new_default
+
 sub _source_from_new : Test(3) {
   my $db = Dongry::Database->new
       (sources => {hoge => {dsn => 1}, fuga => {dsn => 2}});
@@ -46,6 +55,35 @@ sub _source_from_new : Test(3) {
   eq_or_diff $db->source ('fuga'), {dsn => 2};
   eq_or_diff $db->source ('foo'), undef;
 } # _source_from_new
+
+# ------ |onconnect| ------
+
+sub _onconnect_new : Test(2) {
+  my ($onconnect_self, %onconnect_args);
+  my $db = Dongry::Database->new (onconnect => sub {
+    ($onconnect_self, %onconnect_args) = @_;
+  });
+  $db->source (hoge => {
+    dsn => $test_dsn_1,
+  });
+  lives_ok { $db->connect ('hoge') };
+  is $onconnect_self, $db;
+} # _onconnect_new
+
+# ------ |onerror| ------
+
+sub _onerror_new : Test(2) {
+  my ($onerror_self, %onerror_args);
+  my $db = Dongry::Database->new (onerror => sub {
+    ($onerror_self, %onerror_args) = @_;
+  });
+  $db->source (hoge => {
+    dsn => $test_dsn_1,
+    password => 'foo',
+  });
+  dies_ok { $db->connect ('hoge') };
+  is $onerror_self, $db;
+} # _onerror_new
 
 # ------ |connect| ------
 
@@ -214,12 +252,85 @@ sub _connect_onconnct_after_disconnect : Test(3) {
 
 # ------ |disconnect| ------
 
-# XXX
+sub _disconnect_disconnected : Test(3) {
+  my $db = Dongry::Database->new;
+  $db->source (hoge => {dsn => $test_dsn_1});
+  $db->connect ('hoge');
+  ok $db->{dbhs}->{hoge};
+  
+  lives_ok { $db->disconnect ('hoge') };
+  ng $db->{dbhs}->{hoge};
+} # _disconnect_disconnected
 
-# ------ |transaction| ------
+sub _disconnect_nop : Test(2) {
+  my $db = Dongry::Database->new;
+  $db->source (hoge => {dsn => $test_dsn_1});
+  
+  lives_ok { $db->disconnect ('hoge') };
+  ng $db->{dbhs}->{hoge};
+} # _disconnect_nop
 
-# XXX
+sub _disconnect_unknown_source : Test(2) {
+  my $db = Dongry::Database->new;
+  
+  lives_ok { $db->disconnect ('fuga') };
+  ng $db->{dbhs}->{fuga};
+} # _disconnect_unknown_source
+
+sub _disconnect_disconnected_some : Test(5) {
+  my $db = Dongry::Database->new;
+  $db->source (hoge => {dsn => $test_dsn_1});
+  $db->source (fuga => {dsn => $test_dsn_2});
+  $db->connect ('hoge');
+  $db->connect ('fuga');
+  ok $db->{dbhs}->{hoge};
+  ok $db->{dbhs}->{fuga};
+  
+  lives_ok { $db->disconnect ('hoge') };
+  ng $db->{dbhs}->{hoge};
+  ok $db->{dbhs}->{fuga};
+} # _disconnect_disconnected_some
+
+sub _disconnect_all_disconnected : Test(3) {
+  my $db = Dongry::Database->new;
+  $db->source (hoge => {dsn => $test_dsn_1});
+  $db->connect ('hoge');
+  ok $db->{dbhs}->{hoge};
+  
+  lives_ok { $db->disconnect };
+  ng $db->{dbhs}->{hoge};
+} # _disconnect_disconnected
+
+sub _disconnect_all_disconnected_multiple : Test(5) {
+  my $db = Dongry::Database->new;
+  $db->source (hoge => {dsn => $test_dsn_1});
+  $db->source (fuga => {dsn => $test_dsn_2});
+  $db->connect ('hoge');
+  $db->connect ('fuga');
+  ok $db->{dbhs}->{hoge};
+  ok $db->{dbhs}->{fuga};
+  
+  lives_ok { $db->disconnect };
+  ng $db->{dbhs}->{hoge};
+  ng $db->{dbhs}->{fuga};
+} # _disconnect_all_disconnected
+
+sub _disconnect_all_disconnected_nop : Test(2) {
+  my $db = Dongry::Database->new;
+  
+  lives_ok { $db->disconnect };
+  ng $db->{dbhs}->{hoge};
+} # _disconnect_disconnected
 
 __PACKAGE__->runtests;
 
 1;
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

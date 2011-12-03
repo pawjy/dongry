@@ -1,6 +1,7 @@
 package Dongry::Database;
 use strict;
 use warnings;
+our $VERSION = '1.0';
 use DBI;
 use Carp;
 
@@ -25,12 +26,16 @@ sub load ($$) {
   return $Instances->{$_[1]} if $Instances->{$_[1]};
   
   #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-  my $def = $Registry->{$_[1]} or carp "Database |$_[1]| is not defined";
+  my $def = $Registry->{$_[1]} or croak "Database |$_[1]| is not defined";
   return $Instances->{$_[1]} = $_[0]->new
-      (sources => $def->{sources} || ($def->{get_sources} or sub { undef })->(),
-       onerror => $def->{onerror} || ($def->{get_onerror} or sub { undef })->(),
-       onconnect => $def->{onconnect} || ($def->{get_onconnect} or sub { undef })->(),
-       schema => $def->{schema} || ($def->{get_schema} or sub { undef })->());
+      (sources => $def->{sources} ||
+           ($def->{get_sources} or sub { undef })->(),
+       onerror => $def->{onerror} ||
+           ($def->{get_onerror} or sub { undef })->(),
+       onconnect => $def->{onconnect} ||
+           ($def->{get_onconnect} or sub { undef })->(),
+       schema => $def->{schema} ||
+           ($def->{get_schema} or sub { undef })->());
 } # load
 
 # ------ Connection ------
@@ -51,7 +56,7 @@ sub onconnect ($) {
   return $_[0]->{onconnect} || sub {
     #my ($self, %args) = @_;
     #
-  }; # onconnect default
+  };
 } # onerror
 
 sub onerror ($) {
@@ -61,8 +66,10 @@ sub onerror ($) {
   return $_[0]->{onerror} || sub {
     local $Carp::CarpLevel = $Carp::CarpLevel - 1; # Bogus hack (Don't copy!)
     my ($self, %args) = @_;
-    croak $self->source ($args{source_name})->{dsn} . ': ' . $args{text} . (defined $args{sql} ? ': ' . $args{sql} : '');
-  }; # onerror default
+    croak $self->source ($args{source_name})->{dsn} .
+        ': ' . $args{text} .
+        (defined $args{sql} ? ': ' . $args{sql} : '');
+  };
 } # onerror
 
 sub connect ($$) {
@@ -110,6 +117,12 @@ sub disconnect ($$) {
     }
   }
 } # disconnect
+
+sub DESTROY {
+  $_[0]->disconnect;
+} # DESTROY
+
+# ------ Transaction ------
 
 sub transaction ($) {
   my $self = shift;
@@ -326,6 +339,7 @@ sub query ($%) {
 } # query
 
 package Dongry::Database::Executed;
+our $VERSION = '1.0';
 use Carp;
 use List::Rubyish;
 
@@ -406,6 +420,7 @@ sub first_as_row ($) {
 } # first_as_row
 
 package Dongry::Database::Executed::Inserted;
+our $VERSION = '1.0';
 push our @ISA, 'Dongry::Database::Executed';
 use Carp;
 
@@ -456,6 +471,7 @@ sub first_as_row ($) {
 } # first_as_row
 
 package Dongry::Database::Transaction;
+our $VERSION = '1.0';
 use Carp;
 
 push our @CARP_NOT, qw(Dongry::Database);
