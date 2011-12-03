@@ -1,0 +1,6 @@
+[submodule "modules/perl-rdb-utils"]
+	path = modules/perl-rdb-utils
+	url = git://github.com/wakaba/perl-rdb-utils.git
+[submodule "modules/perl-json-functions-xs"]
+	path = modules/perl-json-functions-xs
+	url = git://github.com/wakaba/perl-json-functions-xs.git
