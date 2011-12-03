@@ -139,7 +139,12 @@ sub transaction ($) {
 
 # ------ SQL Execution ------
 
-our $ReadOnlyQueryPattern = qr/^\s*(?:[Ss][Ee][Ll][Ee][Cc][Tt]|[Ss][Hh][Oo][Ww]|[Dd][Ee][Ss][Cc]|[Ee][Xx][Pp][Ll][Aa][Ii][Nn])\b/;
+our $ReadOnlyQueryPattern = qr/^\s*(?:
+  [Ss][Ee][Ll][Ee][Cc][Tt]|
+  [Ss][Hh][Oo][Ww]|
+  [Dd][Ee][Ss][Cc](?:[Rr][Ii][Bb][Ee])?|
+  [Ee][Xx][Pp][Ll][Aa][Ii][Nn]
+)\b/x;
 
 sub execute ($$;$%) {
   my ($self, $sql, $values, %args) = @_;
@@ -346,7 +351,7 @@ use List::Rubyish;
 push our @CARP_NOT, qw(Dongry::Database List::Rubyish);
 
 sub row_count ($) {
-  return $_[0]->{row_count};
+  return $_[0]->{row_count} + 0;
 } # row_count
 
 sub table_name ($) {
