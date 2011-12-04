@@ -727,6 +727,115 @@ sub _execute_select_return_multiple_rows_first_as_row : Test(11) {
   dies_ok { $result->all_as_rows };
 } # _execute_select_return_multiple_rows_first_as_row
 
+sub _execute_insert_return_a_row_each : Test(10) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  my $result = $db->execute
+      ('insert into table1 (id, value) values (1253, NULL)');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, undef;
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _execute_insert_return_a_row_each
+
+sub _execute_insert_return_a_row_all : Test(10) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  my $result = $db->execute
+      ('insert into table1 (id, value) values (1253, NULL)');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, undef;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+} # _execute_insert_return_a_row_all
+
+sub _execute_insert_return_a_row_first : Test(10) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  my $result = $db->execute
+      ('insert into table1 (id, value) values (1253, NULL)');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, undef;
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+} # _execute_insert_return_a_row_first
+
+sub _execute_insert_return_multiple_row_all : Test(10) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  my $result = $db->execute
+      ('insert into table1 (id, value)
+        values (1253, NULL), (1424, "tex"), (10, "gseg aea")');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 3;
+  is $result->table_name, undef;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+} # _execute_insert_return_multiple_row_all
+
 __PACKAGE__->runtests;
 
 1;

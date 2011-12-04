@@ -360,58 +360,47 @@ sub table_name ($) {
 
 sub each ($$) {
   my ($self, $code) = @_;
-  croak 'This method is no longer available' unless $self->{sth};
-  while (my $hashref = $self->{sth}->fetchrow_hashref) {
+  my $sth = delete $self->{sth} or croak 'This method is no longer available';
+  while (my $hashref = $sth->fetchrow_hashref) {
     local $_ = $hashref; ## Sigh, consistency with List::Rubyish...
     $code->();
   }
-  delete $self->{sth};
 } # each
 
 sub each_as_row ($$) {
   my ($self, $code) = @_;
-  my $db = $self->{db};
   my $tn = $self->{table_name} or croak 'Table name is not known';
+  my $db = $self->{db};
   require Dongry::Table;
   $self->for (sub {
-    my $row = Dongry::Table->new_row
+    local $_ = Dongry::Table->new_row
         (db => $db, table_name => $tn, data => $_);
-    local $_ = $row;
     $code->();
   });
 } # each_as_row
 
 sub all ($) {
-  croak 'This method is no longer available' unless $_[0]->{sth};
-  my $list = List::Rubyish->new ($_[0]->{sth}->fetchall_arrayref ({}));
-  delete $_[0]->{sth};
-  return $list;
+  my $sth = delete $_[0]->{sth} or croak 'This method is no longer available';
+  return List::Rubyish->new ($sth->fetchall_arrayref ({}));
 } # all
 
 sub all_as_rows ($) {
-  my $self = shift;
-  my $db = $self->{db};
-  my $tn = $self->{table_name} or croak 'Table name is not known';
+  my $tn = $_[0]->{table_name} or croak 'Table name is not known';
+  my $db = $_[0]->{db};
   require Dongry::Table;
-  return $_[0]->{all_as_rows} ||= $self->all->map(sub {
-    return Dongry::Table->new_row
-        (db => $db,
-         table_name => $tn,
-         data => $_);
+  return scalar $_[0]->all->map(sub {
+    return Dongry::Table->new_row (db => $db, table_name => $tn, data => $_);
   });
 } # all_as_rows
 
 sub first ($) {
-  croak 'This method is no longer available' unless $_[0]->{sth};
-  my $first = $_[0]->{sth}->fetchrow_hashref; # or undef
-  delete $_[0]->{sth};
-  return $first;
+  my $sth = delete $_[0]->{sth} or croak 'This method is no longer available';
+  return $sth->fetchrow_hashref; # or undef
 } # first
 
 sub first_as_row ($) {
   my $self = shift;
   croak 'Table name is not known' unless $self->{table_name};
-
   my $data = $self->first or return undef;
   require Dongry::Table;
   return Dongry::Table->new_row
