@@ -57,14 +57,13 @@ sub onconnect ($) {
     #my ($self, %args) = @_;
     #
   };
-} # onerror
+} # onconnect
 
 sub onerror ($) {
   if (@_ > 1) {
     $_[0]->{onerror} = $_[1];
   }
   return $_[0]->{onerror} || sub {
-    local $Carp::CarpLevel = $Carp::CarpLevel - 1; # Bogus hack (Don't copy!)
     my ($self, %args) = @_;
     croak $self->source ($args{source_name})->{dsn} .
         ': ' . $args{text} .
@@ -85,7 +84,6 @@ sub connect ($$) {
       ($source->{dsn}, $source->{username}, $source->{password},
        {RaiseError => 1, PrintError => 0, HandleError => sub {
           #my ($msg, $dbh, $returned) = @_:
-          local $Carp::CarpLevel = $Carp::CarpLevel + 2;
           $self->onerror->($self,
                            text => $_[0],
                            source_name => $name,
@@ -93,7 +91,6 @@ sub connect ($$) {
           return 0;
         }, AutoCommit => 1, ReadOnly => !$source->{writable}});
   {
-    #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
     $self->onconnect->($self, source_name => $name);
   }
 } # connect
@@ -361,40 +358,38 @@ sub table_name ($) {
   return $_[0]->{table_name};
 } # table_name
 
-sub for_each ($$) {
+sub each ($$) {
   my ($self, $code) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
+  croak 'This method is no longer available' unless $self->{sth};
   while (my $hashref = $self->{sth}->fetchrow_hashref) {
-    #local $Carp::CarpLevel = -2;
-    $code->($hashref);
+    local $_ = $hashref; ## Sigh, consistency with List::Rubyish...
+    $code->();
   }
-} # for_each
+  delete $self->{sth};
+} # each
 
-sub for_each_as_row ($$) {
+sub each_as_row ($$) {
   my ($self, $code) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
   my $db = $self->{db};
   my $tn = $self->{table_name} or croak 'Table name is not known';
   require Dongry::Table;
-  $self->for_each (sub {
-    #local $Carp::CarpLevel = -2;
+  $self->for (sub {
     my $row = Dongry::Table->new_row
-        (db => $db,
-         table_name => $tn,
-         data => $_[0]);
-    $code->($row);
+        (db => $db, table_name => $tn, data => $_);
+    local $_ = $row;
+    $code->();
   });
-} # for_each_as_row
+} # each_as_row
 
 sub all ($) {
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-  return $_[0]->{data}
-      ||= List::Rubyish->new ($_[0]->{sth}->fetchall_arrayref ({}));
+  croak 'This method is no longer available' unless $_[0]->{sth};
+  my $list = List::Rubyish->new ($_[0]->{sth}->fetchall_arrayref ({}));
+  delete $_[0]->{sth};
+  return $list;
 } # all
 
 sub all_as_rows ($) {
   my $self = shift;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
   my $db = $self->{db};
   my $tn = $self->{table_name} or croak 'Table name is not known';
   require Dongry::Table;
@@ -407,13 +402,14 @@ sub all_as_rows ($) {
 } # all_as_rows
 
 sub first ($) {
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-  return $_[0]->{sth}->fetchrow_hashref; # or undef
+  croak 'This method is no longer available' unless $_[0]->{sth};
+  my $first = $_[0]->{sth}->fetchrow_hashref; # or undef
+  delete $_[0]->{sth};
+  return $first;
 } # first
 
 sub first_as_row ($) {
   my $self = shift;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
   croak 'Table name is not known' unless $self->{table_name};
 
   my $data = $self->first or return undef;
@@ -429,13 +425,13 @@ our $VERSION = '1.0';
 push our @ISA, 'Dongry::Database::Executed';
 use Carp;
 
-sub for_each ($$;%) {
+sub each ($$;%) {
   my ($self, $code, %args) = @_;
   #local $Carp::CarpLevel = $Carp::CarpLevel + 2;
   for (@{$self->{data}}) {
-    $code->($_);
+    $code->();
   }
-} # for_each
+} # each
 
 sub all ($) {
   return ref $_[0]->{data} eq 'ARRAY'

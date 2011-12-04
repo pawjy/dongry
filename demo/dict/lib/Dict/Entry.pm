@@ -37,8 +37,8 @@ sub description_row_in_lang {
       ->select ('description',
                 {category_id => $self->category->category_id,
                  entry_id => $self->entry_id})
-      ->for_each_as_row (sub {
-    $self->{description_rows}->{$_[0]->get ('lang')} = $_[0];
+      ->each_as_row (sub {
+    $self->{description_rows}->{$_->get ('lang')} = $_;
   });
 
   return $self->{description_rows}->{$lang}; # or undef

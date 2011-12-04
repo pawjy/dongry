@@ -186,6 +186,547 @@ sub _execute_explain_no_return : Test(1) {
   };
 } # _execute_explain_no_return
 
+sub _execute_select_return_no_rows_each : Test(11) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 0;
+  is $result->table_name, undef;
+  my $invoked = 0;
+  $result->each (sub { $invoked++ });
+  is $invoked, 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _execute_select_return_no_rows_each
+
+sub _execute_select_return_no_rows_each_as_row : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 0;
+  is $result->table_name, undef;
+  my $invoked = 0;
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  lives_ok { $result->each (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _execute_select_return_no_rows_each_as_row
+
+sub _execute_select_return_no_rows_all : Test(11) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 0;
+  is $result->table_name, undef;
+  my $all = $result->all;
+  isa_list_n_ok $all, 0;
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _execute_select_return_no_rows_all
+
+sub _execute_select_return_no_rows_all_as_rows : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 0;
+  is $result->table_name, undef;
+  dies_ok { $result->all_as_rows };
+  my $all = $result->all;
+  isa_list_n_ok $all, 0;
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->all };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _execute_select_return_no_rows_all_as_rows
+
+sub _execute_select_return_no_rows_first : Test(11) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 0;
+  is $result->table_name, undef;
+  my $first = $result->first;
+  is $first, undef;
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+} # _execute_select_return_no_rows_first
+
+sub _execute_select_return_no_rows_first_as_row : Test(11) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 0;
+  is $result->table_name, undef;
+  dies_ok { $result->first_as_row };
+  my $first = $result->first;
+  is $first, undef;
+  dies_ok { $result->first };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+} # _execute_select_return_no_rows_first_as_row
+
+sub _execute_select_return_a_row_each : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id) values (1253)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, undef;
+  my $invoked = 0;
+  my @value;
+  $result->each (sub { push @value, $_; $invoked++ });
+  is $invoked, 1;
+  eq_or_diff \@value, [{id => 1253, value => undef}];
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 1;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _execute_select_return_a_row_each
+
+sub _execute_select_return_a_row_each_as_row : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id) values (1253)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, undef;
+  my $invoked = 0;
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  lives_ok { $result->each (sub { $invoked++ }) };
+  is $invoked, 1;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _execute_select_return_a_row_each_as_row
+
+sub _execute_select_return_a_row_all : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id) values (1253)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, undef;
+  my $all = $result->all;
+  isa_list_n_ok $all, 1;
+  eq_or_diff $all->to_a, [{id => 1253, value => undef}];
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _execute_select_return_a_row_all
+
+sub _execute_select_return_a_row_all_as_rows : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id) values (1253)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, undef;
+  dies_ok { $result->all_as_rows };
+  my $all = $result->all;
+  isa_list_n_ok $all, 1;
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->all };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _execute_select_return_a_row_all_as_rows
+
+sub _execute_select_return_a_row_first : Test(11) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id) values (1253)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, undef;
+  my $first = $result->first;
+  eq_or_diff $first, {id => 1253, value => undef};
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+} # _execute_select_return_a_row_first
+
+sub _execute_select_return_a_row_first_as_row : Test(11) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id) values (1253)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, undef;
+  dies_ok { $result->first_as_row };
+  my $first = $result->first;
+  eq_or_diff $first, {id => 1253, value => undef};
+  dies_ok { $result->first };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+} # _execute_select_return_a_row_first_as_row
+
+sub _execute_select_return_multiple_rows_each : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id, value)
+        values (1253, NULL), (3113, "hoge"), (10, 333)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1 order by id asc');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 3;
+  is $result->table_name, undef;
+  my $invoked = 0;
+  my @value;
+  $result->each (sub { push @value, $_; $invoked++ });
+  is $invoked, 3;
+  eq_or_diff \@value, [{id => 10, value => 333},
+                       {id => 1253, value => undef},
+                       {id => 3113, value => 'hoge'}];
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 3;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _execute_select_return_multiple_rows_each
+
+sub _execute_select_return_multiple_rows_each_as_row : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id, value)
+        values (1253, NULL), (3113, "hoge"), (10, 333)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 3;
+  is $result->table_name, undef;
+  my $invoked = 0;
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  lives_ok { $result->each (sub { $invoked++ }) };
+  is $invoked, 3;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _execute_select_return_multiple_rows_each_as_row
+
+sub _execute_select_return_multiple_rows_all : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id, value)
+        values (1253, NULL), (3113, "hoge"), (10, 333)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1 order by id asc');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 3;
+  is $result->table_name, undef;
+  my $all = $result->all;
+  isa_list_n_ok $all, 3;
+  eq_or_diff $all->to_a, [{id => 10, value => 333},
+                       {id => 1253, value => undef},
+                       {id => 3113, value => 'hoge'}];
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _execute_select_return_multiple_rows_all
+
+sub _execute_select_return_multiple_rows_all_as_rows : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id, value)
+        values (1253, NULL), (3113, "hoge"), (10, 333)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 3;
+  is $result->table_name, undef;
+  dies_ok { $result->all_as_rows };
+  my $all = $result->all;
+  isa_list_n_ok $all, 3;
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->all };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _execute_select_return_multiple_rows_all_as_rows
+
+sub _execute_select_return_multiple_rows_first : Test(11) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id, value)
+        values (1253, NULL), (3113, "hoge"), (10, 333)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1 order by id asc');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 3;
+  is $result->table_name, undef;
+  my $first = $result->first;
+  eq_or_diff $first, {id => 10, value => '333'};
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+} # _execute_select_return_multiple_rows_first
+
+sub _execute_select_return_multiple_rows_first_as_row : Test(11) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id, value)
+        values (1253, NULL), (3113, "hoge"), (10, 333)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn}});
+
+  my $result = $db->execute ('select * from table1 order by id asc');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 3;
+  is $result->table_name, undef;
+  dies_ok { $result->first_as_row };
+  my $first = $result->first;
+  eq_or_diff $first, {id => 10, value => 333};
+  dies_ok { $result->first };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+} # _execute_select_return_multiple_rows_first_as_row
+
 __PACKAGE__->runtests;
 
 1;

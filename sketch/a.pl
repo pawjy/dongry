@@ -52,8 +52,8 @@ $Dongry::Database::Registry->{hoge} = {
 
 my $db = Dongry::Database->load ('hoge');
 
-$db->execute ('show databases')->for_each (sub {
-  my $hashref = shift;
+$db->execute ('show databases')->each (sub {
+  my $hashref = $_;
   warn Dumper $hashref;
 });
 
@@ -69,8 +69,8 @@ warn Dumper $db->execute ('create table hoge (
   key (ac)
 ) DEFAULT CHARSET=BINARY, ENGINE=InnoDB');
 
-warn Dumper $db->execute ('show create table hoge')->for_each (sub {
-  warn Dumper $_[0];
+warn Dumper $db->execute ('show create table hoge')->each (sub {
+  warn Dumper $_;
 });
 
 warn Dumper $db->execute ('insert into hoge (foo,value) values (123,"abc")');
@@ -80,8 +80,8 @@ my $transaction = $db->transaction;
 warn Dumper $db->execute ('insert into hoge (foo) values (456),
  (545)');
 
-$db->execute ('select * from hoge')->for_each (sub {
-  my $hashref = shift;
+$db->execute ('select * from hoge')->each (sub {
+  my $hashref = $_;
   warn Dumper $hashref;
 });
 
@@ -97,15 +97,15 @@ $transaction2->rollback;
 $db->disconnect;
 
 warn "...";
-$db->execute ('select * from hoge')->for_each (sub {
-  my $hashref = shift;
+$db->execute ('select * from hoge')->each (sub {
+  my $hashref = $_;
   warn Dumper $hashref;
 });
 
 warn "Result:";
 $db->execute ('select * from hoge where value is null and foo = ?',
-              [1])->for_each (sub {
-  warn Dumper $_[0];
+              [1])->each (sub {
+  warn Dumper $_;
 });
 
 #$db->{dbh}->do('select * from hoge where foo = ?', undef, 1);
