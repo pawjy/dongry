@@ -836,6 +836,234 @@ sub _execute_insert_return_multiple_row_all : Test(10) {
   is $invoked, 0;
 } # _execute_insert_return_multiple_row_all
 
+sub _execute_update_return_no_row_all : Test(10) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id, value)
+        values (1253, NULL), (1424, "tex"), (10, "gseg aea")');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  my $result = $db->execute
+      ('update table1 set id = 20 where value = "not found"');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 0;
+  is $result->table_name, undef;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+} # _execute_update_return_no_row_all
+
+sub _execute_update_return_a_row_all : Test(10) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id, value)
+        values (1253, NULL), (1424, "tex"), (10, "gseg aea")');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  my $result = $db->execute
+      ('update table1 set id = 20 where value = "tex"');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, undef;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+} # _execute_update_return_a_row_all
+
+sub _execute_update_return_multiple_rows_all : Test(10) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id, value)
+        values (1253, NULL), (1424, "tex"), (10, "gseg aea")');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  my $result = $db->execute
+      ('update table1 set value = 20');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 3;
+  is $result->table_name, undef;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+} # _execute_update_return_multiple_rows_all
+
+sub _execute_update_return_multiple_rows_error : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id, value)
+        values (1253, NULL), (1424, "tex"), (10, "gseg aea")');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  dies_ok { $db->execute ('update table1 set id = 20') };
+
+  my $db2 = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0}});
+  is $db2->execute
+      ('select count(*) as count from table1 where id = 20')->first->{count},
+      1; # Oh!
+} # _execute_update_return_multiple_rows_error
+
+sub _execute_delete_return_no_row_all : Test(10) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id, value)
+        values (1253, NULL), (1424, "tex"), (10, "gseg aea")');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  my $result = $db->execute
+      ('delete from table1 where value = "not found"');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 0;
+  is $result->table_name, undef;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+} # _execute_delete_return_no_row_all
+
+sub _execute_delete_return_a_row_all : Test(10) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id, value)
+        values (1253, NULL), (1424, "tex"), (10, "gseg aea")');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  my $result = $db->execute
+      ('delete from table1 where value = "tex"');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, undef;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+} # _execute_delete_return_a_row_all
+
+sub _execute_delete_return_multiple_rows_all : Test(10) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+  $db0->execute
+      ('insert into table1 (id, value)
+        values (1253, NULL), (1424, "tex"), (10, "gseg aea")');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  my $result = $db->execute ('delete from table1');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 3;
+  is $result->table_name, undef;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+} # _execute_delete_return_multiple_rows_all
+
+sub _execute_show_tables_return_multiple_rows_all : Test(10) {
+  reset_db_set;
+  my $dsn = test_dsn 'testtable';
+  my $db0 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db0->execute
+      ('create table table1 (id int unsigned not null primary key,
+                             value text)');
+
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 1}});
+
+  my $result = $db->execute ('SHOW TABLES');
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, undef;
+  eq_or_diff [values %{$result->all->to_a->[0]}], ['table1'];
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  my $invoked = 0;
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+} # _execute_show_all_return_multiple_rows_all
+
 __PACKAGE__->runtests;
 
 1;
