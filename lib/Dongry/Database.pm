@@ -13,6 +13,10 @@ push our @CARP_NOT, qw(
   Dongry::Table Dongry::Table::Row Dongry::Query
 );
 
+if ($ENV{DONGRY_DEBUG}) {
+  require DBIx::ShowSQL;
+}
+
 # ------ Construction ------
 
 sub new ($;%) {
@@ -25,8 +29,6 @@ our $Instances = {};
 
 sub load ($$) {
   return $Instances->{$_[1]} if $Instances->{$_[1]};
-  
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
   my $def = $Registry->{$_[1]} or croak "Database |$_[1]| is not defined";
   return $Instances->{$_[1]} = $_[0]->new
       (sources => $def->{sources} ||
@@ -74,8 +76,6 @@ sub onerror ($) {
 
 sub connect ($$) {
   my $self = shift;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-
   my $name = shift or croak 'No data source name';
   return if $self->{dbhs}->{$name};
   my $source = $self->{sources}->{$name}
@@ -125,8 +125,6 @@ sub DESTROY {
 
 sub transaction ($) {
   my $self = shift;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-
   croak "$self->{sources}->{master}->{dsn}: Cannot start new transaction before committing the current transaction"
       if $self->{in_transaction};
 
@@ -136,7 +134,7 @@ sub transaction ($) {
   return bless {db => $self}, 'Dongry::Database::Transaction';
 } # transaction
 
-# ------ SQL Execution ------
+# ------ Bare SQL execution ------
 
 our $ReadOnlyQueryPattern = qr/^\s*(?:
   [Ss][Ee][Ll][Ee][Cc][Tt]|
@@ -147,7 +145,6 @@ our $ReadOnlyQueryPattern = qr/^\s*(?:
 
 sub execute ($$;$%) {
   my ($self, $sql, $values, %args) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
 
   my $name = $args{source_name} ||
       ((!$self->{in_transaction} &&
@@ -175,10 +172,12 @@ sub execute ($$;$%) {
       'Dongry::Database::Executed';
 } # execute
 
+# ------ Structured SQL execution ------
+
 sub insert ($$$;%) {
   my ($self, $table_name, $data, %args) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
 
+  croak "No data" unless @$data;
   my %col;
   for (@$data) {
     $col{$_} = 1 for keys %$_;
@@ -195,9 +194,10 @@ sub insert ($$$;%) {
   my $sql = 'INSERT INTO ' . $table_name .
       ' (' . (join ', ', @col) . ')' .
       ' VALUES ' .
-        (join ', ', ("($placeholder)") x @$data) .
+      (join ', ', ("($placeholder)") x @$data) .
       '';
-  my $return = $self->execute ($sql, \@values, source_name => $args{source_name});
+  my $return = $self->execute
+      ($sql, \@values, source_name => $args{source_name});
 
   return unless defined wantarray;
   bless $return, 'Dongry::Database::Executed::Inserted';
@@ -309,7 +309,7 @@ sub delete ($$$;%) {
   return $return;
 } # delete
 
-# ------ Accessors to more abstract interfaces ------
+# ------ Schema-aware SQL operations ------
 
 $Dongry::Types ||= {};
 
@@ -375,7 +375,7 @@ sub each_as_row ($$) {
   my $tn = $self->{table_name} or croak 'Table name is not known';
   my $db = $self->{db};
   require Dongry::Table;
-  $self->for (sub {
+  $self->each (sub {
     local $_ = Dongry::Table->new_row
         (db => $db, table_name => $tn, data => $_);
     $code->();
@@ -425,50 +425,59 @@ our $VERSION = '1.0';
 push our @ISA, 'Dongry::Database::Executed';
 use Carp;
 
-sub each ($$;%) {
-  my ($self, $code, %args) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 2;
-  for (@{$self->{data}}) {
-    $code->();
-  }
+sub each ($$) {
+  my ($self, $code) = @_;
+  my $data = delete $self->{data}
+      or croak 'This method is no longer available';
+  $code->() for @$data;
+  delete $self->{data};
 } # each
 
 sub all ($) {
-  return ref $_[0]->{data} eq 'ARRAY'
-      ? List::Rubyish->new ($_[0]->{data}) : $_[0]->{data};
+  my $data = delete $_[0]->{data}
+      or croak 'This method is no longer available';
+  delete $_[0]->{data};
+  return ref $data eq 'ARRAY' ? List::Rubyish->new ($data) : $data;
 } # all
 
 sub all_as_rows ($) {
   my $self = shift;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-  my $db = $self->{db};
   my $tn = $self->{table_name} or croak 'Table name is not known';
+  my $data = delete $self->{data}
+      or croak 'This method is no longer available';
+  delete $self->{data};
+  my $db = $self->{db};
   require Dongry::Table;
-  return $_[0]->{all_as_rows} ||= List::Rubyish->new([map {
-    return Dongry::Table->new_row
-        (db => $db,
-         table_name => $tn,
-         data => $self->{data}->[$_],
-         $self->{parsed_data} ? (parsed_data => $self->{parsed_data}->[$_]) : ());
-  } 0..$#{$self->{data}}]);
+  return List::Rubyish->new([map {
+    Dongry::Table->new_row
+        (db => $db, table_name => $tn, data => $data->[$_],
+         $self->{parsed_data}
+             ? (parsed_data => $self->{parsed_data}->[$_]) : ());
+  } 0..$#$data]);
 } # all_as_rows
 
 sub first ($) {
-  return $_[0]->{data}->[0]; # or undef
+  my $data = delete $_[0]->{data}
+      or croak 'This method is no longer available';
+  delete $_[0]->{data};
+  return $data->[0]; # or undef
 } # first
 
 sub first_as_row ($) {
   my $self = shift;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-  return undef unless @{$self->{data}};
   croak 'Table name is not known' unless $self->{table_name};
+  my $data = delete $self->{data}
+      or croak 'This method is no longer available';
+  delete $self->{data};
+  return undef unless $data->[0];
 
   require Dongry::Table;
   return Dongry::Table->new_row
       (db => $self->{db},
        table_name => $self->{table_name},
-       data => $self->{data}->[0],
-       ($self->{parsed_data} ? (parsed_data => $self->{parsed_data}->[0]) : ()));
+       data => $data->[0],
+       ($self->{parsed_data}
+            ? (parsed_data => $self->{parsed_data}->[0]) : ()));
 } # first_as_row
 
 package Dongry::Database::Transaction;
