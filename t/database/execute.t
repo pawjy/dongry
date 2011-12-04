@@ -6,6 +6,7 @@ use lib file (__FILE__)->dir->parent->subdir ('lib')->stringify;
 use Test::Dongry;
 use base qw(Test::Class);
 use Dongry::Database;
+use Encode;
 
 sub _execute_create_table_no_return : Test(1) {
   reset_db_set;
@@ -1063,6 +1064,628 @@ sub _execute_show_tables_return_multiple_rows_all : Test(10) {
   dies_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
 } # _execute_show_all_return_multiple_rows_all
+
+sub _execute_select_source : Test(4) {
+  reset_db_set;
+  my $dsn1 = test_dsn 'testdb1';
+  my $dsn2 = test_dsn 'testdb2';
+
+  my $db1 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1}});
+  $db1->execute ('create table foo (id int)');
+  $db1->execute ('insert into foo (id) values (100)');
+  my $db2 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn2, writable => 1}});
+  $db2->execute ('create table foo (id int)');
+  $db2->execute ('insert into foo (id) values (200)');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1},
+                   default => {dsn => $dsn2, writable => 1},
+                   heavy => {dsn => $dsn1}});
+  is $db->execute ('select * from foo where id = 100')->row_count, 0;
+  is $db->execute ('select * from foo where id = 100', [],
+                   source_name => 'master')->row_count, 1;
+  is $db->execute ('select * from foo where id = 100', [],
+                   source_name => 'default')->row_count, 0;
+  is $db->execute ('select * from foo where id = 100', [],
+                   source_name => 'heavy')->row_count, 1;
+} # _execute_select_source
+
+sub _execute_insert_source : Test(3) {
+  reset_db_set;
+  my $dsn1 = test_dsn 'testdb1';
+  my $dsn2 = test_dsn 'testdb2';
+  my $dsn3 = test_dsn 'testdb3';
+
+  my $db1 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1}});
+  $db1->execute ('create table foo (id int)');
+  $db1->execute ('insert into foo (id) values (100)');
+  my $db2 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn2, writable => 1}});
+  $db2->execute ('create table foo (id int)');
+  $db2->execute ('insert into foo (id) values (200)');
+  my $db3 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn3, writable => 1}});
+  $db3->execute ('create table foo (id int)');
+  $db3->execute ('insert into foo (id) values (300)');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1},
+                   default => {dsn => $dsn2, writable => 1},
+                   heavy => {dsn => $dsn3, writable => 1}});
+  $db->execute ('insert into foo (id) values (400)');
+  
+  is $db1->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 1;
+  is $db2->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 0;
+  is $db3->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 0;
+} # _execute_insert_source
+
+sub _execute_insert_source_default : Test(3) {
+  reset_db_set;
+  my $dsn1 = test_dsn 'testdb1';
+  my $dsn2 = test_dsn 'testdb2';
+  my $dsn3 = test_dsn 'testdb3';
+
+  my $db1 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1}});
+  $db1->execute ('create table foo (id int)');
+  $db1->execute ('insert into foo (id) values (100)');
+  my $db2 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn2, writable => 1}});
+  $db2->execute ('create table foo (id int)');
+  $db2->execute ('insert into foo (id) values (200)');
+  my $db3 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn3, writable => 1}});
+  $db3->execute ('create table foo (id int)');
+  $db3->execute ('insert into foo (id) values (300)');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1},
+                   default => {dsn => $dsn2, writable => 1},
+                   heavy => {dsn => $dsn3, writable => 1}});
+  $db->execute ('insert into foo (id) values (400)', [],
+                source_name => 'default');
+  
+  is $db1->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 0;
+  is $db2->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 1;
+  is $db3->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 0;
+} # _execute_insert_source_default
+
+sub _execute_insert_source_master : Test(3) {
+  reset_db_set;
+  my $dsn1 = test_dsn 'testdb1';
+  my $dsn2 = test_dsn 'testdb2';
+  my $dsn3 = test_dsn 'testdb3';
+
+  my $db1 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1}});
+  $db1->execute ('create table foo (id int)');
+  $db1->execute ('insert into foo (id) values (100)');
+  my $db2 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn2, writable => 1}});
+  $db2->execute ('create table foo (id int)');
+  $db2->execute ('insert into foo (id) values (200)');
+  my $db3 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn3, writable => 1}});
+  $db3->execute ('create table foo (id int)');
+  $db3->execute ('insert into foo (id) values (300)');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1},
+                   default => {dsn => $dsn2, writable => 1},
+                   heavy => {dsn => $dsn3, writable => 1}});
+  $db->execute ('insert into foo (id) values (400)', [],
+                source_name => 'master');
+  
+  is $db1->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 1;
+  is $db2->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 0;
+  is $db3->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 0;
+} # _execute_insert_source_master
+
+sub _execute_insert_source_heavy : Test(3) {
+  reset_db_set;
+  my $dsn1 = test_dsn 'testdb1';
+  my $dsn2 = test_dsn 'testdb2';
+  my $dsn3 = test_dsn 'testdb3';
+
+  my $db1 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1}});
+  $db1->execute ('create table foo (id int)');
+  $db1->execute ('insert into foo (id) values (100)');
+  my $db2 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn2, writable => 1}});
+  $db2->execute ('create table foo (id int)');
+  $db2->execute ('insert into foo (id) values (200)');
+  my $db3 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn3, writable => 1}});
+  $db3->execute ('create table foo (id int)');
+  $db3->execute ('insert into foo (id) values (300)');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1},
+                   default => {dsn => $dsn2, writable => 1},
+                   heavy => {dsn => $dsn3, writable => 1}});
+  $db->execute ('insert into foo (id) values (400)', [],
+                source_name => 'heavy');
+  
+  is $db1->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 0;
+  is $db2->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 0;
+  is $db3->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 1;
+} # _execute_insert_source_heavy
+
+sub _execute_update_source : Test(3) {
+  reset_db_set;
+  my $dsn1 = test_dsn 'testdb1';
+  my $dsn2 = test_dsn 'testdb2';
+  my $dsn3 = test_dsn 'testdb3';
+
+  my $db1 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1}});
+  $db1->execute ('create table foo (id int)');
+  $db1->execute ('insert into foo (id) values (100)');
+  my $db2 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn2, writable => 1}});
+  $db2->execute ('create table foo (id int)');
+  $db2->execute ('insert into foo (id) values (200)');
+  my $db3 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn3, writable => 1}});
+  $db3->execute ('create table foo (id int)');
+  $db3->execute ('insert into foo (id) values (300)');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1},
+                   default => {dsn => $dsn2, writable => 1},
+                   heavy => {dsn => $dsn1, writable => 1}});
+  $db->execute ('UPDATE foo SET id = 400');
+  
+  is $db1->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 1;
+  is $db2->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 0;
+  is $db3->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 0;
+} # _execute_update_source
+
+sub _execute_delete_source : Test(3) {
+  reset_db_set;
+  my $dsn1 = test_dsn 'testdb1';
+  my $dsn2 = test_dsn 'testdb2';
+  my $dsn3 = test_dsn 'testdb3';
+
+  my $db1 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1}});
+  $db1->execute ('create table foo (id int)');
+  $db1->execute ('insert into foo (id) values (100)');
+  my $db2 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn2, writable => 1}});
+  $db2->execute ('create table foo (id int)');
+  $db2->execute ('insert into foo (id) values (200)');
+  my $db3 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn3, writable => 1}});
+  $db3->execute ('create table foo (id int)');
+  $db3->execute ('insert into foo (id) values (300)');
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1},
+                   default => {dsn => $dsn2, writable => 1},
+                   heavy => {dsn => $dsn1, writable => 1}});
+  $db->execute ('DELETE from foo');
+  
+  is $db1->execute ('select * from foo', [],
+                    source_name => 'master')->row_count, 0;
+  is $db2->execute ('select * from foo', [],
+                    source_name => 'master')->row_count, 1;
+  is $db3->execute ('select * from foo', [],
+                    source_name => 'master')->row_count, 1;
+} # _execute_delete_source
+
+sub _execute_unknown_source_name : Test(1) {
+  my $db = Dongry::Database->new;
+  dies_ok { $db->execute ('select * from foo', [], source_name => 'foo') };
+} # _execute_unknown_source_name
+
+sub _execute_unknown_source_name_2 : Test(1) {
+  my $db = Dongry::Database->new (sources => {master => {dsn => 'foo'}});
+  dies_ok { $db->execute ('select * from foo', [], source_name => 'foo') };
+} # _execute_unknown_source_name_2
+
+sub _execute_bad_source_definition_1 : Test(1) {
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => 'bad'}});
+  dies_ok { $db->execute ('select * from foo', []) };
+} # _execute_bad_source_definition_1
+
+sub _execute_bad_source_definition_2 : Test(1) {
+  my $db = Dongry::Database->new
+      (sources => {hoge => {dsn => 'bad'}});
+  dies_ok { $db->execute ('select * from foo', [], source_name => 'hoge') };
+} # _execute_bad_source_definition_2
+
+sub _execute_bad_source_definition_3 : Test(1) {
+  my $db = Dongry::Database->new
+      (sources => {hoge => {dsn => 'dbi:mysql:bad'}});
+  dies_ok { $db->execute ('select * from foo', [], source_name => 'hoge') };
+} # _execute_bad_source_definition_3
+
+sub _execute_must_be_writable_1 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', [], source_name => 'master');
+  $db->execute ('insert into hoge1 (id) values (1)');
+
+  is $db->execute ('select * from hoge1', [],
+                   must_be_writable => 1)->row_count, 1;
+} # _execute_must_be_writable_1
+
+sub _execute_must_be_writable_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
+  $db->execute ('insert into hoge1 (id) values (1)', [],
+                source_name => 'writable');
+
+  dies_ok {
+    $db->execute ('select * from hoge1', [], must_be_writable => 1);
+  };
+} # _execute_must_be_writable_2
+
+sub _execute_must_be_writable_3 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn},
+                   default => {dsn => $dsn, writable => 1},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
+  $db->execute ('insert into hoge1 (id) values (1)', [],
+                source_name => 'writable');
+
+  is $db->execute ('select * from hoge1', [],
+                   must_be_writable => 1,
+                   source_name => 'default')->row_count, 1;
+} # _execute_must_be_writable_3
+
+sub _execute_must_be_writable_4 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn},
+                   default => {dsn => $dsn, writable => 1},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
+
+  is $db->execute ('insert into hoge1 (id) values (1)', [],
+                   must_be_writable => 1,
+                   source_name => 'default')->row_count, 1;
+} # _execute_must_be_writable_4
+
+sub _execute_must_be_writable_5 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
+
+  dies_ok {
+    $db->execute ('insert into hoge1 (id) values (1)', [],
+                  must_be_writable => 1);
+  };
+} # _execute_must_be_writable_5
+
+sub _execute_even_if_read_only_1 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
+
+  $db->execute ('insert into hoge1 (id) values (1)', [],
+                source_name => 'master',
+                even_if_read_only => 1);
+
+  is $db->execute ('select * from hoge1', [], source_name => 'writable')
+      ->row_count, 1;
+} # _execute_even_if_read_only_1
+
+sub _execute_even_if_read_only_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn},
+                   default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
+
+  $db->execute ('insert into hoge1 (id) values (1)', [],
+                even_if_read_only => 1);
+
+  is $db->execute ('select * from hoge1', [], source_name => 'writable')
+      ->row_count, 1;
+} # _execute_even_if_read_only_2
+
+sub _execute_even_if_read_only_3 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {fuga => {dsn => $dsn},
+                   default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
+
+  $db->execute ('insert into hoge1 (id) values (1)', [],
+                even_if_read_only => 1,
+                source_name => 'fuga');
+
+  is $db->execute ('select * from hoge1', [], source_name => 'writable')
+      ->row_count, 1;
+} # _execute_even_if_read_only_3
+
+sub _execute_even_if_read_only_4 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {fuga => {dsn => $dsn},
+                   default => {dsn => $dsn, writable => 1},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
+
+  $db->execute ('insert into hoge1 (id) values (1)', [],
+                even_if_read_only => 1,
+                source_name => 'fuga');
+
+  is $db->execute ('select * from hoge1', [], source_name => 'writable')
+      ->row_count, 1;
+} # _execute_even_if_read_only_4
+
+sub _execute_even_if_read_only_5 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {fuga => {dsn => $dsn},
+                   default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
+
+  is $db->execute ('select * from hoge1', [],
+                   even_if_read_only => 1,
+                   source_name => 'fuga')->row_count, 0;
+} # _execute_even_if_read_only_5
+
+sub _execute_even_if_read_only_default_source : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {fuga => {dsn => $dsn},
+                   master => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
+
+  dies_ok {
+    $db->execute ('select * from hoge1', [],
+                  even_if_read_only => 1);
+  };
+} # _execute_even_if_read_only_default_source
+
+sub _execute_even_if_read_only_default_source_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {fuga => {dsn => $dsn},
+                   default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
+
+  dies_ok {
+    $db->execute ('insert into hoge1 (id) values (0)', [],
+                  even_if_read_only => 1);
+  };
+} # _execute_even_if_read_only_default_source_2
+
+sub _execute_placeholder_zero : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', undef,
+                source_name => 'writable');
+  $db->execute ('insert into hoge1 (id) values (12)', undef,
+                source_name => 'writable');
+
+  is $db->execute ('select * from hoge1', [])->row_count, 1;
+} # _execute_placeholder_zero
+
+sub _execute_placeholder_one : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', undef,
+                source_name => 'writable');
+  $db->execute ('insert into hoge1 (id) values (12)', undef,
+                source_name => 'writable');
+
+  is $db->execute ('select * from hoge1 where id = ?', [12])->row_count, 1;
+} # _execute_placeholder_one
+
+sub _execute_placeholder_one_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int)', undef,
+                source_name => 'writable');
+  $db->execute ('insert into hoge1 (id) values (12)', undef,
+                source_name => 'writable');
+
+  is $db->execute ('select * from hoge1 where id = ?', [123])->row_count, 0;
+} # _execute_placeholder_one_2
+
+sub _execute_placeholder_multiple : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int, value text)', undef,
+                source_name => 'writable');
+  $db->execute ('insert into hoge1 (id,value) values (12,"ab")', undef,
+                source_name => 'writable');
+  $db->execute ('insert into hoge1 (id,value) values (13,null)', undef,
+                source_name => 'writable');
+
+  is $db->execute ('select * from hoge1 where id > ? and value = ?',
+                   [10, "ab"])->row_count, 1;
+} # _execute_placeholder_multiple
+
+sub _execute_placeholder_multiple_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int, value text)', undef,
+                source_name => 'writable');
+  $db->execute ('insert into hoge1 (id,value) values (12,"ab")', undef,
+                source_name => 'writable');
+  $db->execute ('insert into hoge1 (id,value) values (13,null)', undef,
+                source_name => 'writable');
+
+  is $db->execute ('select * from hoge1 where id > ? and value = ?',
+                   [10, undef])->row_count, 0;
+} # _execute_placeholder_multiple_2
+
+sub _execute_placeholder_multiple_3 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int, value text)', undef,
+                source_name => 'writable');
+  $db->execute ('insert into hoge1 (id,value) values (12,"ab")', undef,
+                source_name => 'writable');
+  $db->execute ('insert into hoge1 (id,value) values (13,null)', undef,
+                source_name => 'writable');
+  $db->execute ('insert into hoge1 (id,value) values (13,"")', undef,
+                source_name => 'writable');
+
+  is $db->execute ('select * from hoge1 where id > ? and value = ?',
+                   [10, undef])->row_count, 0;
+} # _execute_placeholder_multiple_3
+
+sub _execute_placeholder_multiple_4 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int, value text)', undef,
+                source_name => 'writable');
+
+  $db->execute ('insert into hoge1 (id,value) values (?, ?)',
+                [10, undef],
+                source_name => 'writable');
+
+  is $db->execute ('select * from hoge1 where id = ? and value is null',
+                   [10])->row_count, 1;
+} # _execute_placeholder_multiple_4
+
+sub _execute_placeholder_too_many : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int, value text)', undef,
+                source_name => 'writable');
+
+  dies_ok { 
+    $db->execute ('insert into hoge1 (id,value) values (?, ?)',
+                  [10, undef, 4],
+                  source_name => 'writable');
+  };
+
+  is $db->execute ('select * from hoge1 where id = ? and value is null',
+                   [10])->row_count, 0;
+} # _execute_placeholder_too_many
+
+sub _execute_placeholder_too_few : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int, value text)', undef,
+                source_name => 'writable');
+
+  dies_ok { 
+    $db->execute ('insert into hoge1 (id,value) values (?, ?)',
+                  [10],
+                  source_name => 'writable');
+  };
+
+  is $db->execute ('select * from hoge1 where id = ? and value is null',
+                   [10])->row_count, 0;
+} # _execute_placeholder_too_few
+
+sub _execute_placeholder_bytes : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int, value text)', undef,
+                source_name => 'writable');
+  
+  my $text = encode 'utf-8', "\x{1000}";
+  $db->execute ('insert into hoge1 (id,value) values (?, ?)',
+                [10, $text],
+                source_name => 'writable');
+
+  is $db->execute ('select * from hoge1 where id = 10')->first->{value}, $text;
+} # _execute_placeholder_bytes
+
+sub _execute_bytes : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn},
+                   writable => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge1 (id int, value text)', undef,
+                source_name => 'writable');
+  my $text = encode 'utf-8', "\x{1000}";
+  $db->execute ('insert into hoge1 (id,value) values (?, ?)',
+                [10, $text],
+                source_name => 'writable');
+
+  is $db->execute ('select * from hoge1 where value = "' . $text . '"')
+      ->first->{id}, 10;
+} # _execute_bytes
 
 __PACKAGE__->runtests;
 

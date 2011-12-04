@@ -322,6 +322,27 @@ sub _disconnect_all_disconnected_nop : Test(2) {
   ng $db->{dbhs}->{hoge};
 } # _disconnect_disconnected
 
+{
+  package test::destroy::1;
+  sub DESTROY {
+    $test::destroy::1::destroyed++;
+  }
+}
+
+sub _destroy : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge';
+  my $db = Dongry::Database->new;
+  $db->source (default => {dsn => $dsn});
+  my $result = $db->execute ('show tables');
+  $db->{dummy} = bless {}, 'test::destroy::1';
+  $test::destroy::1::destroyed = 0;
+  undef $db;
+  is $test::destroy::1::destroyed, 0;
+  undef $result;
+  is $test::destroy::1::destroyed, 1;
+} # _destroy
+
 __PACKAGE__->runtests;
 
 1;

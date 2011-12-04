@@ -4,6 +4,7 @@ use warnings;
 our $VERSION = '1.0';
 use DBI;
 use Carp;
+use Scalar::Util qw(weaken);
 
 push our @CARP_NOT, qw(
   DBI DBI::st DBI::db
@@ -80,14 +81,17 @@ sub connect ($$) {
   my $source = $self->{sources}->{$name}
       or croak "Data source |$name| is not defined";
 
+  my $onerror_args = {db => $self};
+  weaken $onerror_args->{db};
   $self->{dbhs}->{$name} = DBI->connect
       ($source->{dsn}, $source->{username}, $source->{password},
        {RaiseError => 1, PrintError => 0, HandleError => sub {
           #my ($msg, $dbh, $returned) = @_:
-          $self->onerror->($self,
-                           text => $_[0],
-                           source_name => $name,
-                           sql => $self->{last_sql});
+          $onerror_args->{db}->onerror
+              ->($onerror_args->{db},
+                 text => $_[0],
+                 source_name => $name,
+                 sql => $onerror_args->{db}->{last_sql});
           return 0;
         }, AutoCommit => 1, ReadOnly => !$source->{writable}});
   {
@@ -97,8 +101,6 @@ sub connect ($$) {
 
 sub disconnect ($$) {
   my $self = shift;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-
   for my $name (
     @_ ? ($_[0]) : (keys %{$self->{sources} or {}})
   ) {
@@ -365,6 +367,7 @@ sub each ($$) {
     local $_ = $hashref; ## Sigh, consistency with List::Rubyish...
     $code->();
   }
+  $sth->finish;
 } # each
 
 sub each_as_row ($$) {
@@ -381,7 +384,9 @@ sub each_as_row ($$) {
 
 sub all ($) {
   my $sth = delete $_[0]->{sth} or croak 'This method is no longer available';
-  return List::Rubyish->new ($sth->fetchall_arrayref ({}));
+  my $list = List::Rubyish->new ($sth->fetchall_arrayref ({}));
+  $sth->finish;
+  return $list;
 } # all
 
 sub all_as_rows ($) {
@@ -395,7 +400,9 @@ sub all_as_rows ($) {
 
 sub first ($) {
   my $sth = delete $_[0]->{sth} or croak 'This method is no longer available';
-  return $sth->fetchrow_hashref; # or undef
+  my $first = $sth->fetchrow_hashref; # or undef
+  $sth->finish;
+  return $first;
 } # first
 
 sub first_as_row ($) {
@@ -408,6 +415,10 @@ sub first_as_row ($) {
        table_name => $self->{table_name},
        data => $data);
 } # first_as_row
+
+sub DESTROY {
+  $_[0]->{sth}->finish if $_[0]->{sth};
+} # DESTROY
 
 package Dongry::Database::Executed::Inserted;
 our $VERSION = '1.0';
