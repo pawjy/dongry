@@ -176,6 +176,13 @@ sub execute ($$;$%) {
 
 # ------ Structured SQL execution ------
 
+## <http://dev.mysql.com/doc/refman/5.6/en/identifiers.html>.
+sub _quote ($) {
+  my $s = $_[0];
+  $s =~ s/`/``/g;
+  return q<`> . $s . q<`>;
+} # _quote
+
 sub insert ($$$;%) {
   my ($self, $table_name, $data, %args) = @_;
 
@@ -193,8 +200,8 @@ sub insert ($$$;%) {
 
   my $placeholder = join ', ', ('?') x @col;
   
-  my $sql = 'INSERT INTO ' . $table_name .
-      ' (' . (join ', ', @col) . ')' .
+  my $sql = 'INSERT INTO ' . (_quote $table_name) .
+      ' (' . (join ', ', map { _quote $_ } @col) . ')' .
       ' VALUES ' .
       (join ', ', ("($placeholder)") x @$data) .
       '';

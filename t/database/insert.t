@@ -795,6 +795,32 @@ sub _insert_column_error : Test(8) {
       ->row_count, 0;
 } # _insert_column_error
 
+sub _insert_stupid_table_name : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table `ho``ge``_(a)` (id int)');
+
+  $db->insert ('ho`ge`_(a)', [{id => 1}]);
+
+  is $db->execute ('select * from `ho``ge``_(a)`', undef,
+                   source_name => 'master')->row_count, 1;
+} # _insert_stupid_table_name
+
+sub _insert_stupid_column_name : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (`ho``ge``_\\(a)` int)');
+
+  $db->insert ('hoge', [{'ho`ge`_\\(a)' => 1}]);
+
+  is $db->execute ('select * from hoge where `ho``ge``_\\(a)` = 1', undef,
+                   source_name => 'master')->row_count, 1;
+} # _insert_stupid_column_name
+
 sub _last_insert_id_unknown : Test(1) {
   my $db = Dongry::Database->new;
   is $db->last_insert_id, undef;
