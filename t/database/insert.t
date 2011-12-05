@@ -749,12 +749,12 @@ sub _insert_duplicate_error : Test(8) {
 
   my $messline;
   dies_ok {
-    $messline = __LINE__; $db->execute ('insert into foo (id) values (2)');
+    $messline = __LINE__; $db->insert ('foo', [{id => 2}]);
   };
 
   is $onerror_self, $db;
   is $onerror_args{source_name}, 'master';
-  is $onerror_args{sql}, 'insert into foo (id) values (2)';
+  is $onerror_args{sql}, 'INSERT INTO `foo` (`id`) VALUES (?)';
   ok $onerror_args{text};
   is $invoked, 1;
   is $shortmess, ' at ' . __FILE__ . ' line ' . $messline . "\n";
@@ -762,6 +762,56 @@ sub _insert_duplicate_error : Test(8) {
   is $db->execute ('select * from foo', undef, source_name => 'master')
       ->row_count, 1;
 } # _insert_duplicate_error
+
+sub _insert_ignore_no_duplicate_error : Test(3) {
+  reset_db_set;
+  my $dsn = test_dsn 'inserttest1';
+  my $invoked = 0;
+  my ($onerror_self, %onerror_args);
+  my $shortmess;
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}},
+       onerror => sub {
+         ($onerror_self, %onerror_args) = @_;
+         $invoked++;
+         $shortmess = Carp::shortmess;
+       });
+
+  $db->execute ('create table foo (id int unique key, val text)');
+  $db->execute ('insert into foo (id, val) values (2, "abc")');
+
+  is $db->insert ('foo', [{id => 2, val => 'xyz'}], duplicate => 'ignore')
+      ->row_count, 0;
+  is $db->{last_sql}, 'INSERT IGNORE INTO `foo` (`id`, `val`) VALUES (?, ?)';
+  
+  eq_or_diff $db->execute ('select * from foo', undef, source_name => 'master')
+      ->all->to_a, [{id => 2, val => 'abc'}];
+} # _insert_ignore_no_duplicate_error
+
+sub _insert_replace_no_duplicate_error : Test(3) {
+  reset_db_set;
+  my $dsn = test_dsn 'inserttest1';
+  my $invoked = 0;
+  my ($onerror_self, %onerror_args);
+  my $shortmess;
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}},
+       onerror => sub {
+         ($onerror_self, %onerror_args) = @_;
+         $invoked++;
+         $shortmess = Carp::shortmess;
+       });
+
+  $db->execute ('create table foo (id int unique key, val text)');
+  $db->execute ('insert into foo (id, val) values (2, "abc")');
+
+  is $db->insert ('foo', [{id => 2, val => 'xyz'}], duplicate => 'replace')
+      ->row_count, 2;
+  is $db->{last_sql}, 'REPLACE INTO `foo` (`id`, `val`) VALUES (?, ?)';
+  
+  eq_or_diff $db->execute ('select * from foo', undef, source_name => 'master')
+      ->all->to_a, [{id => 2, val => 'xyz'}];
+} # _insert_replace_no_duplicate_error
 
 sub _insert_column_error : Test(8) {
   reset_db_set;
@@ -820,6 +870,27 @@ sub _insert_stupid_column_name : Test(1) {
   is $db->execute ('select * from hoge where `ho``ge``_\\(a)` = 1', undef,
                    source_name => 'master')->row_count, 1;
 } # _insert_stupid_column_name
+
+sub _insert_with_default : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute
+      ('create table hoge (v1 int default 4, v2 int default 5, v3 int)');
+
+  $db->insert ('hoge', [{v1 => 12}, {v2 => 44}, {v3 => 444}]);
+  is $db->{last_sql},
+      'INSERT INTO `hoge` (`v1`, `v2`, `v3`) VALUES '.
+      '(?, DEFAULT, DEFAULT), (DEFAULT, ?, DEFAULT), (DEFAULT, DEFAULT, ?)';
+
+  eq_or_diff $db->execute ('select * from hoge order by v1 desc, v2 desc',
+                           undef,
+                           source_name => 'master')->all->to_a,
+             [{v1 => 12, v2 => 5, v3 => undef},
+              {v1 => 4, v2 => 44, v3 => undef},
+              {v1 => 4, v2 => 5, v3 => 444}];
+} # _insert_with_default
 
 sub _last_insert_id_unknown : Test(1) {
   my $db = Dongry::Database->new;

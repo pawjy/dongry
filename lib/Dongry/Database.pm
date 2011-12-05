@@ -193,18 +193,23 @@ sub insert ($$$;%) {
   }
 
   my @col = keys %col;
-  my @values = map {
-    my $data = $_;
-    map { $data->{$_} } @col;
-  } @$data;
-
-  my $placeholder = join ', ', ('?') x @col;
+  my @values;
+  my @placeholders;
+  for my $data (@$data) {
+    push @values, (map { exists $data->{$_} ? ($data->{$_}) : () } @col);
+    push @placeholders, 
+        '(' . (join ', ', (map { exists $data->{$_}
+                                     ? '?' : 'DEFAULT' } @col)) . ')';
+  }
   
-  my $sql = 'INSERT INTO ' . (_quote $table_name) .
+  my $sql = 'INSERT';
+  if ($args{duplicate}) {
+    $sql .= ' IGNORE' if $args{duplicate} eq 'ignore';
+    $sql = 'REPLACE' if $args{duplicate} eq 'replace';
+  }
+  $sql .= ' INTO ' . (_quote $table_name) .
       ' (' . (join ', ', map { _quote $_ } @col) . ')' .
-      ' VALUES ' .
-      (join ', ', ("($placeholder)") x @$data) .
-      '';
+      ' VALUES ' . (join ', ', @placeholders);
   my $return = $self->execute
       ($sql, \@values, source_name => $args{source_name});
 
