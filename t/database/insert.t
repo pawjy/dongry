@@ -730,6 +730,137 @@ sub _insert_rubyish_result_first_as_row : Test(5) {
   eq_or_diff $value->{data}, {id => 32};
 } # _insert_rubyish_result_first_as_row
 
+sub _insert_duplicate_error : Test(8) {
+  reset_db_set;
+  my $dsn = test_dsn 'inserttest1';
+  my $invoked = 0;
+  my ($onerror_self, %onerror_args);
+  my $shortmess;
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}},
+       onerror => sub {
+         ($onerror_self, %onerror_args) = @_;
+         $invoked++;
+         $shortmess = Carp::shortmess;
+       });
+
+  $db->execute ('create table foo (id int unique key)');
+  $db->execute ('insert into foo (id) values (2)');
+
+  my $messline;
+  dies_ok {
+    $messline = __LINE__; $db->execute ('insert into foo (id) values (2)');
+  };
+
+  is $onerror_self, $db;
+  is $onerror_args{source_name}, 'master';
+  is $onerror_args{sql}, 'insert into foo (id) values (2)';
+  ok $onerror_args{text};
+  is $invoked, 1;
+  is $shortmess, ' at ' . __FILE__ . ' line ' . $messline . "\n";
+  
+  is $db->execute ('select * from foo', undef, source_name => 'master')
+      ->row_count, 1;
+} # _insert_duplicate_error
+
+sub _insert_column_error : Test(8) {
+  reset_db_set;
+  my $dsn = test_dsn 'inserttest1';
+  my $invoked = 0;
+  my ($onerror_self, %onerror_args);
+  my $shortmess;
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}},
+       onerror => sub {
+         ($onerror_self, %onerror_args) = @_;
+         $invoked++;
+         $shortmess = Carp::shortmess;
+       });
+
+  $db->execute ('create table foo (id int unique key)');
+
+  my $messline;
+  dies_ok {
+    $messline = __LINE__; $db->execute ('insert into foo (id2) values (2)');
+  };
+
+  is $onerror_self, $db;
+  is $onerror_args{source_name}, 'master';
+  is $onerror_args{sql}, 'insert into foo (id2) values (2)';
+  ok $onerror_args{text};
+  is $invoked, 1;
+  is $shortmess, ' at ' . __FILE__ . ' line ' . $messline . "\n";
+  
+  is $db->execute ('select * from foo', undef, source_name => 'master')
+      ->row_count, 0;
+} # _insert_column_error
+
+sub _last_insert_id_unknown : Test(1) {
+  my $db = Dongry::Database->new;
+  is $db->last_insert_id, undef;
+} # _last_insert_id_unknown
+
+sub _last_insert_id_unknown_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (id int)', undef, source_name => 'default');
+  $db->execute ('select * from hoge');
+  is $db->last_insert_id, undef;
+} # _last_insert_id_unknown_2
+
+sub _last_insert_id_inserted : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (id int)');
+  $db->execute ('insert into hoge (id) values (2)');
+  is $db->last_insert_id, 0;
+} # _last_insert_id_inserted
+
+sub _last_insert_id_inserted_pk : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (id int primary key)');
+  $db->execute ('insert into hoge (id) values (2)');
+  is $db->last_insert_id, 0;
+} # _last_insert_id_inserted_pk
+
+sub _last_insert_id_inserted_pk_auto_increment : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (id int primary key auto_increment)');
+  $db->execute ('insert into hoge (id) values (2)');
+  is $db->last_insert_id, 2;
+} # _last_insert_id_inserted_pk_auto_increment
+
+sub _last_insert_id_inserted_multiple : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (id int primary key auto_increment)');
+  $db->execute ('insert into hoge (id) values (2), (3)');
+  ok $db->last_insert_id;
+} # _last_insert_id_inserted_multiple
+
+sub _last_insert_id_inserted_multiple_statements : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (id int primary key auto_increment)');
+  $db->execute ('insert into hoge (id) values (2)');
+  $db->execute ('insert into hoge (id) values (3)');
+  is $db->last_insert_id, 3;
+} # _last_insert_id_inserted_multiple_statements
+
 __PACKAGE__->runtests;
 
 1;

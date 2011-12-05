@@ -68,6 +68,7 @@ sub onerror ($) {
   }
   return $_[0]->{onerror} || sub {
     my ($self, %args) = @_;
+    local $Carp::CarpLevel = $Carp::CarpLevel - 1;
     croak $self->source ($args{source_name})->{dsn} .
         ': ' . $args{text} .
         (defined $args{sql} ? ': ' . $args{sql} : '');
@@ -87,6 +88,7 @@ sub connect ($$) {
       ($source->{dsn}, $source->{username}, $source->{password},
        {RaiseError => 1, PrintError => 0, HandleError => sub {
           #my ($msg, $dbh, $returned) = @_:
+          local $Carp::CarpLevel = $Carp::CarpLevel + 1;
           $onerror_args->{db}->onerror
               ->($onerror_args->{db},
                  text => $_[0],
