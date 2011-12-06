@@ -257,7 +257,6 @@ sub _order ($$) {
 
 sub select ($$$;%) {
   my ($self, $table_name, $where, %args) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
 
   my ($where_sql, $where_bind) = $self->_where ($where);
   croak 'No where' unless $where_sql;
