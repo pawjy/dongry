@@ -871,6 +871,53 @@ sub _insert_stupid_column_name : Test(1) {
                    source_name => 'master')->row_count, 1;
 } # _insert_stupid_column_name
 
+sub _insert_utf8_flagged_string : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'inserttest1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  $db->execute ('create table foo (id int unique key, val text)');
+
+  eq_or_diff $db->insert ('foo', [{id => 2, val => "\x{5000}\x{6000}"}])
+      ->all->to_a, [{id => 2, val => "\x{5000}\x{6000}"}];
+  
+  eq_or_diff $db->execute ('select * from foo', undef, source_name => 'master')
+      ->all->to_a, [{id => 2, val => encode 'utf-8', "\x{5000}\x{6000}"}];
+} # _insert_utf8_flagged_string
+
+sub _insert_utf8_unflagged_string : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'inserttest1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  $db->execute ('create table foo (id int unique key, val text)');
+
+  eq_or_diff $db->insert ('foo', [{id => 2,
+                                   val => encode 'utf-8', "\x{5000}\x{6000}"}])
+      ->all->to_a, [{id => 2, val => encode 'utf-8', "\x{5000}\x{6000}"}];
+  
+  eq_or_diff $db->execute ('select * from foo', undef, source_name => 'master')
+      ->all->to_a, [{id => 2, val => encode 'utf-8', "\x{5000}\x{6000}"}];
+} # _insert_utf8_unflagged_string
+
+sub _insert_object : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'inserttest1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  $db->execute ('create table foo (id int unique key, val text)');
+
+  my $obj = file (__FILE__);
+  eq_or_diff $db->insert ('foo', [{id => 2, val => $obj}])
+      ->all->to_a, [{id => 2, val => $obj}];
+  
+  eq_or_diff $db->execute ('select * from foo', undef, source_name => 'master')
+      ->all->to_a, [{id => 2, val => '' . $obj}];
+} # _insert_object
+
 sub _insert_with_default : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'select1';
