@@ -313,6 +313,195 @@ sub _select_a_row_all_as_rows : Test(15) {
   is $invoked, 0;
 } # _select_a_row_all_as_rows
 
+sub _select_multiple_rows_each : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1},
+                   default => {dsn => $dsn}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (23, NULL, "xyxa")');
+  
+  my $result = $db->select ('foo', {id => {-in => [12, 23]}});
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 2;
+  is $result->table_name, 'foo';
+  my $invoked = 0;
+  my @value;
+  $result->each (sub { push @value, $_; $invoked++ });
+  is $invoked, 2;
+  eq_or_diff [sort { $a->{id} <=> $b->{id} } @value],
+             [{id => 12, v1 => 'abc', v2 => '322'},
+              {id => 23, v1 => undef, v2 => 'xyxa'}];
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 2;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _select_multiple_rows_each
+
+sub _select_multiple_rows_each_as_row : Test(19) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1},
+                   default => {dsn => $dsn}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (23, NULL, "xyxa")');
+  
+  my $result = $db->select ('foo', {id => {-in => [12, 23]}});
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 2;
+  is $result->table_name, 'foo';
+  my $invoked = 0;
+  my @value;
+  $result->each_as_row (sub { push @value, $_; $invoked++ });
+  is $invoked, 2;
+  @value = sort { $a->{id} <=> $b->{id} } @value;
+  isa_ok $value[0], 'Dongry::Table::Row';
+  is $value[0]->{db}, $db;
+  is $value[0]->{table_name}, 'foo';
+  eq_or_diff $value[0]->{data}, {id => 12, v1 => 'abc', v2 => '322'};
+  isa_ok $value[1], 'Dongry::Table::Row';
+  is $value[1]->{db}, $db;
+  is $value[1]->{table_name}, 'foo';
+  eq_or_diff $value[1]->{data}, {id => 23, v1 => undef, v2 => 'xyxa'};
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_ok { $result->each (sub { $invoked++ }) };
+  is $invoked, 2;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+} # _select_multiple_rows_each_as_row
+
+sub _select_multiple_rows_first : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1},
+                   default => {dsn => $dsn}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (23, NULL, "xyxa")');
+  
+  my $result = $db->select ('foo', {id => {-in => [12, 23]}});
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 2;
+  is $result->table_name, 'foo';
+  my $invoked = 0;
+  my $value = $result->first;
+  eq_or_diff $value,
+      $value->{id} == 12 ? {id => 12, v1 => 'abc', v2 => '322'}
+                         : {id => 23, v1 => undef, v2 => 'xyxa'};
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+} # _select_multiple_rows_first
+
+sub _select_multiple_rows_first_as_row : Test(14) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1},
+                   default => {dsn => $dsn}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (23, NULL, "xyxa")');
+  
+  my $result = $db->select ('foo', {id => {-in => [12, 23]}});
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 2;
+  is $result->table_name, 'foo';
+  my $invoked = 0;
+  my $value = $result->first_as_row;
+  isa_ok $value, 'Dongry::Table::Row';
+  is $value->{db}, $db;
+  is $value->{table_name}, 'foo';
+  eq_or_diff $value->{data},
+      $value->{data}->{id} == 12 ? {id => 12, v1 => 'abc', v2 => '322'}
+                                 : {id => 23, v1 => undef, v2 => 'xyxa'};
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_ok { $result->each (sub { $invoked++ }) };
+  is $invoked, 0;
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+} # _select_multiple_rows_first_as_row
+
+sub _select_multiple_rows_all : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1},
+                   default => {dsn => $dsn}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (23, NULL, "xyxa")');
+  
+  my $result = $db->select ('foo', {id => {-in => [12, 23]}});
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 2;
+  is $result->table_name, 'foo';
+  my $invoked = 0;
+  my $list = $result->all;
+  isa_list_n_ok $list, 2;
+  eq_or_diff $list->sort (sub { $_[0]->{id} <=> $_[1]->{id} })->to_a,
+      [{id => 12, v1 => 'abc', v2 => '322'},
+       {id => 23, v1 => undef, v2 => 'xyxa'}];
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  is $invoked, 0;
+} # _select_multiple_rows_all
+
+sub _select_multiple_rows_all_as_rows : Test(19) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1},
+                   default => {dsn => $dsn}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (23, NULL, "xyxa")');
+  
+  my $result = $db->select ('foo', {id => {-in => [12, 23]}});
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 2;
+  is $result->table_name, 'foo';
+  my $invoked = 0;
+  my $list = $result->all_as_rows;
+  isa_list_n_ok $list, 2;
+  my $values = $list->sort (sub { $_[0]->{id} <=> $_[1]->{id} })->to_a;
+  isa_ok $values->[0], 'Dongry::Table::Row';
+  is $values->[0]->{db}, $db;
+  is $values->[0]->{table_name}, 'foo';
+  eq_or_diff $values->[0]->{data}, {id => 12, v1 => 'abc', v2 => '322'};
+  isa_ok $values->[1], 'Dongry::Table::Row';
+  is $values->[1]->{db}, $db;
+  is $values->[1]->{table_name}, 'foo';
+  eq_or_diff $values->[1]->{data}, {id => 23, v1 => undef, v2 => 'xyxa'};
+  dies_ok { $result->all };
+  dies_ok { $result->all_as_rows };
+  dies_ok { $result->first };
+  dies_ok { $result->first_as_row };
+  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_ok { $result->each (sub { $invoked++ }) };
+  is $invoked, 0;
+} # _select_multiple_rows_all_as_rows
+
 __PACKAGE__->runtests;
 
 1;
