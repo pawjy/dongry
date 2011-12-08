@@ -502,6 +502,186 @@ sub _select_multiple_rows_all_as_rows : Test(19) {
   is $invoked, 0;
 } # _select_multiple_rows_all_as_rows
 
+sub _select_multiple_rows_no_return : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  {
+    my $db = Dongry::Database->new
+        (sources => {master => {dsn => $dsn, writable => 1},
+                     default => {dsn => $dsn}});
+    $db->execute ('create table foo (id int, v1 text, v2 text)');
+    $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+    $db->execute ('insert into foo (id, v1, v2) values (23, NULL, "xyxa")');
+    
+    lives_ok {
+      $db->select ('foo', {id => {-in => [12, 23]}});
+      undef;
+    };
+    undef $db;
+  }
+  ok 1;
+} # _select_multiple_rows_no_return
+
+sub _select_no_source : Test(2) {
+  my $db = Dongry::Database->new;
+  dies_ok {
+    my $result = $db->select ('foo', {id => {-in => [12, 23]}});
+  };
+} # _select_no_source
+
+sub _select_sources : Test(5) {
+  reset_db_set;
+  my $dsn1 = test_dsn 'dsn1';
+  my $dsn2 = test_dsn 'dsn2';
+  my $dsn3 = test_dsn 'dsn3';
+  my $db1 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1}});
+  my $db2 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn2, writable => 1}});
+  my $db3 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn3, writable => 1}});
+  $db1->execute ('create table foo (id int)');
+  $db2->execute ('create table foo (id int)');
+  $db3->execute ('create table foo (id int)');
+  $db1->execute ('insert into foo (id) values (1)');
+  $db2->execute ('insert into foo (id) values (2)');
+  $db3->execute ('insert into foo (id) values (3)');
+  
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn1},
+                   master => {dsn => $dsn2},
+                   heavy => {dsn => $dsn3}});
+
+  my $result1 = $db->select ('foo', {id => {'>=', 0}});
+  is $result1->first->{id}, 1;
+
+  my $result2 = $db->select ('foo', {id => {'>=', 0}},
+                             source_name => 'default');
+  is $result2->first->{id}, 1;
+
+  my $result3 = $db->select ('foo', {id => {'>=', 0}},
+                             source_name => 'master');
+  is $result3->first->{id}, 2;
+
+  my $result4 = $db->select ('foo', {id => {'>=', 0}},
+                             source_name => 'heavy');
+  is $result4->first->{id}, 3;
+  
+  dies_ok {
+    my $result5 = $db->select ('foo', {id => {'>=', 0}},
+                               source_name => 'notfound');
+  };
+} # _select_sources
+
+sub _select_must_be_writable_yes : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 1},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (23, NULL, "xyxa")');
+  
+  my $result = $db->select ('foo', {id => {-in => [12, 23]}},
+                            source_name => 'default',
+                            must_be_writable => 1);
+  is $result->row_count, 2;
+} # _select_must_be_writable_yes
+
+sub _select_must_be_writable_yes_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (23, NULL, "xyxa")');
+  
+  my $result = $db->select ('foo', {id => {-in => [12, 23]}},
+                            must_be_writable => 1);
+  is $result->row_count, 2;
+} # _select_must_be_writable_yes_2
+
+sub _select_must_be_writable_yes_3 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (23, NULL, "xyxa")');
+  
+  my $result = $db->select ('foo', {id => {-in => [12, 23]}},
+                            source => 'master',
+                            must_be_writable => 1);
+  is $result->row_count, 2;
+} # _select_must_be_writable_yes_3
+
+sub _select_must_be_writable_no : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (23, NULL, "xyxa")');
+  
+  dies_ok {
+    my $result = $db->select ('foo', {id => {-in => [12, 23]}},
+                              source_name => 'default',
+                              must_be_writable => 1);
+  };
+} # _select_must_be_writable_no
+
+sub _select_must_be_writable_no_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (23, NULL, "xyxa")');
+  
+  dies_ok {
+    my $result = $db->select ('foo', {id => {-in => [12, 23]}},
+                              source_name => 'default',
+                              must_be_writable => 1);
+  };
+} # _select_must_be_writable_no_2
+
+# XXX field
+
+# XXX field SQL error
+
+# XXX table
+
+# XXX SQLA
+
+# XXX SQLP
+
+# XXX where SQL error
+
+# XXX utf8, bytes
+
+# XXX group
+
+# XXX group SQL error
+
+# XXX order
+
+# XXX order SQL error
+
+# XXX offset limit
+
+# XXX lock
+
+# XXX other options
+
 __PACKAGE__->runtests;
 
 1;
