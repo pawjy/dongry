@@ -1248,11 +1248,136 @@ sub _select_where_sqla_latin1_string : Test(3) {
   is $result3->first->{id}, 23;
 } # _select_where_sqla_latin1_string
 
-# XXX SQLP
+sub _select_where_sqlp_no_args : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute (qq{insert into foo (id, v1) values (12, "abc")});
+  $db->execute (qq{insert into foo (id, v1) values (23, "def")});
 
-# XXX where SQL error
+  my $result = $db->select
+      ('foo', ['id = 12 or id = 23'], order => [id => 'ASC']);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 23];
+} # _select_where_sqlp_no_args
 
-# XXX utf8, bytes
+sub _select_where_sqlp_no_args_utf8_flagged : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute (qq{insert into foo (id, v1) values (12, "abc")});
+  $db->execute (qq{insert into foo (id, v1) values (23, "\x{7000}")});
+
+  my $result = $db->select ('foo', ["v1 = '\x{7000}'"]);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [23];
+} # _select_where_sqlp_no_args_utf8_flagged
+
+sub _select_where_sqlp_no_args_utf8_unflagged : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute (qq{insert into foo (id, v1) values (12, "abc")});
+  $db->execute (qq{insert into foo (id, v1) values (23, "\x{7000}")});
+
+  my $result = $db->select ('foo', [encode 'utf-8', "v1 = '\x{7000}'"]);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [23];
+} # _select_where_sqlp_no_args_utf8_unflagged
+
+sub _select_where_sqlp_with_args : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute (qq{insert into foo (id, v1) values (12, "abc")});
+  $db->execute (qq{insert into foo (id, v1) values (23, "def")});
+
+  my $result = $db->select
+      ('foo', ['id = :id1 or id = :id2',
+               id1 => 12, id2 => 23], order => [id => 'ASC']);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 23];
+} # _select_where_sqlp_with_args
+
+sub _select_where_sqlp_with_args_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute (qq{insert into foo (id, v1) values (12, "abc")});
+  $db->execute (qq{insert into foo (id, v1) values (23, "def")});
+
+  my $result = $db->select
+      ('foo', ['id = ? or v1 = ?',
+               id => 12, v1 => 'def'], order => [id => 'ASC']);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 23];
+} # _select_where_sqlp_with_args_2
+
+sub _select_where_sqlp_with_args_utf8_flagged : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute (qq{insert into foo (id, v1) values (12, "abc")});
+  $db->execute (qq{insert into foo (id, v1) values (23, "\x{7000}")});
+
+  my $result = $db->select
+      ('foo', ['v1 = ?', v1 => "\x{7000}"], order => [id => 'ASC']);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [23];
+} # _select_where_sqlp_with_args_utf8_flagged
+
+sub _select_where_sqlp_with_args_utf8_unflagged : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute (qq{insert into foo (id, v1) values (12, "abc")});
+  $db->execute (qq{insert into foo (id, v1) values (23, "\x{7000}")});
+
+  my $result = $db->select
+      ('foo', ['v1 = ?', v1 => encode 'utf-8', "\x{7000}"]);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [23];
+} # _select_where_sqlp_with_args_utf8_unflagged
+
+sub _select_where_bad_args : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+
+  dies_ok {
+    my $result = $db->select ('foo', 'id = 12');
+  };
+} # _select_where_bad_args
+
+sub _select_where_no_args : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+
+  dies_ok {
+    my $result = $db->select ('foo', undef);
+  };
+} # _select_where_no_args
 
 # XXX group
 

@@ -304,8 +304,9 @@ sub select ($$$;%) {
   } else {
     $sql .= ' *';
   }
-  $sql .= ' FROM ' . (_quote $table_name) . $where_sql;
-  $sql .= $self->_order ($args{order});
+  $sql .= ' FROM ' . (_quote $table_name)
+       . $where_sql
+       . $self->_order ($args{order});
   $sql .= ' LIMIT ' . ($args{offset} || 0) . ',' . ($args{limit} || 1)
       if $args{limit} or $args{offset};
   if ($args{lock}) {
