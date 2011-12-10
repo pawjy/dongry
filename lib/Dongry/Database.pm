@@ -5,8 +5,6 @@ our $VERSION = '1.0';
 use DBI;
 use Carp;
 use Scalar::Util qw(weaken);
-use Encode;
-require utf8;
 
 push our @CARP_NOT, qw(
   DBI DBI::st DBI::db
@@ -402,7 +400,6 @@ package Dongry::Database::Executed;
 our $VERSION = '1.0';
 use Carp;
 use List::Rubyish;
-use Encode;
 
 push our @CARP_NOT, qw(Dongry::Database List::Rubyish);
 
@@ -417,22 +414,10 @@ sub table_name ($) {
   return $_[0]->{table_name};
 } # table_name
 
-sub _fixup_hashref ($) {
-  return undef unless defined $_[0];
-  my @key;
-  for (keys %{$_[0]}) {
-    push @key, $_ if $_ =~ /[^\x00-\x7F]/;
-  }
-  for (@key) {
-    $_[0]->{decode 'utf-8', $_} = delete $_[0]->{$_};
-  }
-  return $_[0];
-} # _fixup_hashref
-
 sub each ($$) {
   my ($self, $code) = @_;
   my $sth = delete $self->{sth} or croak 'This method is no longer available';
-  while (my $hashref = _fixup_hashref $sth->fetchrow_hashref) {
+  while (my $hashref = $sth->fetchrow_hashref) {
     local $_ = $hashref; ## Sigh, consistency with List::Rubyish...
     $code->();
   }
@@ -453,8 +438,7 @@ sub each_as_row ($$) {
 
 sub all ($) {
   my $sth = delete $_[0]->{sth} or croak 'This method is no longer available';
-  my $list = List::Rubyish->new ($sth->fetchall_arrayref ({}))
-      ->map (sub { _fixup_hashref $_ });
+  my $list = List::Rubyish->new ($sth->fetchall_arrayref ({}));
   $sth->finish;
   return $list;
 } # all
@@ -470,7 +454,7 @@ sub all_as_rows ($) {
 
 sub first ($) {
   my $sth = delete $_[0]->{sth} or croak 'This method is no longer available';
-  my $first = _fixup_hashref $sth->fetchrow_hashref; # or undef
+  my $first = $sth->fetchrow_hashref; # or undef
   $sth->finish;
   return $first;
 } # first

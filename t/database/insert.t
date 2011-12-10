@@ -955,7 +955,7 @@ sub _insert_utf8_flagged_column : Test(1) {
   eq_or_diff $db->execute
       ((encode 'utf-8', qq{select * from foo}), undef,
        source_name => 'master')->all->to_a,
-           [{id => 2, "\x{5000}\x{6000}" => "ho"}];
+           [{id => 2, (encode 'utf-8', "\x{5000}\x{6000}") => "ho"}];
 } # _insert_utf8_flagged_table
 
 sub _insert_utf8_unflagged_column : Test(2) {
@@ -974,7 +974,7 @@ sub _insert_utf8_unflagged_column : Test(2) {
   eq_or_diff $db->execute
       ((encode 'utf-8', qq{select * from foo}), undef,
        source_name => 'master')->all->to_a,
-           [{id => 2, "\x{5000}\x{6000}" => "ho"}];
+           [{id => 2, (encode 'utf-8', "\x{5000}\x{6000}") => "ho"}];
 } # _insert_utf8_unflagged_table
 
 sub _insert_object : Test(2) {

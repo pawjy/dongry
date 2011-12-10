@@ -776,7 +776,7 @@ sub _select_fields_utf8_flagged : Test(1) {
 
   my $result = $db->select ('foo', {id => {'>', 0}}, fields => ["\x{6000}"]);
   eq_or_diff $result->all->to_a,
-      [{"\x{6000}" => 'abc'}];
+      [{(encode 'utf-8', "\x{6000}") => 'abc'}];
 } # _select_fields_utf8_flagged
 
 sub _select_fields_utf8_unflagged : Test(1) {
@@ -793,7 +793,7 @@ sub _select_fields_utf8_unflagged : Test(1) {
   my $result = $db->select ('foo', {id => {'>', 0}},
                             fields => [encode 'utf-8', "\x{6000}"]);
   eq_or_diff $result->all->to_a,
-      [{"\x{6000}" => 'abc'}];
+      [{(encode 'utf-8', "\x{6000}") => 'abc'}];
 } # _select_fields_utf8_unflagged
 
 sub _select_fields_function : Test(1) {
@@ -1091,7 +1091,7 @@ sub _select_where_sqla_value_utf8_flagged_table_column : Test(1) {
 
   my $result = $db->select ("\x{8000}", {"\x{9000}" => "\x{6000}"});
   eq_or_diff $result->all->to_a,
-      [{id => 12, "\x{9000}" => encode 'utf-8', "\x{6000}"}];
+      [{id => 12, (encode 'utf-8', "\x{9000}") => encode 'utf-8', "\x{6000}"}];
 } # _select_where_sqla_utf8_flagged_table_column
 
 sub _select_where_sqla_value_utf8_unflagged_table_column : Test(1) {
@@ -1112,7 +1112,7 @@ sub _select_where_sqla_value_utf8_unflagged_table_column : Test(1) {
   my $result = $db->select
       ("\x{8000}", {"\x{9000}" => encode 'utf-8', "\x{6000}"});
   eq_or_diff $result->all->to_a,
-      [{id => 12, "\x{9000}" => encode 'utf-8', "\x{6000}"}];
+      [{id => 12, (encode 'utf-8', "\x{9000}") => encode 'utf-8', "\x{6000}"}];
 } # _select_where_sqla_utf8_unflagged_table_column
 
 sub _select_where_sqla_in : Test(1) {
