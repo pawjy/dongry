@@ -13,6 +13,7 @@ push our @CARP_NOT, qw(
   Dongry::Database::Executed Dongry::Database::Executed::Inserted
   Dongry::Database::Transaction 
   Dongry::Table Dongry::Table::Row Dongry::Query
+  SQL::Abstract SQL::NamedPlaceholder
 );
 
 if ($ENV{DONGRY_DEBUG}) {
@@ -275,7 +276,7 @@ sub _where ($$) {
   #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
   if (ref $_[0] eq 'HASH') {
     require SQL::Abstract;
-    $self->{sqla} ||= SQL::Abstract->new;
+    $self->{sqla} ||= SQL::Abstract->new (quote_char => q{`});
     my ($sql, @bind) = $self->{sqla}->where ($_[0]);
     return ($sql, \@bind);
   } elsif (ref $_[0] eq 'ARRAY') {
@@ -313,7 +314,7 @@ sub select ($$$;%) {
   } else {
     $sql .= ' *';
   }
-  $sql .= ' FROM ' . (_quote _encode $table_name) . $where_sql;
+  $sql .= ' FROM ' . (_quote _encode $table_name) . _encode $where_sql;
   $sql .= $self->_order ($args{order});
   $sql .= ' LIMIT ' . ($args{offset} || 0) . ',' . ($args{limit} || 1)
       if $args{limit} or $args{offset};
