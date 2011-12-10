@@ -902,6 +902,21 @@ sub _insert_utf8_unflagged_string : Test(2) {
       ->all->to_a, [{id => 2, val => encode 'utf-8', "\x{5000}\x{6000}"}];
 } # _insert_utf8_unflagged_string
 
+sub _insert_latin1_string : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'inserttest1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  $db->execute ('create table foo (id int unique key, val text)');
+
+  eq_or_diff $db->insert ('foo', [{id => 2, val => "\x{a5}\x{81}\x{d5}"}])
+      ->all->to_a, [{id => 2, val => "\x{a5}\x{81}\x{d5}"}];
+  
+  eq_or_diff $db->execute ('select * from foo', undef, source_name => 'master')
+      ->all->to_a, [{id => 2, val => encode 'latin1', "\x{a5}\x{81}\x{d5}"}];
+} # _insert_latin1_string
+
 sub _insert_utf8_flagged_table : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'inserttest1';

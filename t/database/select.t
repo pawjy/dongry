@@ -1222,6 +1222,32 @@ sub _select_where_sqla_bad : Test(1) {
   };
 } # _select_where_sqla_bad
 
+sub _select_where_sqla_latin1_string : Test(3) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute
+      (encode 'utf-8',
+       qq{insert into foo (id, v1) values (12, "\x{91}\x{c1}\x{fe}")});
+  $db->execute
+      (encode 'latin1',
+       qq{insert into foo (id, v1) values (23, "\x{91}\x{c1}\x{fe}")});
+
+  my $result = $db->select ('foo', {v1 => "\x{91}\x{c1}\x{fe}"});
+  is $result->first->{id}, 23;
+  
+  my $result2 = $db->select
+      ('foo', {v1 => encode 'utf-8', "\x{91}\x{c1}\x{fe}"});
+  is $result2->first->{id}, 12;
+  
+  my $result3 = $db->select
+      ('foo', {v1 => encode 'latin1', "\x{91}\x{c1}\x{fe}"});
+  is $result3->first->{id}, 23;
+} # _select_where_sqla_latin1_string
+
 # XXX SQLP
 
 # XXX where SQL error
