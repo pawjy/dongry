@@ -681,37 +681,34 @@ sub _fields_valid : Test(29) {
     ['abc', '`abc`'],
     ['ab `\\c', '`ab ``\\c`'],
     ['abc', '`abc`'],
-    ["\x{4010}\x{124}ab", encode 'utf-8', qq{`\x{4010}\x{124}ab`}],
+    ["\x{4010}\x{124}ab", qq{`\x{4010}\x{124}ab`}],
     [['a', 'bcd'], '`a`, `bcd`'],
-    [['a', "\x{4010}\x{124}ab"], encode 'utf-8', qq{`a`, `\x{4010}\x{124}ab`}],
+    [['a', "\x{4010}\x{124}ab"], qq{`a`, `\x{4010}\x{124}ab`}],
     [['a', ['b', ['c']]] => '`a`, `b`, `c`'],
     [\'ab cde' => 'ab cde'],
-    [\"ab\x{8000} cde" => encode 'utf-8', "ab\x{8000} cde"],
+    [\"ab\x{8000} cde" => "ab\x{8000} cde"],
     [['a', \'count(b) as c'] => '`a`, count(b) as c'],
     [{-count => undef} => 'COUNT(*)'],
     [{-count => 1} => 'COUNT(`1`)'],
     [{-count => 'a'} => 'COUNT(`a`)'],
-    [{-count => "\x{5000}"}
-         => encode 'utf-8', qq{COUNT(`\x{5000}`)}],
+    [{-count => "\x{5000}"} => qq{COUNT(`\x{5000}`)}],
     [{-count => ['a', 'b']} => 'COUNT(`a`, `b`)'],
     [{-count => 'a', as => 'ab c'} => 'COUNT(`a`) AS `ab c`'],
-    [{-count => 'a', as => "\x{8000}"}
-         => encode 'utf-8', qq{COUNT(`a`) AS `\x{8000}`}],
+    [{-count => 'a', as => "\x{8000}"} => qq{COUNT(`a`) AS `\x{8000}`}],
     [{-count => undef, distinct => 1} => 'COUNT(DISTINCT *)'],
     [{-count => 'a', distinct => 1} => 'COUNT(DISTINCT `a`)'],
-    [{-count => "\x{5000}", distinct => 1}
-         => encode 'utf-8', qq{COUNT(DISTINCT `\x{5000}`)}],
+    [{-count => "\x{5000}", distinct => 1} => qq{COUNT(DISTINCT `\x{5000}`)}],
     [{-count => ['a', 'b'], distinct => 1} => 'COUNT(DISTINCT `a`, `b`)'],
     [{-count => 'a', distinct => 1, as => 'ab c'}
          => 'COUNT(DISTINCT `a`) AS `ab c`'],
     [{-count => 'a', distinct => 1, as => "\x{8000}"}
-         => encode 'utf-8', qq{COUNT(DISTINCT `a`) AS `\x{8000}`}],
+         => qq{COUNT(DISTINCT `a`) AS `\x{8000}`}],
     [{-min => 'a', distinct => 1, as => "\x{8000}"}
-         => encode 'utf-8', qq{MIN(DISTINCT `a`) AS `\x{8000}`}],
+         => qq{MIN(DISTINCT `a`) AS `\x{8000}`}],
     [{-max => 'a', distinct => 1, as => "\x{8000}"}
-         => encode 'utf-8', qq{MAX(DISTINCT `a`) AS `\x{8000}`}],
+         => qq{MAX(DISTINCT `a`) AS `\x{8000}`}],
     [{-sum => 'a', distinct => 1, as => "\x{8000}"}
-         => encode 'utf-8', qq{SUM(DISTINCT `a`) AS `\x{8000}`}],
+         => qq{SUM(DISTINCT `a`) AS `\x{8000}`}],
     ['' => '``'],
     [['a', undef] => '`a`, *'],
   ) {
@@ -792,10 +789,10 @@ sub _select_fields_utf8_unflagged : Test(1) {
   $db->execute
       (encode 'utf-8', "insert into foo (id, `\x{6000}`) values (12, 'abc')");
 
-  dies_ok {
-    my $result = $db->select ('foo', {id => {'>', 0}},
-                              fields => [encode 'utf-8', "\x{6000}"]);
-  };
+  my $result = $db->select ('foo', {id => {'>', 0}},
+                            fields => [encode 'utf-8', "\x{6000}"]);
+  eq_or_diff $result->all->to_a,
+      [{"\x{6000}" => 'abc'}];
 } # _select_fields_utf8_unflagged
 
 sub _select_fields_function : Test(1) {
@@ -944,9 +941,8 @@ sub _select_table_utf8_unflagged : Test(1) {
   $db->execute
       (encode 'utf-8', "insert into `\x{8000}` (id) value (3)");
 
-  dies_ok {
-    my $result = $db->select ((encode 'utf-8', "\x{8000}"), {id => {'>', 0}});
-  };
+  my $result = $db->select ((encode 'utf-8', "\x{8000}"), {id => {'>', 0}});
+  eq_or_diff $result->all->to_a, [{id => 3, v1 => undef, v2 => undef}];
 } # _select_table_utf8_unflagged
 
 sub _select_where_sqla_empty : Test(1) {

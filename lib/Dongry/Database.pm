@@ -186,14 +186,6 @@ sub _quote ($) {
   return q<`> . $s . q<`>;
 } # _quote
 
-sub _encode ($) {
-  if (utf8::is_utf8 ($_[0]) or $_[0] =~ /[^\x00-\x7F]/) {
-    return encode 'utf-8', $_[0];
-  } else {
-    return $_[0];
-  }
-} # _encode
-
 sub insert ($$$;%) {
   my ($self, $table_name, $data, %args) = @_;
 
@@ -218,8 +210,8 @@ sub insert ($$$;%) {
     $sql .= ' IGNORE' if $args{duplicate} eq 'ignore';
     $sql = 'REPLACE' if $args{duplicate} eq 'replace';
   }
-  $sql .= ' INTO ' . (_quote _encode $table_name) .
-      ' (' . (join ', ', map { _quote _encode $_ } @col) . ')' .
+  $sql .= ' INTO ' . (_quote $table_name) .
+      ' (' . (join ', ', map { _quote $_ } @col) . ')' .
       ' VALUES ' . (join ', ', @placeholders);
   my $return = $self->execute
       ($sql, \@values, source_name => $args{source_name});
@@ -241,7 +233,7 @@ sub _fields ($) {
   if (not defined $_[0]) {
     return '*';
   } elsif (not ref $_[0]) {
-    return _quote _encode $_[0];
+    return _quote $_[0];
   } elsif (ref $_[0] eq 'ARRAY') {
     if (@{$_[0]}) {
       return join ', ', map { _fields ($_) } @{$_[0]};
@@ -255,7 +247,7 @@ sub _fields ($) {
       $v .= 'DISTINCT ' if $_[0]->{distinct};
       $v .= _fields ($_[0]->{$func});
       $v .= ')';
-      $v .= ' AS ' . _quote _encode $_[0]->{as} if defined $_[0]->{as};
+      $v .= ' AS ' . _quote $_[0]->{as} if defined $_[0]->{as};
       return $v;
     } else {
       if ($func) {
@@ -265,7 +257,7 @@ sub _fields ($) {
       }
     }
   } elsif (ref $_[0] eq 'SCALAR') {
-    return _encode ${$_[0]};
+    return ${$_[0]};
   } else {
     croak sprintf 'Field value %s is not supported', $_[0];
   }
@@ -314,7 +306,7 @@ sub select ($$$;%) {
   } else {
     $sql .= ' *';
   }
-  $sql .= ' FROM ' . (_quote _encode $table_name) . _encode $where_sql;
+  $sql .= ' FROM ' . (_quote $table_name) . $where_sql;
   $sql .= $self->_order ($args{order});
   $sql .= ' LIMIT ' . ($args{offset} || 0) . ',' . ($args{limit} || 1)
       if $args{limit} or $args{offset};
