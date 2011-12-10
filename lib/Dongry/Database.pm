@@ -5,6 +5,8 @@ our $VERSION = '1.0';
 use DBI;
 use Carp;
 use Scalar::Util qw(weaken);
+use Encode;
+require utf8;
 
 push our @CARP_NOT, qw(
   DBI DBI::st DBI::db
@@ -183,6 +185,14 @@ sub _quote ($) {
   return q<`> . $s . q<`>;
 } # _quote
 
+sub _encode ($) {
+  if (utf8::is_utf8 ($_[0]) or $_[0] =~ /[^\x00-\x7F]/) {
+    return encode 'utf-8', $_[0];
+  } else {
+    return $_[0];
+  }
+} # _encode
+
 sub insert ($$$;%) {
   my ($self, $table_name, $data, %args) = @_;
 
@@ -207,8 +217,8 @@ sub insert ($$$;%) {
     $sql .= ' IGNORE' if $args{duplicate} eq 'ignore';
     $sql = 'REPLACE' if $args{duplicate} eq 'replace';
   }
-  $sql .= ' INTO ' . (_quote $table_name) .
-      ' (' . (join ', ', map { _quote $_ } @col) . ')' .
+  $sql .= ' INTO ' . (_quote _encode $table_name) .
+      ' (' . (join ', ', map { _quote _encode $_ } @col) . ')' .
       ' VALUES ' . (join ', ', @placeholders);
   my $return = $self->execute
       ($sql, \@values, source_name => $args{source_name});
@@ -224,6 +234,33 @@ sub last_insert_id ($) {
   my $dbh = $_[0]->{dbhs}->{master} or return undef;
   return $dbh->last_insert_id (undef, undef, undef, undef);
 } # last_insert_id
+
+sub _fields ($);
+sub _fields ($) {
+  if (not defined $_[0]) {
+    return '*';
+  } elsif (not ref $_[0]) {
+    return _quote _encode $_[0];
+  } elsif (ref $_[0] eq 'ARRAY') {
+    return join ', ', map { _fields ($_) } @{$_[0]};
+  } elsif (ref $_[0] eq 'HASH') {
+    my $func = [grep { /^-/ } keys %{$_[0]}]->[0] || '';
+    if ($func =~ /\A-(count|min|max|sum)\z/) {
+      my $v = (uc $1) . '(';
+      $v .= 'DISTINCT ' if $_[0]->{distinct};
+      $v .= _fields ($_[0]->{$func});
+      $v .= ')';
+      $v .= ' AS ' . _quote _encode $_[0]->{as} if defined $_[0]->{as};
+      return $v;
+    } else {
+      croak sprintf 'Field function %s is not supported', $func;
+    }
+  } elsif (ref $_[0] eq 'SCALAR') {
+    return _encode ${$_[0]};
+  } else {
+    croak sprintf 'Field value %s is not supported', $_[0];
+  }
+} # _fields
 
 sub _where ($$) {
   my $self = shift;
@@ -261,8 +298,13 @@ sub select ($$$;%) {
   my ($where_sql, $where_bind) = $self->_where ($where);
   croak 'No where' unless $where_sql;
   
-  my $sql = 'SELECT ';
-  $sql .= $args{field} || '*';
+  my $sql = 'SELECT';
+  $sql .= ' DISTINCT' if $args{distinct};
+  if ($args{fields}) {
+    $sql .= ' ' . _fields $args{fields};
+  } else {
+    $sql .= ' *';
+  }
   $sql .= ' FROM ' . $table_name . $where_sql;
   $sql .= $self->_order ($args{order});
   $sql .= ' LIMIT ' . ($args{offset} || 0) . ',' . ($args{limit} || 1)
@@ -359,6 +401,7 @@ package Dongry::Database::Executed;
 our $VERSION = '1.0';
 use Carp;
 use List::Rubyish;
+use Encode;
 
 push our @CARP_NOT, qw(Dongry::Database List::Rubyish);
 
@@ -373,10 +416,22 @@ sub table_name ($) {
   return $_[0]->{table_name};
 } # table_name
 
+sub _fixup_hashref ($) {
+  return undef unless defined $_[0];
+  my @key;
+  for (keys %{$_[0]}) {
+    push @key, $_ if $_ =~ /[^\x00-\x7F]/;
+  }
+  for (@key) {
+    $_[0]->{decode 'utf-8', $_} = delete $_[0]->{$_};
+  }
+  return $_[0];
+} # _fixup_hashref
+
 sub each ($$) {
   my ($self, $code) = @_;
   my $sth = delete $self->{sth} or croak 'This method is no longer available';
-  while (my $hashref = $sth->fetchrow_hashref) {
+  while (my $hashref = _fixup_hashref $sth->fetchrow_hashref) {
     local $_ = $hashref; ## Sigh, consistency with List::Rubyish...
     $code->();
   }
@@ -397,7 +452,8 @@ sub each_as_row ($$) {
 
 sub all ($) {
   my $sth = delete $_[0]->{sth} or croak 'This method is no longer available';
-  my $list = List::Rubyish->new ($sth->fetchall_arrayref ({}));
+  my $list = List::Rubyish->new ($sth->fetchall_arrayref ({}))
+      ->map (sub { _fixup_hashref $_ });
   $sth->finish;
   return $list;
 } # all
@@ -413,7 +469,7 @@ sub all_as_rows ($) {
 
 sub first ($) {
   my $sth = delete $_[0]->{sth} or croak 'This method is no longer available';
-  my $first = $sth->fetchrow_hashref; # or undef
+  my $first = _fixup_hashref $sth->fetchrow_hashref; # or undef
   $sth->finish;
   return $first;
 } # first

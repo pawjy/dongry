@@ -902,6 +902,83 @@ sub _insert_utf8_unflagged_string : Test(2) {
       ->all->to_a, [{id => 2, val => encode 'utf-8', "\x{5000}\x{6000}"}];
 } # _insert_utf8_unflagged_string
 
+sub _insert_utf8_flagged_table : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'inserttest1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  $db->execute
+      ((encode 'utf-8',
+        qq{create table `\x{5000}\x{6000}` (id int unique key, val text)}));
+
+  my $result = $db->insert ("\x{5000}\x{6000}", [{id => 2, val => "abc"}]);
+  is $result->table_name, "\x{5000}\x{6000}";
+  
+  eq_or_diff $db->execute
+      ((encode 'utf-8', qq{select * from `\x{5000}\x{6000}`}), undef,
+       source_name => 'master')->all->to_a,
+           [{id => 2, val => "abc"}];
+} # _insert_utf8_flagged_table
+
+sub _insert_utf8_unflagged_table : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'inserttest1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  $db->execute
+      ((encode 'utf-8',
+        qq{create table `\x{5000}\x{6000}` (id int unique key, val text)}));
+
+  dies_ok {
+    my $result = $db->insert ((encode 'utf-8', "\x{5000}\x{6000}"),
+                              [{id => 2, val => "abc"}]);
+  };
+  
+  ng $db->execute
+      ((encode 'utf-8', qq{select * from `\x{5000}\x{6000}`}), undef,
+       source_name => 'master')->first;
+} # _insert_utf8_unflagged_table
+
+sub _insert_utf8_flagged_column : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'inserttest1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  $db->execute
+      ((encode 'utf-8',
+        qq{create table foo (id int, `\x{5000}\x{6000}` text)}));
+
+  my $result = $db->insert ('foo', [{id => 2, "\x{5000}\x{6000}" => 'ho'}]);
+  
+  eq_or_diff $db->execute
+      ((encode 'utf-8', qq{select * from foo}), undef,
+       source_name => 'master')->all->to_a,
+           [{id => 2, "\x{5000}\x{6000}" => "ho"}];
+} # _insert_utf8_flagged_table
+
+sub _insert_utf8_unflagged_column : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'inserttest1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+
+  $db->execute
+      ((encode 'utf-8',
+        qq{create table foo (id int, `\x{5000}\x{6000}` text)}));
+
+  dies_ok {
+    my $result = $db->insert
+        ('foo', [{id => 2, (encode 'utf-8', "\x{5000}\x{6000}") => 'ho'}]);
+  };
+
+  ng $db->execute
+      ((encode 'utf-8', qq{select * from foo}), undef,
+       source_name => 'master')->first;
+} # _insert_utf8_unflagged_table
+
 sub _insert_object : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'inserttest1';
@@ -1008,3 +1085,12 @@ sub _last_insert_id_inserted_multiple_statements : Test(1) {
 __PACKAGE__->runtests;
 
 1;
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

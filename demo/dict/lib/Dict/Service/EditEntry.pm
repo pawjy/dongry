@@ -63,7 +63,7 @@ sub create_entry_if_necessary {
     my $entry_id = $dictdb->select
         ('entry',
          {category_id => $self->category->category_id},
-         field => 'MAX(entry_id) + 1 AS value',
+         fields => \'MAX(entry_id) + 1 AS value',
          source_name => 'master',
          lock => 'update')->first->{value} || 1;
     $entry_row = $dictdb->table ('entry')->create

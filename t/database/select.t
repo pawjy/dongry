@@ -654,6 +654,199 @@ sub _select_must_be_writable_no_2 : Test(1) {
   };
 } # _select_must_be_writable_no_2
 
+sub _select_distinct : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  
+  my $result0 = $db->select ('foo', {id => {'>', 0}}, distinct => 0);
+  eq_or_diff $result0->all->to_a,
+      [{id => 12, v1 => 'abc', v2 => '322'},
+       {id => 12, v1 => 'abc', v2 => '322'}];
+
+  my $result = $db->select ('foo', {id => {'>', 0}}, distinct => 1);
+  eq_or_diff $result->all->to_a, [{id => 12, v1 => 'abc', v2 => '322'}];
+} # _select_distinct
+
+sub _fields_valid : Test(27) {
+  my $db = Dongry::Database->new;
+  for (
+    [undef, '*'],
+    ['abc', '`abc`'],
+    ['ab `\\c', '`ab ``\\c`'],
+    ['abc', '`abc`'],
+    ["\x{4010}\x{124}ab", encode 'utf-8', qq{`\x{4010}\x{124}ab`}],
+    [['a', 'bcd'], '`a`, `bcd`'],
+    [['a', "\x{4010}\x{124}ab"], encode 'utf-8', qq{`a`, `\x{4010}\x{124}ab`}],
+    [['a', ['b', ['c']]] => '`a`, `b`, `c`'],
+    [\'ab cde' => 'ab cde'],
+    [\"ab\x{8000} cde" => encode 'utf-8', "ab\x{8000} cde"],
+    [['a', \'count(b) as c'] => '`a`, count(b) as c'],
+    [{-count => undef} => 'COUNT(*)'],
+    [{-count => 1} => 'COUNT(`1`)'],
+    [{-count => 'a'} => 'COUNT(`a`)'],
+    [{-count => "\x{5000}"}
+         => encode 'utf-8', qq{COUNT(`\x{5000}`)}],
+    [{-count => ['a', 'b']} => 'COUNT(`a`, `b`)'],
+    [{-count => 'a', as => 'ab c'} => 'COUNT(`a`) AS `ab c`'],
+    [{-count => 'a', as => "\x{8000}"}
+         => encode 'utf-8', qq{COUNT(`a`) AS `\x{8000}`}],
+    [{-count => undef, distinct => 1} => 'COUNT(DISTINCT *)'],
+    [{-count => 'a', distinct => 1} => 'COUNT(DISTINCT `a`)'],
+    [{-count => "\x{5000}", distinct => 1}
+         => encode 'utf-8', qq{COUNT(DISTINCT `\x{5000}`)}],
+    [{-count => ['a', 'b'], distinct => 1} => 'COUNT(DISTINCT `a`, `b`)'],
+    [{-count => 'a', distinct => 1, as => 'ab c'}
+         => 'COUNT(DISTINCT `a`) AS `ab c`'],
+    [{-count => 'a', distinct => 1, as => "\x{8000}"}
+         => encode 'utf-8', qq{COUNT(DISTINCT `a`) AS `\x{8000}`}],
+    [{-min => 'a', distinct => 1, as => "\x{8000}"}
+         => encode 'utf-8', qq{MIN(DISTINCT `a`) AS `\x{8000}`}],
+    [{-max => 'a', distinct => 1, as => "\x{8000}"}
+         => encode 'utf-8', qq{MAX(DISTINCT `a`) AS `\x{8000}`}],
+    [{-sum => 'a', distinct => 1, as => "\x{8000}"}
+         => encode 'utf-8', qq{SUM(DISTINCT `a`) AS `\x{8000}`}],
+  ) {
+    eq_or_diff Dongry::Database::_fields $_->[0], $_->[1];
+  }
+} # _fields_valid
+
+sub _select_fields_none : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  
+  my $result = $db->select ('foo', {id => {'>', 0}}, fields => undef);
+  eq_or_diff $result->all->to_a,
+      [{id => 12, v1 => 'abc', v2 => '322'},
+       {id => 12, v1 => 'abc', v2 => '322'}];
+} # _select_fields_none
+
+sub _select_fields_some : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  
+  my $result = $db->select ('foo', {id => {'>', 0}}, fields => ['id', 'v1']);
+  eq_or_diff $result->all->to_a,
+      [{id => 12, v1 => 'abc'},
+       {id => 12, v1 => 'abc'}];
+} # _select_fields_some
+
+sub _select_fields_utf8_flagged : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute
+      (encode 'utf-8', "create table foo (id int, v1 text, `\x{6000}` text)");
+  $db->execute
+      (encode 'utf-8', "insert into foo (id, `\x{6000}`) values (12, 'abc')");
+
+  my $result = $db->select ('foo', {id => {'>', 0}}, fields => ["\x{6000}"]);
+  eq_or_diff $result->all->to_a,
+      [{"\x{6000}" => 'abc'}];
+} # _select_fields_utf8_flagged
+
+sub _select_fields_utf8_unflagged : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute
+      (encode 'utf-8', "create table foo (id int, v1 text, `\x{6000}` text)");
+  $db->execute
+      (encode 'utf-8', "insert into foo (id, `\x{6000}`) values (12, 'abc')");
+
+  dies_ok {
+    my $result = $db->select ('foo', {id => {'>', 0}},
+                              fields => [encode 'utf-8', "\x{6000}"]);
+  };
+} # _select_fields_utf8_unflagged
+
+sub _select_fields_function : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  
+  my $result = $db->select ('foo', {id => {'>', 0}},
+                            fields => ['id', {-count => undef}]);
+  eq_or_diff $result->all->to_a,
+      [{id => 12, 'COUNT(*)' => '2'}];
+} # _select_fields_function
+
+sub _select_fields_function_named : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  
+  my $result = $db->select ('foo', {id => {'>', 0}},
+                            fields => ['id', {-count => undef, as => 'v1'}]);
+  eq_or_diff $result->all->to_a,
+      [{id => 12, 'v1' => '2'}];
+} # _select_fields_function_named
+
+sub _select_fields_function_distinct : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  
+  my $result = $db->select
+      ('foo', {id => {'>', 0}},
+       fields => ['id', {-count => 'id', distinct => 1, as => 'hoge'}]);
+  eq_or_diff $result->all->to_a,
+      [{id => 12, 'hoge' => '1'}];
+} # _select_fields_function_distinct
+
+sub _select_fields_bare : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+  $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
+  $db->execute ('insert into foo (id, v1, v2) values (10, "abc", 322)');
+  
+  my $result = $db->select
+      ('foo', {id => {'>', 0}},
+       fields => \'min(id) as min, max(id) as max, min(id) + max(id) as mm');
+  eq_or_diff $result->all->to_a,
+      [{min => 10, max => 12, mm => 22}];
+} # _select_fields_bare
+
 # XXX field
 
 # XXX field SQL error
@@ -685,3 +878,12 @@ sub _select_must_be_writable_no_2 : Test(1) {
 __PACKAGE__->runtests;
 
 1;
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
