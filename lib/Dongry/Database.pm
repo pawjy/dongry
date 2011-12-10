@@ -242,7 +242,11 @@ sub _fields ($) {
   } elsif (not ref $_[0]) {
     return _quote _encode $_[0];
   } elsif (ref $_[0] eq 'ARRAY') {
-    return join ', ', map { _fields ($_) } @{$_[0]};
+    if (@{$_[0]}) {
+      return join ', ', map { _fields ($_) } @{$_[0]};
+    } else {
+      croak 'Array reference cannot be empty';
+    }
   } elsif (ref $_[0] eq 'HASH') {
     my $func = [grep { /^-/ } keys %{$_[0]}]->[0] || '';
     if ($func =~ /\A-(count|min|max|sum)\z/) {
@@ -253,7 +257,11 @@ sub _fields ($) {
       $v .= ' AS ' . _quote _encode $_[0]->{as} if defined $_[0]->{as};
       return $v;
     } else {
-      croak sprintf 'Field function %s is not supported', $func;
+      if ($func) {
+        croak sprintf 'Field function %s is not supported', $func;
+      } else {
+        croak 'Hash reference must contain a field function name';
+      }
     }
   } elsif (ref $_[0] eq 'SCALAR') {
     return _encode ${$_[0]};
@@ -305,7 +313,7 @@ sub select ($$$;%) {
   } else {
     $sql .= ' *';
   }
-  $sql .= ' FROM ' . $table_name . $where_sql;
+  $sql .= ' FROM ' . (_quote _encode $table_name) . $where_sql;
   $sql .= $self->_order ($args{order});
   $sql .= ' LIMIT ' . ($args{offset} || 0) . ',' . ($args{limit} || 1)
       if $args{limit} or $args{offset};

@@ -673,7 +673,7 @@ sub _select_distinct : Test(2) {
   eq_or_diff $result->all->to_a, [{id => 12, v1 => 'abc', v2 => '322'}];
 } # _select_distinct
 
-sub _fields_valid : Test(27) {
+sub _fields_valid : Test(29) {
   my $db = Dongry::Database->new;
   for (
     [undef, '*'],
@@ -711,10 +711,26 @@ sub _fields_valid : Test(27) {
          => encode 'utf-8', qq{MAX(DISTINCT `a`) AS `\x{8000}`}],
     [{-sum => 'a', distinct => 1, as => "\x{8000}"}
          => encode 'utf-8', qq{SUM(DISTINCT `a`) AS `\x{8000}`}],
+    ['' => '``'],
+    [['a', undef] => '`a`, *'],
   ) {
     eq_or_diff Dongry::Database::_fields $_->[0], $_->[1];
   }
 } # _fields_valid
+
+sub _fields_invalid : Test(5) {
+  for (
+    [],
+    {},
+    {-hoge => 1},
+    {count => 1},
+    [bless {}, 'hoge'],
+  ) {
+    dies_ok {
+      Dongry::Database::_fields $_;
+    };
+  }
+} # _fields_invalid
 
 sub _select_fields_none : Test(1) {
   reset_db_set;
@@ -847,11 +863,90 @@ sub _select_fields_bare : Test(1) {
       [{min => 10, max => 12, mm => 22}];
 } # _select_fields_bare
 
-# XXX field
+sub _select_fields_column_error : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
 
-# XXX field SQL error
+  dies_ok {
+    my $result = $db->select ('foo', {id => {'>', 0}}, fields => \'hoge');
+  };
+} # _select_fields_column_error
 
-# XXX table
+sub _select_fields_struct_error : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+
+  dies_ok {
+    my $result = $db->select ('foo', {id => {'>', 0}}, fields => [\\'hoge']);
+  };
+} # _select_fields_struct_error
+
+sub _select_fields_function_error : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 text, v2 text)');
+
+  dies_ok {
+    my $result = $db->select ('foo', {id => {'>', 0}}, fields => {-hoge => 1});
+  };
+} # _select_fields_function_error
+
+sub _select_table_stupid : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute
+      (encode 'utf-8', "create table `123 ``ab-c[` (id int, v1 text)");
+  $db->execute
+      (encode 'utf-8', "insert into `123 ``ab-c[` (id) value (3)");
+
+  my $result = $db->select ("123 `ab-c[", {id => {'>', 0}});
+  eq_or_diff $result->all->to_a, [{id => 3, v1 => undef}];
+} # _select_table_stupid
+
+sub _select_table_utf8_flagged : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute
+      (encode 'utf-8', "create table `\x{8000}` (id int, v1 text, v2 text)");
+  $db->execute
+      (encode 'utf-8', "insert into `\x{8000}` (id) value (3)");
+
+  my $result = $db->select ("\x{8000}", {id => {'>', 0}});
+  eq_or_diff $result->all->to_a, [{id => 3, v1 => undef, v2 => undef}];
+} # _select_table_utf8_flagged
+
+sub _select_table_utf8_unflagged : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute
+      (encode 'utf-8', "create table `\x{8000}` (id int, v1 text, v2 text)");
+  $db->execute
+      (encode 'utf-8', "insert into `\x{8000}` (id) value (3)");
+
+  dies_ok {
+    my $result = $db->select ((encode 'utf-8', "\x{8000}"), {id => {'>', 0}});
+  };
+} # _select_table_utf8_unflagged
 
 # XXX SQLA
 
