@@ -362,7 +362,7 @@ sub _select_multiple_rows_each_as_row : Test(19) {
   my @value;
   $result->each_as_row (sub { push @value, $_; $invoked++ });
   is $invoked, 2;
-  @value = sort { $a->{id} <=> $b->{id} } @value;
+  @value = sort { $a->{data}->{id} <=> $b->{data}->{id} } @value;
   isa_ok $value[0], 'Dongry::Table::Row';
   is $value[0]->{db}, $db;
   is $value[0]->{table_name}, 'foo';
@@ -485,7 +485,8 @@ sub _select_multiple_rows_all_as_rows : Test(19) {
   my $invoked = 0;
   my $list = $result->all_as_rows;
   isa_list_n_ok $list, 2;
-  my $values = $list->sort (sub { $_[0]->{id} <=> $_[1]->{id} })->to_a;
+  my $values = $list->sort
+      (sub { $_[0]->{data}->{id} <=> $_[1]->{data}->{id} })->to_a;
   isa_ok $values->[0], 'Dongry::Table::Row';
   is $values->[0]->{db}, $db;
   is $values->[0]->{table_name}, 'foo';

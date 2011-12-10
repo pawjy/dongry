@@ -281,8 +281,8 @@ sub _insert_bad_value_arg_4 : Test(3) {
       (sources => {master => {dsn => $dsn, writable => 1},
                    default => {dsn => $dsn}});
   $db->execute ('create table foo (id int, v1 text, v2 text)');
-  
-  dies_ok { $db->insert ({id => 31}, source_name => 'master') };
+
+  dies_ok { $db->insert ({id => 31}, source_name => 'master', 'dummy') };
   like $db->{last_sql}, qr[^create];
 
   my $result = $db->execute ('select * from foo');
