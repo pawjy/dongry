@@ -340,7 +340,6 @@ sub select ($$$;%) {
 
 sub update ($$$$;%) {
   my ($self, $table_name, $value, $where, %args) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
   
   my @col = keys %$value;
   croak 'No value to update' unless @col;
