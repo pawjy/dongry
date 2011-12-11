@@ -1,4 +1,4 @@
-package test::Dongry::Database::update;
+package test::Dongry::Database::delete;
 use strict;
 use warnings;
 use Path::Class;
@@ -8,7 +8,7 @@ use base qw(Test::Class);
 use Dongry::Database;
 use Encode;
 
-sub _update_nop : Test(66) {
+sub _delete_nop : Test(66) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
   my $db = Dongry::Database->new
@@ -16,7 +16,7 @@ sub _update_nop : Test(66) {
   $db->execute ('create table foo (id int)');
   
   for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
-    my $result = $db->update ('foo', {id => 23}, {id => 12});
+    my $result = $db->delete ('foo', {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 0;
     is $result->table_name, 'foo';
@@ -30,9 +30,9 @@ sub _update_nop : Test(66) {
     dies_ok { $result->first };
     dies_ok { $result->first_as_row };
   }
-} # _update_nop
+} # _delete_nop
 
-sub _update_a_row_updated : Test(72) {
+sub _delete_a_row_deleted : Test(72) {
   for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
@@ -41,7 +41,7 @@ sub _update_a_row_updated : Test(72) {
     $db->execute ('create table foo (id int)');
     $db->execute ('insert into foo (id) values (12)');
     
-    my $result = $db->update ('foo', {id => 23}, {id => 12});
+    my $result = $db->delete ('foo', {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
     is $result->table_name, 'foo';
@@ -57,11 +57,11 @@ sub _update_a_row_updated : Test(72) {
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
-        [{id => 23}];
+        [];
   }
-} # _update_a_row_updated
+} # _delete_a_row_deleted
 
-sub _update_two_row_updated : Test(72) {
+sub _delete_two_row_deleted : Test(72) {
   for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
@@ -70,7 +70,7 @@ sub _update_two_row_updated : Test(72) {
     $db->execute ('create table foo (id int)');
     $db->execute ('insert into foo (id) values (12), (12), (13)');
     
-    my $result = $db->update ('foo', {id => 23}, {id => 12});
+    my $result = $db->delete ('foo', {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 2;
     is $result->table_name, 'foo';
@@ -88,20 +88,20 @@ sub _update_two_row_updated : Test(72) {
         ('foo', ['1 = 1'],
          source_name => 'master',
          order => [id => 1])->all->to_a,
-             [{id => 13}, {id => 23}, {id => 23}];
+             [{id => 13}];
   }
-} # _update_two_rows_updated
+} # _delete_two_rows_deleted
 
-sub _update_a_row_updated_utf8_flagged_value : Test(72) {
+sub _delete_a_row_deleted_utf8_flagged_value : Test(72) {
   for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
         (sources => {master => {dsn => $dsn, writable => 1}});
     $db->execute ('create table foo (id blob)');
-    $db->execute ('insert into foo (id) values (12)');
+    $db->execute (qq{insert into foo (id) values ("\x{5000}")});
     
-    my $result = $db->update ('foo', {id => "\x{5000}"}, {id => 12});
+    my $result = $db->delete ('foo', {id => "\x{5000}"});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
     is $result->table_name, 'foo';
@@ -117,21 +117,21 @@ sub _update_a_row_updated_utf8_flagged_value : Test(72) {
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
-        [{id => encode 'utf-8', "\x{5000}"}];
+        [];
   }
-} # _update_a_row_updated_utf8_flagged_value
+} # _delete_a_row_deleted_utf8_flagged_value
 
-sub _update_a_row_updated_utf8_unflagged_value : Test(72) {
+sub _delete_a_row_deleted_utf8_unflagged_value : Test(72) {
   for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
         (sources => {master => {dsn => $dsn, writable => 1}});
     $db->execute ('create table foo (id blob)');
-    $db->execute ('insert into foo (id) values (12)');
+    $db->execute (qq{insert into foo (id) values ("\x{6000}")});
     
-    my $result = $db->update
-        ('foo', {id => encode 'utf-8', "\x{5000}"}, {id => 12});
+    my $result = $db->delete
+        ('foo', {id => encode 'utf-8', "\x{6000}"});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
     is $result->table_name, 'foo';
@@ -147,20 +147,20 @@ sub _update_a_row_updated_utf8_unflagged_value : Test(72) {
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
-        [{id => encode 'utf-8', "\x{5000}"}];
+        [];
   }
-} # _update_a_row_updated_utf8_unflagged_value
+} # _delete_a_row_deleted_utf8_unflagged_value
 
-sub _update_a_row_updated_stupid_value : Test(72) {
+sub _delete_a_row_deleted_stupid_value : Test(72) {
   for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
         (sources => {master => {dsn => $dsn, writable => 1}});
     $db->execute ('create table foo (id blob)');
-    $db->execute ('insert into foo (id) values (12)');
+    $db->execute ('insert into foo (id) values ("a ` b);")');
     
-    my $result = $db->update ('foo', {id => "a ` b);"}, {id => 12});
+    my $result = $db->delete ('foo', {id => "a ` b);"});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
     is $result->table_name, 'foo';
@@ -176,11 +176,11 @@ sub _update_a_row_updated_stupid_value : Test(72) {
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
-        [{id => encode 'utf-8', "a ` b);"}];
+        [];
   }
-} # _update_a_row_updated_stupid_value
+} # _delete_a_row_deleted_stupid_value
 
-sub _update_a_row_updated_utf8_flagged_column : Test(72) {
+sub _delete_a_row_deleted_utf8_flagged_column : Test(72) {
   for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
@@ -189,7 +189,7 @@ sub _update_a_row_updated_utf8_flagged_column : Test(72) {
     $db->execute ("create table foo (`\x{5000}` blob)");
     $db->execute ("insert into foo (`\x{5000}`) values (12)");
     
-    my $result = $db->update ('foo', {"\x{5000}" => 23}, {"\x{5000}" => 12});
+    my $result = $db->delete ('foo', {"\x{5000}" => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
     is $result->table_name, 'foo';
@@ -205,11 +205,11 @@ sub _update_a_row_updated_utf8_flagged_column : Test(72) {
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
-        [{(encode 'utf-8', "\x{5000}") => 23}];
+        [];
   }
-} # _update_a_row_updated_utf8_flagged_column
+} # _delete_a_row_deleted_utf8_flagged_column
 
-sub _update_a_row_updated_utf8_unflagged_column : Test(72) {
+sub _delete_a_row_deleted_utf8_unflagged_column : Test(72) {
   for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
@@ -218,9 +218,8 @@ sub _update_a_row_updated_utf8_unflagged_column : Test(72) {
     $db->execute ("create table foo (`\x{5000}` blob)");
     $db->execute ("insert into foo (`\x{5000}`) values (12)");
     
-    my $result = $db->update
-        ('foo', {(encode 'utf-8', "\x{5000}") => 23},
-         {(encode 'utf-8', "\x{5000}") => 12});
+    my $result = $db->delete
+        ('foo', {(encode 'utf-8', "\x{5000}") => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
     is $result->table_name, 'foo';
@@ -236,11 +235,11 @@ sub _update_a_row_updated_utf8_unflagged_column : Test(72) {
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
-        [{(encode 'utf-8', "\x{5000}") => 23}];
+        [];
   }
-} # _update_a_row_updated_utf8_unflagged_column
+} # _delete_a_row_deleted_utf8_unflagged_column
 
-sub _update_a_row_updated_stupid_column : Test(12) {
+sub _delete_a_row_deleted_stupid_column : Test(12) {
   for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
@@ -250,9 +249,8 @@ sub _update_a_row_updated_stupid_column : Test(12) {
     $db->execute ("insert into foo (```ab(;`) values (12)");
     
     dies_ok {
-      my $result = $db->update
-          ('foo', {(encode 'utf-8', "`ab(;") => 23},
-           {(encode 'utf-8', "`ab(;") => 12});
+      my $result = $db->delete
+          ('foo', {(encode 'utf-8', "`ab(;") => 12});
     };
 
     eq_or_diff $db->execute
@@ -261,9 +259,8 @@ sub _update_a_row_updated_stupid_column : Test(12) {
 
     next;
 
-    my $result = $db->update
-        ('foo', {(encode 'utf-8', "`ab(;") => 23},
-         {(encode 'utf-8', "`ab(;") => 12});
+    my $result = $db->delete
+        ('foo', {(encode 'utf-8', "`ab(;") => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
     is $result->table_name, 'foo';
@@ -279,11 +276,11 @@ sub _update_a_row_updated_stupid_column : Test(12) {
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
-        [{(encode 'utf-8', "`ab(;") => 23}];
+        [];
   }
-} # _update_a_row_updated_stupid_column
+} # _delete_a_row_deleted_stupid_column
 
-sub _update_table_stupid : Test(2) {
+sub _delete_table_stupid : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
   my $db = Dongry::Database->new
@@ -292,17 +289,17 @@ sub _update_table_stupid : Test(2) {
   $db->execute ("insert into `2f``b` (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into `2f``b` (id, v1) values (25, 'xycde')");
   
-  my $result = $db->update
-      ('2f`b', {id => 100}, ['id = 25']);
+  my $result = $db->delete
+      ('2f`b', ['id = 25']);
 
   eq_or_diff $db->execute
       ('select * from `2f``b`', undef,
        source_name => 'master', order => {id => 1})
       ->all->to_a,
-          [{id => 12, v1 => 'ab cde'}, {id => 100, v1 => 'xycde'}];
-} # _update_table_stupid
+          [{id => 12, v1 => 'ab cde'}];
+} # _delete_table_stupid
 
-sub _update_table_utf8_flagged : Test(2) {
+sub _delete_table_utf8_flagged : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
   my $db = Dongry::Database->new
@@ -311,17 +308,17 @@ sub _update_table_utf8_flagged : Test(2) {
   $db->execute ("insert into `\x{1000}` (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into `\x{1000}` (id, v1) values (25, 'xycde')");
   
-  my $result = $db->update
-      ("\x{1000}", {id => 100}, ['id = 25']);
+  my $result = $db->delete
+      ("\x{1000}", ['id = 25']);
 
   eq_or_diff $db->execute
       ("select * from `\x{1000}`", undef,
        source_name => 'master', order => {id => 1})
       ->all->to_a,
-          [{id => 12, v1 => 'ab cde'}, {id => 100, v1 => 'xycde'}];
-} # _update_table_utf8_flagged
+          [{id => 12, v1 => 'ab cde'}];
+} # _delete_table_utf8_flagged
 
-sub _update_table_utf8_unflagged : Test(2) {
+sub _delete_table_utf8_unflagged : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
   my $db = Dongry::Database->new
@@ -330,17 +327,17 @@ sub _update_table_utf8_unflagged : Test(2) {
   $db->execute ("insert into `\x{1000}` (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into `\x{1000}` (id, v1) values (25, 'xycde')");
   
-  my $result = $db->update
-      ((encode 'utf-8', "\x{1000}"), {id => 100}, ['id = 25']);
+  my $result = $db->delete
+      ((encode 'utf-8', "\x{1000}"), ['id = 25']);
 
   eq_or_diff $db->execute
       ("select * from `\x{1000}`", undef,
        source_name => 'master', order => {id => 1})
       ->all->to_a,
-          [{id => 12, v1 => 'ab cde'}, {id => 100, v1 => 'xycde'}];
-} # _update_table_utf8_unflagged
+          [{id => 12, v1 => 'ab cde'}];
+} # _delete_table_utf8_unflagged
 
-sub _update_values_bad_column : Test(2) {
+sub _delete_where_sqla : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
   my $db = Dongry::Database->new
@@ -349,78 +346,17 @@ sub _update_values_bad_column : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
-  dies_ok {
-    my $result = $db->update
-        ('foo', {mid => 100}, ['id = 25']);
-  };
-
-  eq_or_diff $db->execute
-      ('select * from foo', undef, source_name => 'master', order => {id => 1})
-      ->all->to_a,
-          [{id => 12, v1 => 'ab cde'}, {id => 25, v1 => 'xycde'}];
-} # _update_values_bad_column
-
-sub _update_values_latin1_value : Test(1) {
-  reset_db_set;
-  my $dsn = test_dsn 'test1';
-  my $db = Dongry::Database->new
-      (sources => {master => {dsn => $dsn, writable => 1}});
-  $db->execute ("create table foo (id int, v1 blob)");
-  $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
-  $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
-  
-  my $result = $db->update
-      ('foo', {v1 => "\x{c0}\x{91}\x{fe}"}, ['id = 25']);
-
-  eq_or_diff $db->execute
-      ("select * from `foo`", undef,
-       source_name => 'master', order => {id => 1})
-      ->all->to_a,
-          [{id => 12, v1 => 'ab cde'}, {id => 25, v1 => "\xC0\x91\xFE"}];
-} # _update_values_latin1_value
-
-sub _update_values_multiple : Test(1) {
-  reset_db_set;
-  my $dsn = test_dsn 'test1';
-  my $db = Dongry::Database->new
-      (sources => {master => {dsn => $dsn, writable => 1}});
-  $db->execute ("create table foo (id int, v1 blob, v2 blob)");
-  $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
-  $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
-  
-  my $result = $db->update
-      ('foo', {v1 => "\x{c0}\x{91}\x{fe}",
-               v2 => "\x{6001}\x{1201}\x{FF}"}, ['id = 25']);
-
-  eq_or_diff $db->execute
-      ("select * from `foo`", undef,
-       source_name => 'master', order => {id => 1})
-      ->all->to_a,
-          [{id => 12, v1 => 'ab cde', v2 => undef},
-           {id => 25, v1 => "\xC0\x91\xFE",
-            v2 => (encode 'utf-8', "\x{6001}\x{1201}\x{00FF}")}];
-} # _update_values_multiple
-
-sub _update_where_sqla : Test(2) {
-  reset_db_set;
-  my $dsn = test_dsn 'test1';
-  my $db = Dongry::Database->new
-      (sources => {master => {dsn => $dsn, writable => 1}});
-  $db->execute ("create table foo (id int, v1 blob)");
-  $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
-  $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
-  
-  my $result = $db->update
-      ('foo', {id => 100}, {id => {'>', 20}});
+  my $result = $db->delete
+      ('foo', {id => {'>', 20}});
   is $result->row_count, 1;
 
   eq_or_diff $db->execute
       ('select * from foo', undef, source_name => 'master', order => {id => 1})
       ->all->to_a,
-          [{id => 12, v1 => 'ab cde'}, {id => 100, v1 => 'xycde'}];
-} # _update_where_sqla
+          [{id => 12, v1 => 'ab cde'}];
+} # _delete_where_sqla
 
-sub _update_where_sqlp : Test(2) {
+sub _delete_where_sqlp : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
   my $db = Dongry::Database->new
@@ -429,17 +365,17 @@ sub _update_where_sqlp : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
-  my $result = $db->update
-      ('foo', {id => 100}, ['id > ?', id => 23]);
+  my $result = $db->delete
+      ('foo', ['id > ?', id => 23]);
   is $result->row_count, 1;
 
   eq_or_diff $db->execute
       ('select * from foo', undef, source_name => 'master', order => {id => 1})
       ->all->to_a,
-          [{id => 12, v1 => 'ab cde'}, {id => 100, v1 => 'xycde'}];
-} # _update_where_sqlp
+          [{id => 12, v1 => 'ab cde'}];
+} # _delete_where_sqlp
 
-sub _update_where_bad_column : Test(2) {
+sub _delete_where_bad_column : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
   my $db = Dongry::Database->new
@@ -449,17 +385,17 @@ sub _update_where_bad_column : Test(2) {
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
   dies_ok {
-    my $result = $db->update
-        ('foo', {id => 100}, ['mid > 23']);
+    my $result = $db->delete
+        ('foo', ['mid > 23']);
   };
 
   eq_or_diff $db->execute
       ('select * from foo', undef, source_name => 'master', order => {id => 1})
       ->all->to_a,
           [{id => 12, v1 => 'ab cde'}, {id => 25, v1 => 'xycde'}];
-} # _update_where_bad_column
+} # _delete_where_bad_column
 
-sub _update_where_bad_sql : Test(2) {
+sub _delete_where_bad_sql : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
   my $db = Dongry::Database->new
@@ -469,17 +405,17 @@ sub _update_where_bad_sql : Test(2) {
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
   dies_ok {
-    my $result = $db->update
-        ('foo', {id => 100}, ['id id id ']);
+    my $result = $db->delete
+        ('foo', ['id id id ']);
   };
 
   eq_or_diff $db->execute
       ('select * from foo', undef, source_name => 'master', order => {id => 1})
       ->all->to_a,
           [{id => 12, v1 => 'ab cde'}, {id => 25, v1 => 'xycde'}];
-} # _update_where_bad_sql
+} # _delete_where_bad_sql
 
-sub _update_where_bad_arg : Test(2) {
+sub _delete_where_bad_arg : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
   my $db = Dongry::Database->new
@@ -489,17 +425,17 @@ sub _update_where_bad_arg : Test(2) {
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
   dies_ok {
-    my $result = $db->update
-        ('foo', {id => 100}, 'id > 23');
+    my $result = $db->delete
+        ('foo', 'id > 23');
   };
 
   eq_or_diff $db->execute
       ('select * from foo', undef, source_name => 'master', order => {id => 1})
       ->all->to_a,
           [{id => 12, v1 => 'ab cde'}, {id => 25, v1 => 'xycde'}];
-} # _update_where_bad_arg
+} # _delete_where_bad_arg
 
-sub _update_where_empty_arg : Test(2) {
+sub _delete_where_empty_arg : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
   my $db = Dongry::Database->new
@@ -509,17 +445,16 @@ sub _update_where_empty_arg : Test(2) {
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
   dies_ok {
-    my $result = $db->update
-        ('foo', {id => 100}, {});
+    my $result = $db->delete ('foo', {});
   };
 
   eq_or_diff $db->execute
       ('select * from foo', undef, source_name => 'master', order => {id => 1})
       ->all->to_a,
           [{id => 12, v1 => 'ab cde'}, {id => 25, v1 => 'xycde'}];
-} # _update_where_empty_arg
+} # _delete_where_empty_arg
 
-sub _update_where_no_arg : Test(2) {
+sub _delete_where_no_arg : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
   my $db = Dongry::Database->new
@@ -529,15 +464,14 @@ sub _update_where_no_arg : Test(2) {
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
   dies_ok {
-    my $result = $db->update
-        ('foo', {id => 100});
+    my $result = $db->delete ('foo');
   };
 
   eq_or_diff $db->execute
       ('select * from foo', undef, source_name => 'master', order => {id => 1})
       ->all->to_a,
           [{id => 12, v1 => 'ab cde'}, {id => 25, v1 => 'xycde'}];
-} # _update_where_no_arg
+} # _delete_where_no_arg
 
 __PACKAGE__->runtests;
 

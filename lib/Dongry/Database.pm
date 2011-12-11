@@ -351,7 +351,8 @@ sub update ($$$$;%) {
   my $sql = sprintf 'UPDATE %s' .
       ' SET ' . (join ', ', ('%s = ?') x @col) .
       $where_sql,
-      $table_name, @col;
+      _quote $table_name,
+      map { _quote $_ } @col;
   my $return = $self->execute ($sql, [@value, @$where_bind]);
 
   return unless defined wantarray;
@@ -362,12 +363,11 @@ sub update ($$$$;%) {
 
 sub delete ($$$;%) {
   my ($self, $table_name, $where, %args) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
 
   my ($where_sql, $where_bind) = $self->_where ($where);
   croak 'No where' unless $where_sql;
   
-  my $sql = 'DELETE FROM ' . $table_name . $where_sql;
+  my $sql = 'DELETE FROM ' . (_quote $table_name) . $where_sql;
   my $return = $self->execute
       ($sql, $where_bind, source_name => $args{source_name});
 
