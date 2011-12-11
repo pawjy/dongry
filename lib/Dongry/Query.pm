@@ -27,6 +27,13 @@ sub table {
   return $_[0]->{table} ||= $_[0]->db->table ($_[0]->table_name);
 } # table
 
+sub fields {
+  if (@_ > 1) {
+    $_[0]->{fields} = $_[1];
+  }
+  return $_[0]->{fields};
+} # fields
+
 sub where {
   if (@_ > 1) {
     $_[0]->{where} = $_[1];
@@ -40,6 +47,13 @@ sub order {
   }
   return $_[0]->{order};
 } # order
+
+sub group {
+  if (@_ > 1) {
+    $_[0]->{group} = $_[1];
+  }
+  return $_[0]->{group};
+} # group
 
 sub item_list_filter {
   my $self = $_[0];
@@ -65,7 +79,9 @@ sub search {
       ($self->db->select
            ($self->table_name,
             $self->where,
+            fields => $self->fields,
             order => $self->order,
+            group => $self->group,
             offset => $args{offset},
             limit => $args{limit},
             source_name => $args{source_name})->all_as_rows);
