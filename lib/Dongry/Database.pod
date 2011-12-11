@@ -1,0 +1,685 @@
+=head1 METHODS OF DATABASE OBJECT
+
+The database object is an instance of the C<Dongry::Database> class.
+It has the following methods:
+
+=head2 Instantiation
+
+=over 4
+
+=item $db = Dongry::Database->new
+
+Create and return a new instance of L<Dongry::Database> database
+object.  As arguments, key-value pairs C<sources>, C<onconnect>,
+C<onerror>, and C<schema> can be specified.  For their usage, see
+following sections.
+
+Example:
+
+  my $db = Dongry::Database->new (sources => {
+    default => {dsn => ..., username => ..., password => ...},
+    master => {dsn => ..., username => ..., password => ...},
+  }, onconnect => sub {
+    my ($self, %args) = @_;
+    warn $args{source_name}, ": Connected";
+  });
+
+=item $Dongry::Database::Registry->{$db_name} = {...}
+
+=item $db = Dongry::Database->load ($db_name)
+
+Instead of creating a new instance each time by the C<new> method,
+named database object instances can be retrieved using the C<load>
+method.
+
+Before invocation, register a short database name to the
+C<%$Dongry::Database::Registry> hash.  The hash key is the database
+name and the hash value is the hash reference containing arguments
+used to instantiate the database object for the first time.  The same
+set of arguments as the C<new> method is available: C<sources>,
+C<onconnect>, C<onerror>, and C<schema>.  In addition, these values
+can be specified as code reference which is invoked to extract the
+actual value by prefixing C<get_> to the hash key (e.g. C<get_schema>
+for C<schema>).  The code reference will be invoked without any
+argument.  The code reference must return the argument value (e.g. an
+C<onconnect> handler code reference for C<get_onconnect>).
+
+Then you can use the short database name to get the instance created
+with the specified arguments.  The instantiation happens only once.
+Invocations of the method with the same database name always return
+the same database object instance.  You can control the lifetime of
+the instances by accessing (e.g. clearing or C<local>izing) the
+C<$Dongry::Database::Instances> hash references.
+
+Example:
+
+  $Dongry::Database::Registry->{user} = {
+    sources => {
+      master => ...,
+      default => ...,
+    },
+    onconnect => sub {
+      warn "User connected";
+    },
+    get_schema => sub { return My::DatabaseInfo->schema },
+  };
+  $db = Dongry::Database->load ('user');
+  $db2 = Dongry::Database->load ('user'); # same as $db
+
+=back
+
+=head2 Connections
+
+=over 4
+
+=item $db->source ($source_name => $source_info)
+
+=item $source_info = $db->source ($source_name)
+
+=item $db = Dongry::Database->new (sources => {$source_name => $source_info, ...})
+
+Get or set data source information for the specified data source name.
+
+Although any string can be used as data source name, there are two
+special predefined source name: C<default> and C<master>.  The
+C<default> data source is selected for read-only operations by
+default.  The C<master> data source is selected for other operations
+by default.  Operations in a transaction are always executed with the
+C<master> data source.  These two data sources would be useful for
+accessing databases operated in popular master-slave configuration.
+In addition, you can define your custom data sources such as C<heavy>
+or C<batch> to send some of queries to alternative slaves.
+
+A data source information specification is a hash reference containing
+following key-value pairs:
+
+=over 4
+
+=item dsn => string (REQUIRED)
+
+The "dsn" string used to connect the database.  See L<DBI> for more
+information.
+
+=item username => string
+
+The user name used to connect the database.  This is optional if the
+database or the database driver module does not require user name.
+
+=item password => string
+
+The password used to connect the database.  This is optional if the
+database or the database driver module does not require password.
+
+=item writable => boolean
+
+Whether the database is writable or not.  If not writable, the
+database module refuse to issue write operations as far as possible.
+Default is false (i.e. not writable).
+
+=back
+
+=item $db->onconnect ($code)
+
+=item $code = $db->onconnect
+
+=item $db = Dongry::Database->new (onconnect => $code)
+
+Get or set the code reference which is invoked when a new connection
+is established.  The code reference, when invoked, receives the "self"
+argument followed by zero or more key-value pairs.  The "self"
+argument is the database object.  The key-value pairs would include:
+
+=over 4
+
+=item source_name => string (ALWAYS)
+
+The name of the data source used to establish the connection.
+
+=back
+
+The default C<onconnect> handler is "do nothing".
+
+=item $db->onerror ($code)
+
+=item $code = $db->onerror
+
+=item $db = Dongry::Database->new (onerror => $code)
+
+Get or set the code reference which is invoked when an error is
+detected during various operations, such as connection to databases or
+execution of queries.  The code reference, when invoked, receives the
+"self" argument followed by zero or more key-value pairs.  The "self"
+argument is the database object.  The key-value pairs would include:
+
+=over 4
+
+=item source_name => string (ALWAYS)
+
+The name of the data source for the relevant database connection.
+
+=item text => string
+
+A short string describing the situation, if available.  This is
+typically an error message from the underlying L<DBI> or database
+driver modules.
+
+=item sql => string
+
+An SQL statement being executed, if any.
+
+=back
+
+The default C<onerror> handler is to show the error message in the
+standard error output.
+
+=item $db->connect ($source_name)
+
+Connect to the data source specified by the argument, if any, or the
+C<default> data source.  If there is already a connection for the data
+source, the method does nothing.  After a connection has been
+established, the C<onconnect> handler is invoked.
+
+You don't have to invoke this method explicitly.  If an operation
+requires the connection, this method is automatically invoked from it
+with an appropriate data source name.
+
+=item $db->disconnect ($source_name)
+
+If a data source name is specified, disconnect the connection for the
+data source.  Otherwise, disconnect the connections hold by the
+database object.  If there is no connection for the data source, the
+method does nothing.
+
+Please notice that if there is an uncommitted transaction session, it
+will be rollbacked by this method.
+
+You don't have to invoke this method explicitly in general, as the
+C<DESTROY> method for the database object will invoke this method
+automatically.
+
+=back
+
+=head2 Transactions
+
+By default SQL executions are automatically committed
+(i.e. C<AutoCommit> is true in L<DBI> layer).
+
+XXX
+
+=head2 Bare SQL operations
+
+Bare SQL execution API, i.e. the C<execute> method, executes SQL
+statements provided by the application as is.  It would be useful if
+you'd like to issue complex or rarely used SQL statements and if you
+really understand what you are doing.  For common operations, please
+consider using more abstract APIs as described in next sections.
+
+=over 4
+
+=item $result = $db->execute ($sql, [$value1, $value2, ...], %opts)
+
+Execute an SQL statement.  The first argument is the SQL statement to
+execute, which possibly contains placeholders.  The second argument is
+an array reference, which contains values bound to the placeholders.
+The second argument can be omitted (i.e. can be C<undef>) if there are
+no placeholders.
+
+In addition, following name-value pairs can be specified:
+
+=over 4
+
+=item source_name => string
+
+The name of the data source used to select the database connection.
+If there is no connection has been established for the data source,
+the C<connect> method with the source name is automatically invoked
+and then the SQL statement is executed.
+
+If this option is not specified, an appropriate data source is
+determined.  In general the C<master> data source is chosen.  However,
+if the SQL is a read-only statement such as C<SELECT>, C<DESC>, or
+C<SHOW>, the C<default> data source is chosen as the default, unless
+it is in the transaction session.
+
+=item must_be_writable => boolean
+
+If this option is set to true, the method would raise an error without
+executing the SQL statement if the selected data source is marked as
+I<writable>.
+
+If this option is set to true and the C<source_name> option is I<not>
+specified, the data source is set to C<master> even if the SQL
+statement is read-only.
+
+=item even_if_read_only => boolean
+
+If this option is set to true, the method would not raise an error
+even when the SQL statement is not considered as read-only by the
+method but the selected data source is I<not> marked as I<writable>.
+
+This option would be useful to issue an C<SET> statement to specify
+database connection configuration for a non-I<writable> data source,
+as the method does not consider the C<SET> statements as read-only.
+
+You should not specify both C<must_be_writable> and
+C<even_if_read_only> options.
+
+=back
+
+The method would return a result object which is I<not> bound to any
+table.  The number of affected rows (or the rows to be fetched) can be
+retrieved from the C<row_count> method of the result object.  If the
+SQL statement returns rows (e.g. C<SELECT> or C<SHOW>), they are
+accessible from various methods of the result object.
+
+=back
+
+=head2 Structured SQL operations
+
+Methods in this section provides abstraction for common patterns of
+SQL executions, such as C<SELECT> and C<INSERT> statements with plain
+arguments.  These methods construct SQL statements in favor of the
+application from the given arguments, with appropriate quotations and
+placeholders.
+
+=over 4
+
+=item $result = $db->insert ($table_name, [$values1, $values2, ...], %opts)
+
+Inserts one or more rows.  The first argument must be the table name
+into which the rows are inserted.  The second argument must be an
+array reference which contains one or more hash references, each of
+them is a row to be inserted (represented as column name/value pairs).
+Unspecified columns are set to their default values.
+
+In addition, following options can be specified as name-value pairs:
+
+=over 4
+
+=item source_name => string
+
+The name of the data source used to select the database connection.
+For more information on how data source is selected, see the
+C<execute> method.
+
+=item duplicate => "ignore" / "replace" / hashref
+
+Specifies how "duplicate entry" error is handled by the database.
+
+If C<ignore> is specified, an C<INSERT IGNORE> statement is issued
+such that any duplicate insertion is ignored without errors.  Please
+note that this statement might ignore other errors as well.
+
+If C<replace> is specified, an C<REPLACE> statement is issued such
+that any existing duplicate row is discarded before the insertion.
+
+If a hash reference is specified, the C<ON DUPLICATE KEY UPDATE>
+clause is appended to the C<INSERT> statement with the values
+specified in the hash.  The format of the hash reference is same as
+the second argument of the C<insert> method.
+
+If this option is not specified, then a normal C<INSERT> statement is
+issued such that any duplication would be reported as an SQL execution
+error.
+
+=back
+
+This method returns a result object bound to the table specified as
+the first argument.  The number of affected rows can be retrieved from
+the C<row_count> method of the result object.  Althugh inserted rows
+can be accessible from various methods of the result object, please
+note that they are only returning the data as specified as an argument
+to the C<insert> method, and they do not reflect default values,
+auto-increment values, normalizations happened at the database server,
+and as such.  To obtain the result of such server-side modifications,
+you have to select the inserted rows from the database explicitly.
+
+Example:
+
+  $db->insert ('mytable', [
+    {id => 12, name => 'Foo', date => 0},
+    {id => 13, name => 'Bar'},
+    {id => 14, name => undef, date => '2012-03-01'},
+  ]);
+  # INSERT INTO `mytable` (`id`, `name`, `date`) VALUES
+  #   ('12', 'Foo', '0'),
+  #   ('13', 'Bar', DEFAULT),
+  #   ('14', NULL, '2012-03-01')
+
+=item $id = $db->last_insert_id
+
+Returns the "last insert ID" as returned by the database.  It is
+usually the auto-increment primary key value of the last inserted row.
+
+=item $result = $db->select ($table_name, $where, %opts)
+
+Selects rows from a table in the database.  Conditions to select rows,
+i.e. the C<WHERE> clause of the SQL statement, must be specified as
+the second argument, in L<SQL::Abstract> or L<SQL::NamedPlaceholder>
+format.  Conditions in the L<SQL::Abstract> format must be specified
+as a hash reference for the C<WHERE> clause.  Conditions in the
+L<SQL::NamedPlaceholder> format must be specified as an array
+reference containing the SQL statement template followed by zero or
+more name-value pairs.
+
+In addition, following options can be specified as name-value pairs:
+
+=over 4
+
+=item source_name => string
+
+The name of the data source used to select the database connection.
+For more information on how data source is selected, see the
+C<execute> method.
+
+=item must_be_writable => boolean
+
+If this option is set to true, the method would raise an error without
+executing the SQL statement if the selected data source is marked as
+I<writable>.  For more information on how this option applies, see the
+C<execute> method.
+
+=item distinct => boolean
+
+If this options is set to true, the C<DISTINCT> keyword is put in the
+statement such that only a row is returned for a duplicate set of
+rows.
+
+=item fields => ...
+
+The columns to retrieve, to be specified just after the C<SELECT>
+keyword of the issued SQL statement.
+
+If nothing is specified, or an C<undef> value is specified, all
+columns, i.e. C<*>, are selected.
+
+If a string is specified, that is considered as a column name.
+
+Hash references with name-value pairs are converted to function calls
+whose function name is specified by the key and the argument is
+specified by the value.  Following function names are available:
+C<-count> (in SQL, C<COUNT()>), C<-min> (in SQL, C<MIN()>), C<-max>
+(in SQL, C<MAX()>), and C<-sum> (in SQL, C<SUM()>).  In addition,
+following name-value pairs can be specified in the hash reference: C<<
+as => name >> names an alias for the function value (in SQL,
+C<function() AS name>), and C<< distinct => boolean >> adds the
+C<DISTINCT> keyword (in SQL, C<function(DISTINCT args)>).
+
+These values can be combined as an array reference, for retrieving one
+or more of those values.
+
+Examples:
+
+  [undef, 'c1']                   # *, `c1`
+  [{-count => undef}, 'c1', 'c2'] # COUNT(*), `c1`, `c2`
+  [{-count => 'c1',
+    as => 'c',
+    distinct => 1}]               # COUNT(DISTINCT `c1`) AS `c`
+
+=item group => [column1, column2, ...]
+
+The columns to use grouping, i.e. column names for the C<GROUP BY>
+clause in the SQL statement.  Column names must be specified as an
+array reference of strings.
+
+=item order => [column1 => direction, column2 => direction, ...]
+
+The columns and their orders for the sorting, i.e. values for the
+C<ORDER BY> clause in the SQL statement.  They must be specified as
+B<array> reference of name-value pairs, where names represent column
+names and values represent their sort order.  The values must be
+either C<ASC>, C<asc>, or C<1> (ascending order) or C<DESC>, C<desc>,
+or C<-1> (descending order).
+
+=item offset => number, limit => number
+
+The offset and the number of rows to retrieve, i.e. values for the
+C<LIMIT> clause in the SQL statement.  They must be specified as
+non-negative integers.  If C<offset> is specified but C<limit> is not
+specified, C<limit> is defaulted to C<1>.  Otherwise, the default for
+C<offset> is zero and the default for C<limit> is inifinity.
+
+=item lock => update/share
+
+The lock mode for the C<SELECT> operation.  If the value is C<update>,
+C<FOR UPDATE> option is included in the C<SELECT> statement.  If the
+value is C<share>, C<LOCK IN SHARE MODE> option is included in the
+C<SELECT> statement.
+
+=back
+
+This method returns a result object bound to the table specified as
+the first argument.  The number of available rows can be retrieved
+from the C<row_count> method of the result object.  The selected rows
+can be accessible from one of C<all>, C<each>, and C<first> methods,
+or their C<_as_row(s)> variants C<all_as_rows>, C<each_as_row>, and
+C<first_as_row>.
+
+Examples:
+
+  my $result = $db->select
+      ('table1',
+       {col1 => 'hoge', col2 => 123, date => {'<=', '2001-02-02'}},
+       order => [date => -1, col1 => 1, col2 => -1]);
+  # SELECT * FROM `table1`
+  #    WHERE `col1` = 'hoge' AND `col2` = '123' AND
+  #          `date` <= '2001-02-02'
+  #    ORDER BY `date` DESC, `col1` ASC, `col2` DESC;
+  $result->each (sub {
+    my $values = shift;
+    warn $values->{date}, "\t", $values->{col1}, "\n";
+  });
+
+  my $result = $db->select
+      ('table1',
+       {col1 => 'hoge'},
+       fields => [{-count => undef, distinct => 1, as => 'count'},
+                  'col1', 'col2'],
+       group => ['col2']);
+  # SELECT COUNT(DISTINCT *) AS `count` FROM `table1`
+  #     WHERE `col1` = 'hoge' GROUP BY `col2`
+  $result->all_as_rows->each (sub {
+    my $row = $_[0];
+    warn $row->get ('col1'), ",", $row->get ('col2');
+    warn $row->get ('count');
+  });
+
+=item $result = $db->update ($table_name, $values, $where, %opts)
+
+Update rows in the specified table using the SQL C<UPDATE> statement.
+The new values must be specified by the second argument, as hash
+reference containing name-value pairs representing the column names
+and their new values.  A value can be specified as a scalar value (a
+text, number, or C<undef> value), or a scalar reference, which is
+interpreted as a bare SQL fragment.  The conditions to specify the
+updated rows, i.e. the C<WHERE> clause, must be specified as the thrid
+argument, in the same format as the C<select> method.
+
+In addition, following options can be specified as name-value pairs:
+
+=over 4
+
+=item source_name => string
+
+The name of the data source used to select the database connection.
+For more information on how data source is selected, see the
+C<execute> method.
+
+=item duplicate => "ignore"
+
+Specifies how "duplicate entry" error is handled by the database.  If
+C<ignore> is specified, an C<UPDATE IGNORE> statement is issued such
+that any attempt to generate duplicate rows is ignored without errors.
+Please note that this statement might ignore other errors as well.  If
+this option is not specified, then a normal C<UPDATE> statement is
+issued such that any duplication would be reported as an SQL execution
+error.
+
+=item order => [column1 => direction, column2 => direction, ...]
+
+The columns and their orders for the sorting, i.e. values for the
+C<ORDER BY> clause in the SQL statement.  They must be specified in
+the same format as the C<select> method.
+
+This option would have no effect unless there is also the C<limit>
+option.
+
+=item limit => number
+
+The maximum number of rows to update, i.e. the value for the C<LIMIT>
+clause in the SQL statement.  It must be specified as a non-negative
+integer.  If the option is not specified, all the matching rows will
+be updated.  Unlike the C<select> method, the C<offset> option is not
+supported.
+
+=back
+
+This method returns a result object bound to the table specified as
+the first argument.  The number of affected rows can be retrieved from
+the C<row_count> method of the result object.  Methods such as C<all>,
+C<each>, and C<first> are not available for the result object
+generated by this method.
+
+Example:
+
+  $db->update
+      ('table1', {col1 => 12, col2 => \'col2 + 2'},
+       {created => {'<=', '2012-01-01 00:00:00'}});
+  # UPDATE `table1` SET `col1` = 12, `col2` = col2 + 2
+  #    WHERE `created` <= '2012-01-01 00:00:00'
+
+=item $db->delete ($table_name, $where, %opts)
+
+Delete rows in the specified table.  The second argument must specify
+the conditions to select the rows to delete, in the same format as the
+second argument of the C<select> method.
+
+In addition, following options can be specified as name-value pairs:
+
+=over 4
+
+=item source_name => string
+
+The name of the data source used to select the database connection.
+For more information on how data source is selected, see the
+C<execute> method.
+
+=item order => [column1 => direction, column2 => direction, ...]
+
+The columns and their orders for the sorting, i.e. values for the
+C<ORDER BY> clause in the SQL statement.  They must be specified in
+the same format as the C<select> method.
+
+This option would have no effect unless there is also the C<limit>
+option.
+
+=item limit => number
+
+The maximum number of rows to delete, i.e. the value for the C<LIMIT>
+clause in the SQL statement.  It must be specified as a non-negative
+integer.  If the option is not specified, all the matching rows will
+be deleted.  Unlike the C<select> method, the C<offset> option is not
+supported.
+
+=back
+
+This method returns a result object bound to the table specified as
+the first argument.  The number of affected rows can be retrieved from
+the C<row_count> method of the result object.  Methods such as C<all>,
+C<each>, and C<first> are not available for the result object
+generated by this method.
+
+Example:
+
+  $db->delete
+      ('table1', {created => {'<=', '2012-01-01 00:00:00'}});
+  # DELETE FROM `table1` WHERE `created` <= '2012-01-01 00:00:00'
+
+=item $db->set_tz ($tz_offset, source_name => $source_name)
+
+Set the time zone for the database connection, using C<SET time_zone>
+statement.  The time zone offset argument, which is default to UTC,
+must be in the format understood by the database, i.e. C<+01:00>.  The
+C<source_name> option, defaulted to the C<master>, specifies the data
+source for which the time zone is set.
+
+The default time zone used when this statement is not issued depends
+on the configuration of the database.
+
+=back
+
+=head2 Schema-aware operations
+
+The following methods provide access to schema-aware APIs.  What is
+schema-aware APIs?  Methods mentioned in the previous sections are not
+schema-aware.  That is, no SQL data type is different from strings for
+the purpose of them.  The schema-aware APIs are built on top of them
+to offer an abstract layer for convertion of database and Perl data
+types.  For example, if you associated the C<created_on> column with
+the C<timestamp_as_DateTime> type handler, where the column is
+declared as SQL C<TIMESTAMP> data type in the database schema, you can
+use a Perl L<DateTime> object to set the value for the column through
+a schema-aware method, and you can retrieve the column value as a
+C<DateTime> object from a schema-aware method.
+
+=over 4
+
+=item $db->schema ($schema)
+
+=item $schema = $db->schema
+
+Get or set the schema definition as used by the database object.  The
+schema definition has to be set before any schema-aware operation is
+actually invoked.
+
+XXX schema definition
+
+=item $table = $db->table ($table_name)
+
+Create a table object for the specified table.  The table object
+provides schema-aware APIs for the table.  For more information on the
+table object see documentation for the L<Dongry::Table> module.
+
+=item $query = $db->query (%opts)
+
+Create a query object with the specified options.  The query object is
+an abstraction for a particular schema-aware C<SELECT> operation.  If
+the C<query_class> option is specified, the class is used to
+instantiate the query object.  Otherwise, the L<Dongry::Query> class
+is used.  For more information, including the list of the other
+available options, see documentation for the L<Dongry::Query> module.
+
+=back
+
+=head1 METHODS OF RESULT OBJECT
+
+The result object is an instance of the C<Dongry::Database::Executed>
+class.  SQL execution methods of the database object, such as
+C<execute> or C<select>, returns an result object.  It has the
+following methods:
+
+=over 4
+
+=item $number = $result->row_count
+
+Return the number of rows affected by the SQL execution (for write
+operations), or the number of rows found by the SQL execution (for
+read operations), as reported by the underlying database driver.
+
+=item $name = $result->table_name
+
+Return the name of the table bound to the result object, if any, or
+C<undef>.
+
+The result object returned by a table-aware method, such as C<select>
+or C<insert>, is bound to a table.  However, a table-unaware method,
+such as C<execute>, does not bind any table into the result object.
+
+If the result object is I<not> bound to a table, following C<_as_row>
+methods cannot be used.
+
+=item $result->each ($code)
+
+XXX
+
+=back
