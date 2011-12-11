@@ -539,6 +539,393 @@ sub _update_where_no_arg : Test(2) {
           [{id => 12, v1 => 'ab cde'}, {id => 25, v1 => 'xycde'}];
 } # _update_where_no_arg
 
+sub _update_source_name_implicit : Test(4) {
+  reset_db_set;
+
+  my $dsn1 = test_dsn 'test1';
+  my $dsn2 = test_dsn 'test2';
+  my $dsn3 = test_dsn 'test3';
+  
+  my $db1 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1}});
+  my $db2 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn2, writable => 1}});
+  my $db3 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn3, writable => 1}});
+
+  $db1->execute ("create table foo (id int, v1 blob)");
+  $db2->execute ("create table foo (id int, v1 blob)");
+  $db3->execute ("create table foo (id int, v1 blob)");
+
+  $db1->execute ("insert into foo (id, v1) values (11, 'ab cde')");
+  $db2->execute ("insert into foo (id, v1) values (21, 'ab cde')");
+  $db3->execute ("insert into foo (id, v1) values (31, 'ab cde')");
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1},
+                   default => {dsn => $dsn2, writable => 1},
+                   heavy => {dsn => $dsn3, writable => 1}});
+  my $result = $db->update ('foo', {id => 100}, {v1 => 'ab cde'});
+  is $result->row_count, 1;
+
+  eq_or_diff $db1->execute
+      ('select id from foo', undef, source_name => 'master')->all->to_a,
+      [{id => 100}];
+  eq_or_diff $db2->execute
+      ('select id from foo', undef, source_name => 'master')->all->to_a,
+      [{id => 21}];
+  eq_or_diff $db3->execute
+      ('select id from foo', undef, source_name => 'master')->all->to_a,
+      [{id => 31}];
+} # _update_source_name_implicit
+
+sub _update_source_name_implicit_not_writable : Test(4) {
+  reset_db_set;
+
+  my $dsn1 = test_dsn 'test1';
+  my $dsn2 = test_dsn 'test2';
+  my $dsn3 = test_dsn 'test3';
+  
+  my $db1 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1}});
+  my $db2 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn2, writable => 1}});
+  my $db3 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn3, writable => 1}});
+
+  $db1->execute ("create table foo (id int, v1 blob)");
+  $db2->execute ("create table foo (id int, v1 blob)");
+  $db3->execute ("create table foo (id int, v1 blob)");
+
+  $db1->execute ("insert into foo (id, v1) values (11, 'ab cde')");
+  $db2->execute ("insert into foo (id, v1) values (21, 'ab cde')");
+  $db3->execute ("insert into foo (id, v1) values (31, 'ab cde')");
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 0},
+                   default => {dsn => $dsn2, writable => 1},
+                   heavy => {dsn => $dsn3, writable => 1}});
+
+  dies_ok {
+    my $result = $db->update ('foo', {id => 100}, {v1 => 'ab cde'});
+  };
+
+  eq_or_diff $db1->execute
+      ('select id from foo', undef, source_name => 'master')->all->to_a,
+      [{id => 11}];
+  eq_or_diff $db2->execute
+      ('select id from foo', undef, source_name => 'master')->all->to_a,
+      [{id => 21}];
+  eq_or_diff $db3->execute
+      ('select id from foo', undef, source_name => 'master')->all->to_a,
+      [{id => 31}];
+} # _update_source_name_implicit_not_writable
+
+sub _update_source_name_default : Test(4) {
+  reset_db_set;
+
+  my $dsn1 = test_dsn 'test1';
+  my $dsn2 = test_dsn 'test2';
+  my $dsn3 = test_dsn 'test3';
+  
+  my $db1 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1}});
+  my $db2 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn2, writable => 1}});
+  my $db3 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn3, writable => 1}});
+
+  $db1->execute ("create table foo (id int, v1 blob)");
+  $db2->execute ("create table foo (id int, v1 blob)");
+  $db3->execute ("create table foo (id int, v1 blob)");
+
+  $db1->execute ("insert into foo (id, v1) values (11, 'ab cde')");
+  $db2->execute ("insert into foo (id, v1) values (21, 'ab cde')");
+  $db3->execute ("insert into foo (id, v1) values (31, 'ab cde')");
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1},
+                   default => {dsn => $dsn2, writable => 1},
+                   heavy => {dsn => $dsn3, writable => 1}});
+  my $result = $db->update ('foo', {id => 100}, {v1 => 'ab cde'},
+                            source_name => 'default');
+  is $result->row_count, 1;
+
+  eq_or_diff $db1->execute
+      ('select id from foo', undef, source_name => 'master')->all->to_a,
+      [{id => 11}];
+  eq_or_diff $db2->execute
+      ('select id from foo', undef, source_name => 'master')->all->to_a,
+      [{id => 100}];
+  eq_or_diff $db3->execute
+      ('select id from foo', undef, source_name => 'master')->all->to_a,
+      [{id => 31}];
+} # _update_source_name_default
+
+sub _update_source_name_default_not_writable : Test(4) {
+  reset_db_set;
+
+  my $dsn1 = test_dsn 'test1';
+  my $dsn2 = test_dsn 'test2';
+  my $dsn3 = test_dsn 'test3';
+  
+  my $db1 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1}});
+  my $db2 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn2, writable => 1}});
+  my $db3 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn3, writable => 1}});
+
+  $db1->execute ("create table foo (id int, v1 blob)");
+  $db2->execute ("create table foo (id int, v1 blob)");
+  $db3->execute ("create table foo (id int, v1 blob)");
+
+  $db1->execute ("insert into foo (id, v1) values (11, 'ab cde')");
+  $db2->execute ("insert into foo (id, v1) values (21, 'ab cde')");
+  $db3->execute ("insert into foo (id, v1) values (31, 'ab cde')");
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1},
+                   default => {dsn => $dsn2, writable => 0},
+                   heavy => {dsn => $dsn3, writable => 1}});
+  dies_ok {
+    my $result = $db->update ('foo', {id => 100}, {v1 => 'ab cde'},
+                              source_name => 'default');
+  };
+
+  eq_or_diff $db1->execute
+      ('select id from foo', undef, source_name => 'master')->all->to_a,
+      [{id => 11}];
+  eq_or_diff $db2->execute
+      ('select id from foo', undef, source_name => 'master')->all->to_a,
+      [{id => 21}];
+  eq_or_diff $db3->execute
+      ('select id from foo', undef, source_name => 'master')->all->to_a,
+      [{id => 31}];
+} # _update_source_name_default_not_writable
+
+sub _update_offset_none : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int, v1 int, v2 blob)");
+  $db->execute ("insert into foo (id, v1) values (12, 1)");
+  $db->execute ("insert into foo (id, v1) values (12, 2)");
+  $db->execute ("insert into foo (id, v1) values (12, 3)");
+
+  my $result = $db->update
+      ('foo', {v2 => 'changed'}, {id => 12}, offset => undef);
+  is $result->row_count, 3;
+
+  eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+      [{id => 12, v1 => 1, v2 => 'changed'},
+       {id => 12, v1 => 2, v2 => 'changed'},
+       {id => 12, v1 => 3, v2 => 'changed'}];
+} # _update_offset_none
+
+sub _update_offset_0 : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int, v1 int, v2 blob)");
+  $db->execute ("insert into foo (id, v1) values (12, 1)");
+  $db->execute ("insert into foo (id, v1) values (12, 2)");
+  $db->execute ("insert into foo (id, v1) values (12, 3)");
+
+  dies_ok {
+    my $result = $db->update
+        ('foo', {v2 => 'changed'}, {id => 12},
+         order => [v1 => 1], offset => 0);
+  };
+
+  eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+      [{id => 12, v1 => 1, v2 => undef},
+       {id => 12, v1 => 2, v2 => undef},
+       {id => 12, v1 => 3, v2 => undef}];
+} # _update_offset_0
+
+sub _update_offset_1 : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int, v1 int, v2 blob)");
+  $db->execute ("insert into foo (id, v1) values (12, 1)");
+  $db->execute ("insert into foo (id, v1) values (12, 2)");
+  $db->execute ("insert into foo (id, v1) values (12, 3)");
+
+  dies_ok {
+    my $result = $db->update
+        ('foo', {v2 => 'changed'}, {id => 12},
+         order => [v1 => 1], offset => 1);
+  };
+
+  eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+      [{id => 12, v1 => 1, v2 => undef},
+       {id => 12, v1 => 2, v2 => undef},
+       {id => 12, v1 => 3, v2 => undef}];
+} # _update_offset_1
+
+sub _update_limit_none : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int, v1 int, v2 blob)");
+  $db->execute ("insert into foo (id, v1) values (12, 1)");
+  $db->execute ("insert into foo (id, v1) values (12, 2)");
+  $db->execute ("insert into foo (id, v1) values (12, 3)");
+
+  my $result = $db->update
+      ('foo', {v2 => 'changed'}, {id => 12},
+       order => [v1 => 1], limit => undef);
+  is $result->row_count, 3;
+
+  eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+      [{id => 12, v1 => 1, v2 => 'changed'},
+       {id => 12, v1 => 2, v2 => 'changed'},
+       {id => 12, v1 => 3, v2 => 'changed'}];
+} # _update_limit_none
+
+sub _update_limit_0 : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int, v1 int, v2 blob)");
+  $db->execute ("insert into foo (id, v1) values (12, 1)");
+  $db->execute ("insert into foo (id, v1) values (12, 2)");
+  $db->execute ("insert into foo (id, v1) values (12, 3)");
+
+  my $result = $db->update
+      ('foo', {v2 => 'changed'}, {id => 12},
+       order => [v1 => 1], limit => 0);
+  is $result->row_count, 1;
+
+  eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+      [{id => 12, v1 => 1, v2 => 'changed'},
+       {id => 12, v1 => 2, v2 => undef},
+       {id => 12, v1 => 3, v2 => undef}];
+} # _update_limit_0
+
+sub _update_limit_1 : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int, v1 int, v2 blob)");
+  $db->execute ("insert into foo (id, v1) values (12, 1)");
+  $db->execute ("insert into foo (id, v1) values (12, 2)");
+  $db->execute ("insert into foo (id, v1) values (12, 3)");
+
+  my $result = $db->update
+      ('foo', {v2 => 'changed'}, {id => 12},
+       order => [v1 => 1], limit => 1);
+  is $result->row_count, 1;
+
+  eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+      [{id => 12, v1 => 1, v2 => 'changed'},
+       {id => 12, v1 => 2, v2 => undef},
+       {id => 12, v1 => 3, v2 => undef}];
+} # _update_limit_1
+
+sub _update_limit_2 : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int, v1 int, v2 blob)");
+  $db->execute ("insert into foo (id, v1) values (12, 1)");
+  $db->execute ("insert into foo (id, v1) values (12, 2)");
+  $db->execute ("insert into foo (id, v1) values (12, 3)");
+
+  my $result = $db->update
+      ('foo', {v2 => 'changed'}, {id => 12},
+       order => [v1 => 1], limit => 2);
+  is $result->row_count, 2;
+
+  eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+      [{id => 12, v1 => 1, v2 => 'changed'},
+       {id => 12, v1 => 2, v2 => 'changed'},
+       {id => 12, v1 => 3, v2 => undef}];
+} # _update_limit_2
+
+sub _update_limit_large : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int, v1 int, v2 blob)");
+  $db->execute ("insert into foo (id, v1) values (12, 1)");
+  $db->execute ("insert into foo (id, v1) values (12, 2)");
+  $db->execute ("insert into foo (id, v1) values (12, 3)");
+
+  my $result = $db->update
+      ('foo', {v2 => 'changed'}, {id => 12},
+       order => [v1 => 1], limit => 200000);
+  is $result->row_count, 3;
+
+  eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+      [{id => 12, v1 => 1, v2 => 'changed'},
+       {id => 12, v1 => 2, v2 => 'changed'},
+       {id => 12, v1 => 3, v2 => 'changed'}];
+} # _update_limit_large
+
+sub _update_offset_limit : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int, v1 int, v2 blob)");
+  $db->execute ("insert into foo (id, v1) values (12, 1)");
+  $db->execute ("insert into foo (id, v1) values (12, 2)");
+  $db->execute ("insert into foo (id, v1) values (12, 3)");
+
+  dies_ok {
+    my $result = $db->update
+        ('foo', {v2 => 'changed'}, {id => 12},
+         order => [v1 => 1], offset => 1, limit => 2);
+  };
+
+  eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+      [{id => 12, v1 => 1, v2 => undef},
+       {id => 12, v1 => 2, v2 => undef},
+       {id => 12, v1 => 3, v2 => undef}];
+} # _update_offset_limit
+
+sub _update_order_desc_limit : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int, v1 int, v2 blob)");
+  $db->execute ("insert into foo (id, v1) values (12, 1)");
+  $db->execute ("insert into foo (id, v1) values (12, 2)");
+  $db->execute ("insert into foo (id, v1) values (12, 3)");
+
+  my $result = $db->update
+      ('foo', {v2 => 'changed'}, {id => 12},
+       order => [v1 => -1], limit => 2);
+  is $result->row_count, 2;
+
+  eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+      [{id => 12, v1 => 1, v2 => undef},
+       {id => 12, v1 => 2, v2 => 'changed'},
+       {id => 12, v1 => 3, v2 => 'changed'}];
+} # _update_order_desc_limit
+
 __PACKAGE__->runtests;
 
 1;

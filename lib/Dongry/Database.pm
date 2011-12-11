@@ -353,7 +353,11 @@ sub update ($$$$;%) {
       $where_sql,
       _quote $table_name,
       map { _quote $_ } @col;
-  my $return = $self->execute ($sql, [@value, @$where_bind]);
+  $sql .= $self->_order ($args{order}) if $args{order};
+  croak 'Offset is not supported' if defined $args{offset};
+  $sql .= sprintf ' LIMIT %d', $args{limit} || 1 if defined $args{limit};
+  my $return = $self->execute
+     ($sql, [@value, @$where_bind], source_name => $args{source_name});
 
   return unless defined wantarray;
   bless $return, 'Dongry::Database::Executed';
@@ -368,6 +372,9 @@ sub delete ($$$;%) {
   croak 'No where' unless $where_sql;
   
   my $sql = 'DELETE FROM ' . (_quote $table_name) . $where_sql;
+  $sql .= $self->_order ($args{order}) if $args{order};
+  croak 'Offset is not supported' if defined $args{offset};
+  $sql .= sprintf ' LIMIT %d', $args{limit} || 1 if defined $args{limit};
   my $return = $self->execute
       ($sql, $where_bind, source_name => $args{source_name});
 
