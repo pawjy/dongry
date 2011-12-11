@@ -1,9 +1,46 @@
+=head1 NAME
+
+Dongry::Database - Dongry database object
+
+=head1 SYNOPSIS
+
+  use Dongry::Database;
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn},
+                   master => {dsn => $dsn, writable => 1}});
+  
+  $db->execute ('CREATE TABLE table1 (col1 INT, date DATE)
+                 ENGINE=InnoDB');
+  $db->execute ('INSERT INTO table1 (col1) VALUES (?), (?)', [10, 2]);
+  
+  my $transaction = $db->transaction;
+  $db->insert ('table1', [{col1 => 12, date => '2012-01-02'}]);
+  $db->update ('table1', {date => '2001-10-02'}, {col1 => {'<', 5}});
+  $transaction->commit;
+  
+  $db->select ('table1', {col1 => $value})->each_as_row (sub {
+    warn $_->get ('date')->ymd ('/'), "\n";
+  });
+  
+  my $table = $db->table ('table1'); # Dongry::Table
+  my $query = $db->query (...);      # Dongry::Query
+
+=head1 DESCRIPTION
+
+XXX
+
 =head1 METHODS OF DATABASE OBJECT
 
-The database object is an instance of the C<Dongry::Database> class.
-It has the following methods:
+The database object is an instance of the C<Dongry::Database> class
+and provides several levels of APIs for accessing a database.  It has
+the following methods:
 
 =head2 Instantiation
+
+There are two ways to instantiate database objects.  One is the C<new>
+constructor, which you can always obtain a new instance.  The other is
+a database object registry where you can lookup the (possibly
+existing) database object by its name.
 
 =over 4
 
@@ -69,6 +106,11 @@ Example:
 =back
 
 =head2 Connections
+
+A database object can have multiple (physically different) connections
+to a (logically same) database.  Such a connection is identified by
+short identifier known as I<data source name>, such as C<default> and
+C<master>.
 
 =over 4
 
@@ -202,9 +244,51 @@ automatically.
 =head2 Transactions
 
 By default SQL executions are automatically committed
-(i.e. C<AutoCommit> is true in L<DBI> layer).
+(i.e. C<AutoCommit> is true in L<DBI> layer).  This behavior can be
+modified by transaction object if the database supports transaction.
 
-XXX
+=over 4
+
+=item $transaction = $db->transaction
+
+Start a transaction and return the transaction object.  The
+transaction object is a "guard" object.  The transaction is effective
+as long as the object is live.
+
+=back
+
+Once you get a transaction object, you can invoke SQL operations as
+usual.  In addition, the C<lock> option of the C<select> method will
+take effect.  After the sequence of SQL statements, you have to commit
+or rollback the transaction to save or discard the modifications.
+
+Methods of the transaction object:
+
+=over 4
+
+=item $transaction->commit
+
+Commit the transaction.  Changes will be persisted by the database.
+
+=item $transaction->rollback
+
+Rollback the transaction.  Changes will be discarded by the database.
+
+=back
+
+These methods can be invoked only once.  If one of them are invoked,
+the transaction object lost its effect.  You can start another
+transaction session by calling the C<< $db->transaction >> method
+again.  Note that a new transaction cannot be initiated if there is
+another transaction.
+
+If you forgot to commit the changes, it will be discarded when the
+transaction object is destroyed by Perl.  Don't rely on this behavior
+since it is not guaranteed by Perl exactly when an object is
+destroyed.  It means when the transaction ends is not clear unless you
+explicitly call the C<rollback> method.
+
+Within the transaction only the C<master> data source is enabled.
 
 =head2 Bare SQL operations
 

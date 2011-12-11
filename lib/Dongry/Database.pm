@@ -350,6 +350,7 @@ sub select ($$$;%) {
   $sql .= sprintf ' LIMIT %d,%d', ($args{offset} || 0), ($args{limit} || 1)
       if defined $args{limit} or defined $args{offset};
   if ($args{lock}) {
+    carp "Lock used outside of transaction" unless $self->{in_transaction};
     $sql .= ' FOR UPDATE' if $args{lock} eq 'update';
     $sql .= ' LOCK IN SHARE MODE' if $args{lock} eq 'share';
     $args{must_be_writable} = 1;
@@ -605,26 +606,28 @@ use Carp;
 push our @CARP_NOT, qw(Dongry::Database);
 
 sub commit ($) {
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-
-  $_[0]->{db}->{dbhs}->{master}->commit if $_[0]->{db}->{in_transaction};
-  delete $_[0]->{db}->{in_transaction};
+  if ($_[0]->{db}->{in_transaction}) {
+    $_[0]->{db}->{dbhs}->{master}->commit;
+    delete $_[0]->{db}->{in_transaction};
+  } else {
+    croak "This transaction can no longer be committed";
+  }
 } # commit
 
 sub rollback ($) {
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-
-  $_[0]->{db}->{dbhs}->{master}->rollback if $_[0]->{db}->{in_transaction};
-  delete $_[0]->{db}->{in_transaction};
+  if ($_[0]->{db}->{in_transaction}) {
+    $_[0]->{db}->{dbhs}->{master}->rollback;
+    delete $_[0]->{db}->{in_transaction};
+  } else {
+    croak "This transaction can no longer be rollbacked";
+  }
 } # rollback
 
 sub DESTROY {
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-
   if ($_[0]->{db}->{in_transaction}) {
     $_[0]->rollback;
-    carp "Transaction is rollbacked since it is not explicitly committed";
-    exit 1;
+    die "Transaction is rollbacked since it is not explicitly committed",
+        Carp::shortmess;
   }
 } # DESTROY
 
