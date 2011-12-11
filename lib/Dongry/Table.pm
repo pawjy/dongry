@@ -1,6 +1,7 @@
 package Dongry::Table;
 use strict;
 use warnings;
+our $VERSION = '1.0';
 use Carp;
 use List::Rubyish;
 
@@ -22,7 +23,6 @@ sub schema ($) {
 
 sub _serialize_values ($$) {
   my ($self, $values) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
   my $schema = $self->schema;
   my $s_values = {};
   for my $name (keys %$values) {
@@ -140,6 +140,7 @@ sub new_row ($%) {
 } # new
 
 package Dongry::Table::Row;
+our $VERSION = '1.0';
 use Carp;
 
 our $CARP_NOT = qw(Dongry::Table);
@@ -155,7 +156,6 @@ sub table_schema ($) {
 
 sub get ($$) {
   my ($self, $name) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
   return $self->{parsed_data}->{$name} if exists $self->{parsed_data}->{$name};
 
   my $schema = $self->table_schema || do {
@@ -232,10 +232,17 @@ sub flags ($) {
 
 sub reload ($;%) {
   my ($self, %args) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-
   my $pk_values = $self->primary_key_values;
   return $self->{db}->select ($self->table_name, $pk_values)->first_as_row;
 } # reload
 
 1;
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
