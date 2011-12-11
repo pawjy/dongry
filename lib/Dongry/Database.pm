@@ -343,7 +343,6 @@ sub update ($$$$;%) {
   
   my @col = keys %$value;
   croak 'No value to update' unless @col;
-  my @value = map { $value->{$_} } @col;
 
   my ($where_sql, $where_bind) = $self->_where ($where);
   croak 'No where' unless $where_sql;
@@ -351,14 +350,26 @@ sub update ($$$$;%) {
   my $sql .= 'UPDATE';
   $sql .= ' IGNORE' if $args{duplicate} and $args{duplicate} eq 'ignore';
   $sql .= ' ' . _quote $table_name;
-  $sql .= sprintf ' SET ' . (join ', ', ('%s = ?') x @col),
-      map { _quote $_ } @col;
+
+  my @sql_value;
+  my @bound_value;
+  for (@col) {
+    if (defined $value->{$_} and ref $value->{$_} eq 'SCALAR') {
+      push @sql_value, (_quote $_), ${$value->{$_}};
+    } else {
+      push @sql_value, (_quote $_), '?';
+      push @bound_value, $value->{$_};
+    }
+  }
+  $sql .= sprintf ' SET ' . (join ', ', ('%s = %s') x (@sql_value / 2)),
+      @sql_value;
+
   $sql .= $where_sql;
   $sql .= $self->_order ($args{order}) if $args{order};
   croak 'Offset is not supported' if defined $args{offset};
   $sql .= sprintf ' LIMIT %d', $args{limit} || 1 if defined $args{limit};
   my $return = $self->execute
-     ($sql, [@value, @$where_bind], source_name => $args{source_name});
+     ($sql, [@bound_value, @$where_bind], source_name => $args{source_name});
 
   return unless defined wantarray;
   bless $return, 'Dongry::Database::Executed';
