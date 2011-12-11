@@ -321,8 +321,8 @@ sub select ($$$;%) {
     $sql .= ' GROUP BY ' . join ', ', map { _quote $_ } @{$args{group}};
   }
   $sql .= $self->_order ($args{order}) if $args{order};
-  $sql .= ' LIMIT ' . ($args{offset} || 0) . ',' . ($args{limit} || 1)
-      if $args{limit} or $args{offset};
+  $sql .= sprintf ' LIMIT %d,%d', ($args{offset} || 0), ($args{limit} || 1)
+      if defined $args{limit} or defined $args{offset};
   if ($args{lock}) {
     $sql .= ' FOR UPDATE' if $args{lock} eq 'update';
     $sql .= ' LOCK IN SHARE MODE' if $args{lock} eq 'share';

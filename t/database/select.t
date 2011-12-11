@@ -1832,11 +1832,299 @@ sub _select_where_order_by_bad_arg : Test(1) {
   };
 } # _select_where_order_by_bad_arg
 
-# XXX offset limit
+sub _select_where_offset_undef : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
 
-# XXX lock
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            offset => undef);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 12, 23];
+} # _select_where_offset_undef
 
-# XXX other options
+sub _select_where_offset_zero : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            offset => 0);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12];
+} # _select_where_offset_zero
+
+sub _select_where_offset_one : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            offset => 1);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12];
+} # _select_where_offset_one
+
+sub _select_where_offset_large : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            offset => 1000);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [];
+} # _select_where_offset_large
+
+sub _select_where_offset_bad : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            offset => 'anbc');
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12];
+} # _select_where_offset_bad
+
+sub _select_where_limit_none : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            limit => undef);
+  is $result->row_count, 3;
+} # _select_where_limit_none
+
+sub _select_where_limit_zero : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            limit => 0);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12];
+} # _select_where_limit_zero
+
+sub _select_where_limit_one : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            limit => 1);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12];
+} # _select_where_limit_one
+
+sub _select_where_limit_two : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            limit => 2);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 12];
+} # _select_where_limit_two
+
+sub _select_where_limit_many : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            limit => 10000);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 12, 23];
+} # _select_where_limit_many
+
+sub _select_where_limit_bad : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            limit => 'bc a');
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [];
+} # _select_where_limit_bad
+
+sub _select_where_limit_bad_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            limit => '2,5');
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 12];
+} # _select_where_limit_bad_2
+
+sub _select_where_offset_limit_none : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            offset => undef,
+                            limit => undef);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 12, 23];
+} # _select_where_offset_limit_none
+
+sub _select_where_offset_limit_zero_zero : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            offset => 0,
+                            limit => 0);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12];
+} # _select_where_offset_limit_zero_zero
+
+sub _select_where_offset_limit_one_one : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            offset => 1,
+                            limit => 1);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12];
+} # _select_where_offset_limit_one_one
+
+sub _select_where_offset_limit_2_1 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            offset => 2,
+                            limit => 1);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [23];
+} # _select_where_offset_limit_2_1
+
+sub _select_where_offset_limit_1_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id'],
+                            offset => 1,
+                            limit => 2);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 23];
+} # _select_where_offset_limit_1_2
 
 __PACKAGE__->runtests;
 
