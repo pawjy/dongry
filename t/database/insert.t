@@ -1029,6 +1029,122 @@ sub _insert_with_default : Test(2) {
               {v1 => 4, v2 => 5, v3 => 444}];
 } # _insert_with_default
 
+sub _insert_duplicate_update_found : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (v1 int unique key, v2 int, v3 blob)');
+  $db->execute ('insert into hoge (v1, v2) values (1, 2112)');
+  $db->execute ('insert into hoge (v1, v2) values (2, 422)');
+
+  my $result = $db->insert
+      ('hoge', [{v1 => 1}], duplicate => {v3 => 'updated'});
+  is $result->row_count, 2;
+
+  eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+             [{v1 => 1, v2 => 2112, v3 => 'updated'},
+              {v1 => 2, v2 => 422, v3 => undef}];
+} # _insert_duplicate_update_found
+
+sub _insert_duplicate_update_not_found : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (v1 int unique key, v2 int, v3 blob)');
+  $db->execute ('insert into hoge (v1, v2) values (1, 2112)');
+  $db->execute ('insert into hoge (v1, v2) values (2, 422)');
+
+  my $result = $db->insert
+      ('hoge', [{v1 => 3}], duplicate => {v3 => 'updated'});
+  is $result->row_count, 1;
+
+  eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+             [{v1 => 1, v2 => 2112, v3 => undef},
+              {v1 => 2, v2 => 422, v3 => undef},
+              {v1 => 3, v2 => undef, v3 => undef}];
+} # _insert_duplicate_update_not_found
+
+sub _insert_duplicate_update_found_sql : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (v1 int unique key, v2 int, v3 blob)');
+  $db->execute ('insert into hoge (v1, v2) values (1, 2112)');
+  $db->execute ('insert into hoge (v1, v2) values (2, 422)');
+
+  my $result = $db->insert
+      ('hoge', [{v1 => 1, v2 => 321}], duplicate => {v3 => \'values(v2)+3'});
+  is $result->row_count, 2;
+
+  eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+             [{v1 => 1, v2 => 2112, v3 => 321 + 3},
+              {v1 => 2, v2 => 422, v3 => undef}];
+} # _insert_duplicate_update_found_sql
+
+sub _insert_duplicate_update_found_sql_2 : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (v1 int unique key, v2 int, v3 blob)');
+  $db->execute ('insert into hoge (v1, v2) values (1, 2112)');
+  $db->execute ('insert into hoge (v1, v2) values (2, 422)');
+
+  my $result = $db->insert
+      ('hoge', [{v1 => 1, v2 => 321}],
+       duplicate => {v2 => \'v2 + 2', v3 => \'values(v2)+3'});
+  is $result->row_count, 2;
+
+  eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+             [{v1 => 1, v2 => 2112 + 2, v3 => 321 + 3},
+              {v1 => 2, v2 => 422, v3 => undef}];
+} # _insert_duplicate_update_found_sql_2
+
+sub _insert_duplicate_update_found_stupid_column : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (v1 int unique key, `22``` int, v3 blob)');
+  $db->execute ('insert into hoge (v1, `22```) values (1, 2112)');
+  $db->execute ('insert into hoge (v1, `22```) values (2, 422)');
+
+  my $result = $db->insert
+      ('hoge', [{v1 => 1}], duplicate => {'22`' => 1, v3 => 'updated'});
+  is $result->row_count, 2;
+
+  eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+             [{v1 => 1, '22`' => 1, v3 => 'updated'},
+              {v1 => 2, '22`' => 422, v3 => undef}];
+} # _insert_duplicate_update_found_stupid_column
+
+sub _insert_duplicate_update_found_utf8_flagged_value : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (v1 int unique key, v2 int, v3 blob)');
+  $db->execute ('insert into hoge (v1, v2) values (1, 2112)');
+  $db->execute ('insert into hoge (v1, v2) values (2, 422)');
+
+  my $result = $db->insert
+      ('hoge', [{v1 => 1}], duplicate => {v3 => "\x{5000}"});
+  is $result->row_count, 2;
+
+  eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+             [{v1 => 1, v2 => 2112, v3 => encode 'utf-8', "\x{5000}"},
+              {v1 => 2, v2 => 422, v3 => undef}];
+} # _insert_duplicate_update_found_utf8_flagged_value
+
 sub _last_insert_id_unknown : Test(1) {
   my $db = Dongry::Database->new;
   is $db->last_insert_id, undef;

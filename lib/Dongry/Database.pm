@@ -211,6 +211,24 @@ sub insert ($$$;%) {
   $sql .= ' INTO ' . (_quote $table_name) .
       ' (' . (join ', ', map { _quote $_ } @col) . ')' .
       ' VALUES ' . (join ', ', @placeholders);
+  if ($args{duplicate} and ref $args{duplicate} eq 'HASH') {
+    my $value = $args{duplicate};
+    my @col = keys %$value;
+    croak 'Duplicate hash is empty' unless @col;
+    my @sql_value;
+    for (@col) {
+      if (defined $value->{$_} and ref $value->{$_} eq 'SCALAR') {
+        push @sql_value, (_quote $_), ${$value->{$_}};
+      } else {
+        push @sql_value, (_quote $_), '?';
+        push @values, $value->{$_};
+      }
+    }
+    $sql .= sprintf ' ON DUPLICATE KEY UPDATE '
+         . (join ', ', ('%s = %s') x (@sql_value / 2)),
+        @sql_value;
+  }
+
   my $return = $self->execute
       ($sql, \@values, source_name => $args{source_name});
 
