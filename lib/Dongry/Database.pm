@@ -137,7 +137,7 @@ sub transaction ($) {
   return bless {db => $self}, 'Dongry::Database::Transaction';
 } # transaction
 
-# ------ Bare SQL execution ------
+# ------ Bare SQL operations ------
 
 our $ReadOnlyQueryPattern = qr/^\s*(?:
   [Ss][Ee][Ll][Ee][Cc][Tt]|
@@ -175,7 +175,7 @@ sub execute ($$;$%) {
       'Dongry::Database::Executed';
 } # execute
 
-# ------ Structured SQL execution ------
+# ------ Structured SQL executions ------
 
 ## <http://dev.mysql.com/doc/refman/5.6/en/identifiers.html>.
 sub _quote ($) {
@@ -377,7 +377,7 @@ sub delete ($$$;%) {
   return $return;
 } # delete
 
-# ------ Schema-aware SQL operations ------
+# ------ Schema-aware operations ------
 
 $Dongry::Types ||= {};
 
@@ -398,6 +398,7 @@ sub schema ($) {
 } # schema
 
 sub table ($$) {
+  croak 'No table name' unless defined $_[1];
   require Dongry::Table;
   return Dongry::Table->new
       (db => $_[0], name => $_[1]);
@@ -409,6 +410,8 @@ sub query ($%) {
   eval qq{ require $query_class } or die $@;
   return $query_class->new (db => $self, %args);
 } # query
+
+# ------ Operation results ------
 
 package Dongry::Database::Executed;
 our $VERSION = '1.0';
@@ -547,6 +550,8 @@ sub first_as_row ($) {
        ($self->{parsed_data}
             ? (parsed_data => $self->{parsed_data}->[0]) : ()));
 } # first_as_row
+
+# ------ Transaction ------
 
 package Dongry::Database::Transaction;
 our $VERSION = '1.0';
