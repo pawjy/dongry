@@ -1379,9 +1379,135 @@ sub _select_where_no_args : Test(1) {
   };
 } # _select_where_no_args
 
-# XXX group
+sub _select_where_group_by_none : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
 
-# XXX group SQL error
+  my $result = $db->select ('foo', {id => {-not => undef}}, group => undef);
+  is $result->row_count, 2;
+} # _select_where_group_by_none
+
+sub _select_where_group_by_column : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}}, group => ['id']);
+  eq_or_diff $result->all->map (sub { $_->{id} })
+      ->sort (sub { $_[0] <=> $_[1] })->to_a, [12, 23];
+} # _select_where_group_by_column
+
+sub _select_where_group_by_multiple_columns : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            group => ['id', 'v1']);
+  eq_or_diff $result->all->map (sub { $_->{id} })
+      ->sort (sub { $_[0] <=> $_[1] })->to_a, [12, 12, 23];
+} # _select_where_group_by_multiple_columns
+
+sub _select_where_group_by_stupid_column : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, `v1 ``)` blob)');
+  $db->execute ('insert into foo (id, `v1 ``)`) values (12, "abc")');
+  $db->execute ('insert into foo (id, `v1 ``)`) values (12, "def")');
+  $db->execute ('insert into foo (id, `v1 ``)`) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            group => ['v1 `)']);
+  eq_or_diff $result->all->map (sub { $_->{'v1 `)'} })
+      ->sort (sub { $_[0] cmp $_[1] })->to_a, ['abc', 'def'];
+} # _select_where_group_by_stupid_column
+
+sub _select_where_group_by_utf8_flagged_column : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int, `\x{8000}` blob)");
+  $db->execute ("insert into foo (id, `\x{8000}`) values (12, 'abc')");
+  $db->execute ("insert into foo (id, `\x{8000}`) values (12, 'def')");
+  $db->execute ("insert into foo (id, `\x{8000}`) values (23, 'def')");
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            group => ["\x{8000}"]);
+  eq_or_diff $result->all->map (sub { $_->{encode 'utf-8', "\x{8000}"} })
+      ->sort (sub { $_[0] cmp $_[1] })->to_a, ['abc', 'def'];
+} # _select_where_group_by_utf8_flagged_column
+
+sub _select_where_group_by_utf8_unflagged_column : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int, `\x{8000}` blob)");
+  $db->execute ("insert into foo (id, `\x{8000}`) values (12, 'abc')");
+  $db->execute ("insert into foo (id, `\x{8000}`) values (12, 'def')");
+  $db->execute ("insert into foo (id, `\x{8000}`) values (23, 'def')");
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            group => [encode 'utf-8', "\x{8000}"]);
+  eq_or_diff $result->all->map (sub { $_->{encode 'utf-8', "\x{8000}"} })
+      ->sort (sub { $_[0] cmp $_[1] })->to_a, ['abc', 'def'];
+} # _select_where_group_by_utf8_unflagged_column
+
+sub _select_where_group_by_bad_column : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  dies_ok {
+    my $result = $db->select ('foo', {id => {-not => undef}}, group => ['v2']);
+  };
+} # _select_where_group_by_bad_column
+
+sub _select_where_group_by_bad_arg : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  dies_ok {
+    my $result = $db->select ('foo', {id => {-not => undef}}, group => 'id');
+  };
+} # _select_where_group_by_bad_arg
 
 # XXX order
 

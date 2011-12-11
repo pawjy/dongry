@@ -305,8 +305,11 @@ sub select ($$$;%) {
     $sql .= ' *';
   }
   $sql .= ' FROM ' . (_quote $table_name)
-       . $where_sql
-       . $self->_order ($args{order});
+       . $where_sql;
+  if ($args{group}) {
+    $sql .= ' GROUP BY ' . join ', ', map { _quote $_ } @{$args{group}};
+  }
+  $sql .= $self->_order ($args{order}) if $args{order};
   $sql .= ' LIMIT ' . ($args{offset} || 0) . ',' . ($args{limit} || 1)
       if $args{limit} or $args{offset};
   if ($args{lock}) {
