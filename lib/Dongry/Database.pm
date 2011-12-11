@@ -177,6 +177,14 @@ sub execute ($$;$%) {
 
 # ------ Structured SQL executions ------
 
+sub set_tz ($;$%) {
+  my ($self, $tz, %args) = @_;
+  $tz ||= '+00:00';
+  $self->execute ('SET time_zone = ?', [$tz],
+                  source_name => $args{source_name},
+                  even_if_read_only => 1);
+} # set_tz
+
 ## <http://dev.mysql.com/doc/refman/5.6/en/identifiers.html>.
 sub _quote ($) {
   my $s = $_[0];
