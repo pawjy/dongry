@@ -1509,9 +1509,328 @@ sub _select_where_group_by_bad_arg : Test(1) {
   };
 } # _select_where_group_by_bad_arg
 
-# XXX order
+sub _select_where_order_by_none : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
 
-# XXX order SQL error
+  my $result = $db->select ('foo', {id => {-not => undef}}, order => undef);
+  is $result->row_count, 3;
+} # _select_where_order_by_none
+
+sub _select_where_order_by_a_column_implicit_order : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}}, order => ['id']);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 12, 23];
+} # _select_where_order_by_a_column_implicit_order
+
+sub _select_where_order_by_a_column_asc_1 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id' => 'ASC']);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 12, 23];
+} # _select_where_order_by_a_column_asc_1
+
+sub _select_where_order_by_a_column_asc_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id' => 'asc']);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 12, 23];
+} # _select_where_order_by_a_column_asc_2
+
+sub _select_where_order_by_a_column_asc_3 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id' => 1]);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 12, 23];
+} # _select_where_order_by_a_column_asc_3
+
+sub _select_where_order_by_a_column_asc_4 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id' => '+1']);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 12, 23];
+} # _select_where_order_by_a_column_asc_4
+
+sub _select_where_order_by_a_column_desc_1 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id' => 'DESC']);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [23, 12, 12];
+} # _select_where_order_by_a_column_desc_1
+
+sub _select_where_order_by_a_column_desc_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id' => 'desc']);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [23, 12, 12];
+} # _select_where_order_by_a_column_desc_2
+
+sub _select_where_order_by_a_column_desc_3 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['id' => -1]);
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [23, 12, 12];
+} # _select_where_order_by_a_column_desc_3
+
+sub _select_where_order_by_a_column_desc_bad_order : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  dies_ok {
+    my $result = $db->select ('foo', {id => {-not => undef}},
+                              order => ['id' => -10]);
+  };
+} # _select_where_order_by_a_column_bad_order
+
+sub _select_where_order_by_a_column_desc_bad_order_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  dies_ok {
+    my $result = $db->select ('foo', {id => {-not => undef}},
+                              order => ['id' => 'random']);
+  };
+} # _select_where_order_by_a_column_bad_order_2
+
+sub _select_where_order_by_multiple_columns_1 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => [id => 1, v1 => -1]);
+  eq_or_diff $result->all->to_a,
+      [{id => 12, v1 => 'def'},
+       {id => 12, v1 => 'abc'},
+       {id => 23, v1 => 'def'}];
+} # _select_where_order_by_multiple_columns_1
+
+sub _select_where_order_by_multiple_columns_2 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => [v1 => undef, id => -1]);
+  eq_or_diff $result->all->to_a,
+      [{id => 12, v1 => 'abc'},
+       {id => 23, v1 => 'def'},
+       {id => 12, v1 => 'def'}];
+} # _select_where_order_by_multiple_columns_2
+
+sub _select_where_order_by_stupid_column : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, `12 ``&` blob)');
+  $db->execute ('insert into foo (id, `12 ``&`) values (12, "abc")');
+  $db->execute ('insert into foo (id, `12 ``&`) values (12, "def")');
+  $db->execute ('insert into foo (id, `12 ``&`) values (23, "def")');
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ['12 `&' => undef, id => -1]);
+  eq_or_diff $result->all->to_a,
+      [{id => 12, '12 `&' => 'abc'},
+       {id => 23, '12 `&' => 'def'},
+       {id => 12, '12 `&' => 'def'}];
+} # _select_where_order_by_stupid_column
+
+sub _select_where_order_by_utf8_flagged_column : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int, `\x{9000}` blob)");
+  $db->execute ("insert into foo (id, `\x{9000}`) values (12, 'abc')");
+  $db->execute ("insert into foo (id, `\x{9000}`) values (12, 'def')");
+  $db->execute ("insert into foo (id, `\x{9000}`) values (23, 'def')");
+
+  my $result = $db->select ('foo', {id => {-not => undef}},
+                            order => ["\x{9000}" => undef, id => -1]);
+  eq_or_diff $result->all->to_a,
+      [{id => 12, (encode 'utf-8', "\x{9000}") => 'abc'},
+       {id => 23, (encode 'utf-8', "\x{9000}") => 'def'},
+       {id => 12, (encode 'utf-8', "\x{9000}") => 'def'}];
+} # _select_where_order_by_utf8_flagged_column
+
+sub _select_where_order_by_utf8_unflagged_column : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int, `\x{9000}` blob)");
+  $db->execute ("insert into foo (id, `\x{9000}`) values (12, 'abc')");
+  $db->execute ("insert into foo (id, `\x{9000}`) values (12, 'def')");
+  $db->execute ("insert into foo (id, `\x{9000}`) values (23, 'def')");
+
+  my $result = $db->select
+      ('foo', {id => {-not => undef}},
+       order => [(encode 'utf-8', "\x{9000}") => undef, id => -1]);
+  eq_or_diff $result->all->to_a,
+      [{id => 12, (encode 'utf-8', "\x{9000}") => 'abc'},
+       {id => 23, (encode 'utf-8', "\x{9000}") => 'def'},
+       {id => 12, (encode 'utf-8', "\x{9000}") => 'def'}];
+} # _select_where_order_by_utf8_unflagged_column
+
+sub _select_where_order_by_bad_column : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  dies_ok {
+    my $result = $db->select ('foo', {id => {-not => undef}},
+                              order => [id => 1, v2 => -1]);
+  };
+} # _select_where_order_by_bad_column
+
+sub _select_where_order_by_empty_arg : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  dies_ok {
+    my $result = $db->select ('foo', {id => {-not => undef}},
+                              order => []);
+  };
+} # _select_where_order_by_empty_arg
+
+sub _select_where_order_by_bad_arg : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, writable => 0},
+                   master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table foo (id int, v1 blob)');
+  $db->execute ('insert into foo (id, v1) values (12, "abc")');
+  $db->execute ('insert into foo (id, v1) values (12, "def")');
+  $db->execute ('insert into foo (id, v1) values (23, "def")');
+
+  dies_ok {
+    my $result = $db->select ('foo', {id => {-not => undef}},
+                              order => 'id');
+  };
+} # _select_where_order_by_bad_arg
 
 # XXX offset limit
 

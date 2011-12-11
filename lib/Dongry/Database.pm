@@ -280,10 +280,21 @@ sub _where ($$) {
 } # _where
 
 sub _order ($$) {
-  if (defined $_[1] and ref $_[1] eq 'ARRAY' and @{$_[1]}) {
+  if (defined $_[1]) {
     my @s;
-    for (0..int ($#{$_[1]} / 2)) {
-      push @s, $_[1]->[$_ * 2] . ' ' . ($_[1]->[$_ * 2 + 1] || 'ASC');
+    for (0..(int (($#{$_[1]} + 2) / 2) - 1)) {
+      push @s, (_quote $_[1]->[$_ * 2]) . ' ' . (
+        {
+          'ASC' => 'ASC',
+          'asc' => 'ASC',
+          '1' => 'ASC',
+          '+1' => 'ASC',
+          'DESC' => 'DESC',
+          'desc' => 'DESC',
+          '-1' => 'DESC',
+        }->{$_[1]->[$_ * 2 + 1] || 'ASC'} or
+        (croak sprintf 'Unknown order: %s', $_[1]->[$_ * 2 + 1])
+      );
     }
     return ' ORDER BY ' . join ', ', @s;
   } else {
