@@ -348,11 +348,12 @@ sub update ($$$$;%) {
   my ($where_sql, $where_bind) = $self->_where ($where);
   croak 'No where' unless $where_sql;
 
-  my $sql = sprintf 'UPDATE %s' .
-      ' SET ' . (join ', ', ('%s = ?') x @col) .
-      $where_sql,
-      _quote $table_name,
+  my $sql .= 'UPDATE';
+  $sql .= ' IGNORE' if $args{duplicate} and $args{duplicate} eq 'ignore';
+  $sql .= ' ' . _quote $table_name;
+  $sql .= sprintf ' SET ' . (join ', ', ('%s = ?') x @col),
       map { _quote $_ } @col;
+  $sql .= $where_sql;
   $sql .= $self->_order ($args{order}) if $args{order};
   croak 'Offset is not supported' if defined $args{offset};
   $sql .= sprintf ' LIMIT %d', $args{limit} || 1 if defined $args{limit};

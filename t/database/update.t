@@ -926,6 +926,49 @@ sub _update_order_desc_limit : Test(2) {
        {id => 12, v1 => 3, v2 => 'changed'}];
 } # _update_order_desc_limit
 
+sub _update_duplicate_error : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int unique key, v1 int, v2 blob)");
+  $db->execute ("insert into foo (id, v1) values (12, 1)");
+  $db->execute ("insert into foo (id, v1) values (22, 2)");
+  $db->execute ("insert into foo (id, v1) values (32, 3)");
+
+  dies_ok {
+    my $result = $db->update
+        ('foo', {id => 22}, {id => 12});
+  };
+
+  eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+      [{id => 12, v1 => 1, v2 => undef},
+       {id => 22, v1 => 2, v2 => undef},
+       {id => 32, v1 => 3, v2 => undef}];
+} # _update_duplicate_error
+
+sub _update_duplicate_ignore : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ("create table foo (id int unique key, v1 int, v2 blob)");
+  $db->execute ("insert into foo (id, v1) values (12, 1)");
+  $db->execute ("insert into foo (id, v1) values (22, 2)");
+  $db->execute ("insert into foo (id, v1) values (32, 3)");
+
+  my $result = $db->update
+      ('foo', {id => 22}, {id => 12}, duplicate => 'ignore');
+  is $result->row_count, 1; # !
+
+  eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+      [{id => 12, v1 => 1, v2 => undef},
+       {id => 22, v1 => 2, v2 => undef},
+       {id => 32, v1 => 3, v2 => undef}];
+} # _update_duplicate_ignore
+
 __PACKAGE__->runtests;
 
 1;
