@@ -851,3 +851,12 @@ sub _delete_order_desc_limit : Test(2) {
 __PACKAGE__->runtests;
 
 1;
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

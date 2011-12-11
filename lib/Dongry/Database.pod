@@ -683,3 +683,30 @@ methods cannot be used.
 XXX
 
 =back
+
+=head1 SEE ALSO
+
+L<DBI>.
+
+L<DBD::MySQL>.
+
+MySQL Reference Manuals <http://dev.mysql.com/doc/index.html>.
+
+=head1 ACKNOWLEDGEMENTS
+
+The design of various features of Dongry is inspired by L<DBI>,
+L<DBIx::MoCo>, L<DBIx::MoCo::Query>, L<SQL::Abstract>,
+L<SQL::NamedPlaceholder>, and L<List::Rubyish>.
+
+=head1 AUTHOR
+
+Wakaba <w@suika.fam.cx>.
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
