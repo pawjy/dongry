@@ -32,7 +32,12 @@ sub _serialize_values ($$) {
           or croak "Type handler for |$type| is not defined";
       $s_values->{$name} = $handler->{serialize}->($values->{$name});
     } else {
-      $s_values->{$name} = $values->{$name};
+      if (defined $values->{$name} and
+          ref $values->{$name}) {
+        croak "Type for |$name| is not defined but a reference is specified";
+      } else {
+        $s_values->{$name} = $values->{$name};
+      }
     }
   }
   return $s_values;
@@ -40,8 +45,6 @@ sub _serialize_values ($$) {
 
 sub insert ($$;%) {
   my ($self, $data, %args) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-
   my $s_data = [];
   for my $values (@$data) {
     my $schema = $self->schema || {};
