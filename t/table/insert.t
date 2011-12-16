@@ -251,6 +251,337 @@ sub _insert_no_schema_with_ref : Test(2) {
      ('select * from table1 order by col1 desc')->all->to_a, [];
 } # _insert_no_schema_with_ref
 
+sub _insert_with_default_fully_serialized : Test(1) {
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      default => {
+        col1 => DateTime->new (year => 2005, month => 12, day => 4),
+        col2 => \"ab cd",
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  $table->insert
+      ([{col1 => DateTime->new (year => 2001, month => 12, day => 3,
+                                time_zone => 'Asia/Tokyo'),
+         col2 => undef},
+        {col2 => \undef}]);
+  
+  eq_or_diff $db->execute
+     ('select * from table1 order by col1 asc')->all->to_a,
+     [{col1 => '2001-12-02 15:00:00', col2 => 'ab cd'},
+      {col1 => '2005-12-04 00:00:00', col2 => undef}];
+} # _insert_with_default_fully_serialized
+
+sub _insert_with_default_code_fully_serialized : Test(1) {
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      default => {
+        col1 => sub { DateTime->new (year => 2005, month => 12, day => 4) },
+        col2 => sub { \"ab cd" },
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  $table->insert
+      ([{col1 => DateTime->new (year => 2001, month => 12, day => 3,
+                                time_zone => 'Asia/Tokyo'),
+         col2 => undef},
+        {col2 => \undef}]);
+  
+  eq_or_diff $db->execute
+     ('select * from table1 order by col1 asc')->all->to_a,
+     [{col1 => '2001-12-02 15:00:00', col2 => 'ab cd'},
+      {col1 => '2005-12-04 00:00:00', col2 => undef}];
+} # _insert_with_default_code_fully_serialized
+
+sub _insert_empty : Test(2) {
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  dies_ok {
+    $table->insert ([]);
+  };
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col1 asc')->all->to_a, [];
+} # _insert_empty
+
+sub _insert_empty_return : Test(2) {
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  dies_ok {
+    my $return = $table->insert ([]);
+  };
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col1 asc')->all->to_a, [];
+} # _insert_empty_return
+
+sub _insert_return_all : Test(5) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      default => {
+        col1 => sub { $date0 },
+        col2 => sub { \"ab cd" },
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob, col3 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+  my $result = $table->insert
+      ([{col1 => $date1,
+         col2 => undef,
+         col3 => 'abc'},
+        {col2 => \undef}]);
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 2;
+  my $rows = $result->all;
+  isa_list_n_ok $rows, 2;
+
+  eq_or_diff $rows->[0],
+      {col1 => '2001-12-02 15:00:00', col2 => 'ab cd', col3 => 'abc'};
+  eq_or_diff $rows->[1],
+      {col1 => '2005-12-04 00:00:00', col2 => undef};
+} # _insert_return_all
+
+sub _insert_return_all_as_rows : Test(11) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      default => {
+        col1 => sub { $date0 },
+        col2 => sub { \"ab cd" },
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob, col3 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+  my $result = $table->insert
+      ([{col1 => $date1,
+         col2 => undef,
+         col3 => 'abc'},
+        {col2 => \undef}]);
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 2;
+  my $rows = $result->all_as_rows;
+  isa_list_n_ok $rows, 2;
+
+  isa_ok $rows->[0], 'Dongry::Table::Row';
+  is $rows->[0]->table_name, 'table1';
+  eq_or_diff $rows->[0]->{data},
+      {col1 => '2001-12-02 15:00:00', col2 => 'ab cd', col3 => 'abc'};
+  eq_or_diff $rows->[0]->{parsed_data},
+      {col1 => $date1, col2 => \'ab cd', col3 => 'abc'};
+  
+  isa_ok $rows->[1], 'Dongry::Table::Row';
+  is $rows->[1]->table_name, 'table1';
+  eq_or_diff $rows->[1]->{data},
+      {col1 => '2005-12-04 00:00:00', col2 => undef};
+  eq_or_diff $rows->[1]->{parsed_data}, {col1 => $date0, col2 => \undef};
+} # _insert_return_all_as_rows
+
+sub _insert_return_each : Test(5) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      default => {
+        col1 => sub { $date0 },
+        col2 => sub { \"ab cd" },
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob, col3 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+  my $result = $table->insert
+      ([{col1 => $date1,
+         col2 => undef,
+         col3 => 'abc'},
+        {col2 => \undef}]);
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 2;
+  my $rows = List::Rubyish->new;
+  $result->each (sub { $rows->push ($_) });
+  isa_list_n_ok $rows, 2;
+
+  eq_or_diff $rows->[0],
+      {col1 => '2001-12-02 15:00:00', col2 => 'ab cd', col3 => 'abc'};
+  eq_or_diff $rows->[1],
+      {col1 => '2005-12-04 00:00:00', col2 => undef};
+} # _insert_return_each
+
+sub _insert_return_each_as_row : Test(11) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      default => {
+        col1 => sub { $date0 },
+        col2 => sub { \"ab cd" },
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob, col3 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+  my $result = $table->insert
+      ([{col1 => $date1,
+         col2 => undef,
+         col3 => 'abc'},
+        {col2 => \undef}]);
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 2;
+  my $rows = List::Rubyish->new;
+  $result->each_as_row (sub { $rows->push ($_) });
+  isa_list_n_ok $rows, 2;
+
+  isa_ok $rows->[0], 'Dongry::Table::Row';
+  is $rows->[0]->table_name, 'table1';
+  eq_or_diff $rows->[0]->{data},
+      {col1 => '2001-12-02 15:00:00', col2 => 'ab cd', col3 => 'abc'};
+  eq_or_diff $rows->[0]->{parsed_data},
+      {col1 => $date1, col2 => \'ab cd', col3 => 'abc'};
+  
+  isa_ok $rows->[1], 'Dongry::Table::Row';
+  is $rows->[1]->table_name, 'table1';
+  eq_or_diff $rows->[1]->{data},
+      {col1 => '2005-12-04 00:00:00', col2 => undef};
+  eq_or_diff $rows->[1]->{parsed_data}, {col1 => $date0, col2 => \undef};
+} # _insert_return_each_as_row
+
+sub _insert_return_first : Test(3) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      default => {
+        col1 => sub { $date0 },
+        col2 => sub { \"ab cd" },
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob, col3 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+  my $result = $table->insert
+      ([{col1 => $date1,
+         col2 => undef,
+         col3 => 'abc'},
+        {col2 => \undef}]);
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 2;
+  my $row = $result->first;
+  eq_or_diff $row,
+      {col1 => '2001-12-02 15:00:00', col2 => 'ab cd', col3 => 'abc'};
+} # _insert_return_first
+
+sub _insert_return_first_as_row : Test(6) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      default => {
+        col1 => sub { $date0 },
+        col2 => sub { \"ab cd" },
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob, col3 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+  my $result = $table->insert
+      ([{col1 => $date1,
+         col2 => undef,
+         col3 => 'abc'},
+        {col2 => \undef}]);
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 2;
+  my $row = $result->first_as_row;
+
+  isa_ok $row, 'Dongry::Table::Row';
+  is $row->table_name, 'table1';
+  eq_or_diff $row->{data},
+      {col1 => '2001-12-02 15:00:00', col2 => 'ab cd', col3 => 'abc'};
+  eq_or_diff $row->{parsed_data},
+      {col1 => $date1, col2 => \'ab cd', col3 => 'abc'};
+} # _insert_return_first_as_row
+
 __PACKAGE__->runtests;
 
 1;

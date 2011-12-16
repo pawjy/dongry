@@ -50,6 +50,7 @@ sub insert ($$;%) {
     my $schema = $self->schema || {};
 
     for (keys %{$schema->{default} or {}}) {
+      next if defined $values->{$_};
       my $default = $schema->{default}->{$_};
       if (defined $default and ref $default eq 'CODE') {
         $values->{$_} = $default->();

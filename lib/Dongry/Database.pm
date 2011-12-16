@@ -550,6 +550,22 @@ sub each ($$) {
   delete $self->{data};
 } # each
 
+sub each_as_row ($$) {
+  my ($self, $code) = @_;
+  my $tn = $self->{table_name} or croak 'Table name is not known';
+  my $data = delete $self->{data}
+      or croak 'This method is no longer available';
+  my $db = $self->{db};
+  require Dongry::Table;
+  for (0..$#$data) {
+    local $_ = Dongry::Table->new_row
+        (db => $db, table_name => $tn, data => $data->[$_],
+         $self->{parsed_data}
+             ? (parsed_data => $self->{parsed_data}->[$_]) : ());
+    $code->();
+  }
+} # each_as_row
+
 sub all ($) {
   my $data = delete $_[0]->{data}
       or croak 'This method is no longer available';
