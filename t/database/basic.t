@@ -7,12 +7,17 @@ use Test::Dongry;
 use base qw(Test::Class);
 use Dongry::Database;
 
-sub _version : Test(4) {
+sub _version : Test(5) {
   ok $Dongry::Database::VERSION;
   ok $Dongry::Database::Executed::VERSION;
   ok $Dongry::Database::Executed::Inserted::VERSION;
   ok $Dongry::Database::Transaction::VERSION;
+  ok $Dongry::Database::BareSQLFragment::VERSION;
 } # _version
+
+sub _inheritance : Test(1) {
+  ok +Dongry::Database::Executed::Inserted->isa ('Dongry::Database::Executed');
+}
 
 # ------ Instantiation ------
 

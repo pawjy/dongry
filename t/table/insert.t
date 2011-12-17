@@ -582,6 +582,256 @@ sub _insert_return_first_as_row : Test(6) {
       {col1 => $date1, col2 => \'ab cd', col3 => 'abc'};
 } # _insert_return_first_as_row
 
+sub _insert_duplicate_error : Test(2) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 blob, col2 int unique key)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->execute ('insert into table1 (col1, col2) values ("orig", 4)');
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+  dies_ok {
+    my $result = $table->insert
+        ([{col1 => $date1, col2 => \11},
+          {col2 => \4}]);
+  };
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [{col1 => '2001-12-02 15:00:00', col2 => 11},
+      {col1 => 'orig', col2 => 4}];
+} # _insert_duplicate_error
+
+sub _insert_duplicate_ignore : Test(2) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 blob, col2 int unique key)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->execute ('insert into table1 (col1, col2) values ("orig", 4)');
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+  my $result = $table->insert
+      ([{col1 => $date1, col2 => \11},
+        {col2 => \4}],
+       duplicate => 'ignore');
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [{col1 => '2001-12-02 15:00:00', col2 => 11},
+      {col1 => 'orig', col2 => 4}];
+} # _insert_duplicate_ignore
+
+sub _insert_duplicate_replace : Test(2) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 blob, col2 int unique key)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->execute ('insert into table1 (col1, col2) values ("orig", 4)');
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+  my $result = $table->insert
+      ([{col1 => $date1, col2 => \11},
+        {col2 => \4}],
+       duplicate => 'replace');
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [{col1 => '2001-12-02 15:00:00', col2 => 11},
+      {col1 => undef, col2 => 4}];
+} # _insert_duplicate_replace
+
+sub _insert_duplicate_values : Test(3) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 blob, col2 int unique key)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->execute ('insert into table1 (col1, col2) values ("orig", 4)');
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+  my $date2 = DateTime->new (year => 2002, month => 3, day => 8,
+                             time_zone => 'UTC');
+  my $result = $table->insert
+      ([{col1 => $date1, col2 => \11},
+        {col2 => \4}],
+       duplicate => {col1 => $date2, col2 => \3});
+
+  eq_or_diff $result->all_as_rows->map (sub { $_->{parsed_data} })->to_a,
+      [{col1 => $date1, col2 => \11}, {col2 => \4}];
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [{col1 => '2001-12-02 15:00:00', col2 => 11},
+      {col1 => '2002-03-08 00:00:00', col2 => 3}];
+} # _insert_duplicate_values
+
+sub _insert_duplicate_values_sql : Test(2) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 blob, col2 int unique key)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->execute ('insert into table1 (col1, col2) values ("orig", 4)');
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+  my $date2 = DateTime->new (year => 2002, month => 3, day => 8,
+                             time_zone => 'UTC');
+  my $result = $table->insert
+      ([{col1 => $date1, col2 => \11},
+        {col2 => \4}],
+       duplicate => {col1 => $date2,
+                     col2 => $db->bare_sql_fragment ('values(col2) * 2')});
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [{col1 => '2001-12-02 15:00:00', col2 => 11},
+      {col1 => '2002-03-08 00:00:00', col2 => 8}];
+} # _insert_duplicate_values_sql
+
+sub _insert_transaction : Test(2) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 blob, col2 int unique key)
+                  engine = InnoDB',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->execute ('insert into table1 (col1, col2) values ("orig", 4)');
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+  my $date2 = DateTime->new (year => 2002, month => 3, day => 8,
+                             time_zone => 'UTC');
+
+  my $transaction = $db->transaction;
+  my $result = $table->insert
+      ([{col1 => $date1, col2 => \11},
+        {col2 => \4}],
+       duplicate => {col1 => $date2,
+                     col2 => $db->bare_sql_fragment ('values(col2) * 2')});
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [{col1 => '2001-12-02 15:00:00', col2 => 11},
+      {col1 => '2002-03-08 00:00:00', col2 => 8}];
+
+  $transaction->rollback;
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc', undef,
+      source_name => 'master')->all->to_a,
+     [{col1 => 'orig', col2 => 4}];
+} # _insert_transaction
+
+sub _insert_not_writable : Test(2) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 blob, col2 int unique key)
+                  engine = InnoDB',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->{sources}->{master}->{writable} = 0;
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+
+  dies_ok {
+    my $result = $table->insert
+        ([{col1 => $date1, col2 => \11},
+          {col2 => \4}]);
+  };
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [];
+} # _insert_not_writable
+
+sub _insert_not_writable_source : Test(2) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 blob, col2 int unique key)
+                  engine = InnoDB',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+
+  dies_ok {
+    my $result = $table->insert
+        ([{col1 => $date1, col2 => \11},
+          {col2 => \4}],
+         source_name => 'default');
+  };
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [];
+} # _insert_not_writable_source
+
 __PACKAGE__->runtests;
 
 1;

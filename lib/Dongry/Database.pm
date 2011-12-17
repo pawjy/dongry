@@ -225,7 +225,8 @@ sub insert ($$$;%) {
     croak 'Duplicate hash is empty' unless @col;
     my @sql_value;
     for (@col) {
-      if (defined $value->{$_} and ref $value->{$_} eq 'SCALAR') {
+      if (defined $value->{$_} and
+          ref $value->{$_} eq 'Dongry::Database::BareSQLFragment') {
         push @sql_value, (_quote $_), ${$value->{$_}};
       } else {
         push @sql_value, (_quote $_), '?';
@@ -280,7 +281,7 @@ sub _fields ($) {
         croak 'Hash reference must contain a field function name';
       }
     }
-  } elsif (ref $_[0] eq 'SCALAR') {
+  } elsif (ref $_[0] eq 'Dongry::Database::BareSQLFragment') {
     return ${$_[0]};
   } else {
     croak sprintf 'Field value %s is not supported', $_[0];
@@ -381,7 +382,8 @@ sub update ($$$$;%) {
   my @sql_value;
   my @bound_value;
   for (@col) {
-    if (defined $value->{$_} and ref $value->{$_} eq 'SCALAR') {
+    if (defined $value->{$_} and
+        ref $value->{$_} eq 'Dongry::Database::BareSQLFragment') {
       push @sql_value, (_quote $_), ${$value->{$_}};
     } else {
       push @sql_value, (_quote $_), '?';
@@ -422,6 +424,10 @@ sub delete ($$$;%) {
   $return->{table_name} = $table_name;
   return $return;
 } # delete
+
+sub bare_sql_fragment ($$) {
+  return bless \($_[1]), 'Dongry::Database::BareSQLFragment';
+} # bare_sql_fragment
 
 # ------ Schema-aware operations ------
 
@@ -646,6 +652,11 @@ sub DESTROY {
         Carp::shortmess;
   }
 } # DESTROY
+
+# ------ Bare SQL fragment ------
+
+package Dongry::Database::BareSQLFragment;
+our $VERSION = '1.0';
 
 1;
 

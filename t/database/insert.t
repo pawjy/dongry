@@ -1068,6 +1068,26 @@ sub _insert_duplicate_update_not_found : Test(2) {
               {v1 => 3, v2 => undef, v3 => undef}];
 } # _insert_duplicate_update_not_found
 
+sub _insert_duplicate_update_found_not_sql : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (v1 int unique key, v2 int, v3 blob)');
+  $db->execute ('insert into hoge (v1, v2) values (1, 2112)');
+  $db->execute ('insert into hoge (v1, v2) values (2, 422)');
+
+  my $v = \'values(v2)+3';
+  my $result = $db->insert
+      ('hoge', [{v1 => 1, v2 => 321}], duplicate => {v3 => $v});
+  is $result->row_count, 2;
+
+  eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+             [{v1 => 1, v2 => 2112, v3 => '' . $v},
+              {v1 => 2, v2 => 422, v3 => undef}];
+} # _insert_duplicate_update_found_not_sql
+
 sub _insert_duplicate_update_found_sql : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'select1';
@@ -1078,7 +1098,8 @@ sub _insert_duplicate_update_found_sql : Test(2) {
   $db->execute ('insert into hoge (v1, v2) values (2, 422)');
 
   my $result = $db->insert
-      ('hoge', [{v1 => 1, v2 => 321}], duplicate => {v3 => \'values(v2)+3'});
+      ('hoge', [{v1 => 1, v2 => 321}],
+       duplicate => {v3 => $db->bare_sql_fragment ('values(v2)+3')});
   is $result->row_count, 2;
 
   eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
@@ -1098,7 +1119,8 @@ sub _insert_duplicate_update_found_sql_2 : Test(2) {
 
   my $result = $db->insert
       ('hoge', [{v1 => 1, v2 => 321}],
-       duplicate => {v2 => \'v2 + 2', v3 => \'values(v2)+3'});
+       duplicate => {v2 => $db->bare_sql_fragment ('v2 + 2'),
+                     v3 => $db->bare_sql_fragment ('values(v2)+3')});
   is $result->row_count, 2;
 
   eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,

@@ -26,6 +26,12 @@ sub _serialize_values ($$) {
   my $schema = $self->schema;
   my $s_values = {};
   for my $name (keys %$values) {
+    if (defined $values->{$name} and
+        ref $values->{$name} eq 'Dongry::Database::BareSQLFragment') {
+      $s_values->{$name} = $values->{$name};
+      next;
+    }
+
     my $type = $schema->{type}->{$name};
     if ($type) {
       my $handler = $Dongry::Types->{$type}
@@ -45,6 +51,7 @@ sub _serialize_values ($$) {
 
 sub insert ($$;%) {
   my ($self, $data, %args) = @_;
+
   my $s_data = [];
   for my $values (@$data) {
     my $schema = $self->schema || {};
@@ -61,6 +68,10 @@ sub insert ($$;%) {
 
     my $s_values = $self->_serialize_values ($values);
     push @$s_data, $s_values;
+  }
+
+  if ($args{duplicate} and ref $args{duplicate} eq 'HASH') {
+    $args{duplicate} = $self->_serialize_values ($args{duplicate});
   }
 
   if (defined wantarray) {

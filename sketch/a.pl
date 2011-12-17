@@ -113,12 +113,12 @@ $db->execute ('select * from hoge where value is null and foo = ?',
 my $result = $db->execute ('select * from hoge where foo = 123');
 $result->table_name ('hoge');
 my $first = $result->first_as_row;
-$first->set ({value => 'abc def', value => undef, text => \"\x{1000}"});
+$first->set ({value => 'abc def', value => undef, text => $db->bare_sql_fragment ("\x{1000}")});
 
 my $row_orig = $db->table ('hoge')->insert ([{
   foo => 15222,
   value => 'a  eg aa aeee',
-  text => my $text = \"\x{2100}\x{3100}",
+  text => my $text = $db->bare_sql_fragment ("\x{2100}\x{3100}"),
 }, {
   foo => 3333,
 }])->first_as_row;
