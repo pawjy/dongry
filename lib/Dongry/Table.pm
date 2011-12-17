@@ -276,7 +276,8 @@ sub set ($$;%) {
   }
 
   my $result = $self->{db}->update
-      ($self->table_name, $s_values, $pk_values);
+      ($self->table_name, $s_values, $pk_values,
+       source_name => $args{source_name});
   croak "@{[$result->{row_count}]} rows are modified by an update"
       unless $result->{row_count} == 1;
 

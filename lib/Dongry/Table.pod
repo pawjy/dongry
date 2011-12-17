@@ -76,6 +76,10 @@ Example:
   my $result = $table->insert
       ([{value => 123, date => DateTime->now},
         {value => 124, date => DateTime->now->add (days => 1)}]);
+  # INSERT INTO `mytable1`
+  #     (`id`, `value`, `date`)
+  #     VALUES (8196, 123, '2012-01-04 01:11:12'),
+  #            (8197, 124, '2012-01-05 01:11:12')
   $result->each_row (sub {
     my $row = $_;
     print $row->get ('id'), "\t", $row->get ('date'), "\n";
@@ -106,6 +110,8 @@ Example:
   });
   my $table = $db->table ('mytable1');
   my $row = $table->create ({date => DateTime->now});
+  # INSERT INTO `mytable1`
+  #     (`id`, `date`) VALUES (124, '2012-01-04 01:11:12')
   print $row->get ('id'), "\t", $row->get ('date'), "\n";
 
 =back
@@ -222,13 +228,46 @@ This method would raises an error if there is no longer the row for
 the primary key values or there are multiple rows for the values.
 
 Following options for the C<select> method of the database object also
-applies to this method: C<source_name>, C<fields>, and C<lock>.
+apply to this method: C<source_name>, C<fields>, and C<lock>.
 
 =back
 
 =head2 Modifying values
 
-XXX
+=over 4
+
+=item $row->set ($values, %args)
+
+Set the values of columns specified to the first argument as a hash
+reference of column name/value pairs.  The values are serialized
+according to the schema definition of the table of the table row
+object.  In place of the column value a bare SQL fragment object
+(i.e. the return value of the C<bare_sql_fragment> method of the
+database object) can be specified if desired.
+
+The C<source_name> option for the C<update> method of the database
+object also applies to this method.
+
+The serialized and parsed values of the specified columns hold by the
+table row object are updated to the new value.  If the bare SQL
+fragment object is specified as the column value, later calls of
+C<get> and C<get_bare> methods for the column would raise an error.
+Likewise, once a primary key column is tainted by a bare SQL fragment
+object, the C<set> method would no longer be able to update the row
+and the C<reload> method would become useless as well.
+
+Example:
+
+  $db->schema ({table1 => {
+    primary_keys => ['id'],
+    type => {date => 'timestamp_as_DateTime'},
+  }});
+  ...
+  $row->set ({date => DateTime->now, value => 120});
+  # UPDATE `table1` SET `value` = 120, `date` = '2011-12-12 00:12:34'
+  #     WHERE `id` = 12345
+
+=back
 
 =head1 SERIALIZATION OF VALUES
 
