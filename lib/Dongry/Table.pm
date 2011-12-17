@@ -190,6 +190,7 @@ sub flags ($) {
 sub get ($$) {
   my ($self, $name) = @_;
   return $self->{parsed_data}->{$name} if exists $self->{parsed_data}->{$name};
+  croak "No data for column |$name|" unless exists $self->{data}->{$name};
 
   my $schema = $self->table_schema || do {
     carp "No schema for table |$self->{table_name}|";
@@ -208,12 +209,13 @@ sub get ($$) {
 } # get
 
 sub get_bare ($$) {
+  croak "No data for column |$_[1]|" unless exists $_[0]->{data}->{$_[1]};
   return $_[0]->{data}->{$_[1]};
 } # get_bare
 
 sub primary_key_bare_values ($) {
   my $self = shift;
-  my $schema = $self->table_schema or croak "No schema";
+  my $schema = $self->table_schema || {};
   my $pk = $schema->{primary_keys};
   croak "No primary key" if not $pk or not @$pk;
   my $data = $self->{data};
@@ -226,7 +228,14 @@ sub primary_key_bare_values ($) {
 sub reload ($;%) {
   my ($self, %args) = @_;
   my $pk_values = $self->primary_key_bare_values;
-  return $self->{db}->select ($self->table_name, $pk_values)->first_as_row;
+  my $result = $self->{db}->select
+      ($self->table_name, $pk_values, %args, limit => 2);
+  if ($result->row_count != 1) {
+    croak sprintf "There are %d rows for the primary keys", $result->row_count;
+  }
+  $self->{data} = $result->first;
+  delete $self->{parsed_data};
+  return $self;
 } # reload
 
 # ------ Modifications ------

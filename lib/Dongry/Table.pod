@@ -164,7 +164,67 @@ be set by the C<create> method of the table object.
 
 =head2 Accessing values
 
-XXX
+The table row object holds two set of column values.  One is the
+I<serialized value>, which is the stringified representation of column
+values as used in SQL statements for the database server.  The other
+is the I<parsed value>, which is in an application-specific data type
+(usually a Perl object in your favorite class).  Convertion rules
+between these values are assigned to columns by the C<type> hash
+reference in the table schema.  If no rule is assinged for the column,
+the serialized value is equal to the parsed value for its values.
+
+Example: If a column is typed as C<text> (as defined in
+L<Dongry::Type::Text>), the serialized value is a string of bytes,
+while the parsed value is a string of characters.  If a column is
+typed as C<timestamp_as_DateTime> (as defined in
+L<Dongry::Type::DateTime>), the serialized value is a date-time
+specification in C<YYYY-MM-DD HH:MM:SS> format while the parsed value
+is a Perl L<DateTime> object.
+
+=over 4
+
+=item $value = $row->get ($column_name)
+
+Get the I<parsed> value for the specified column.  If the row does not
+contain the column with the specified name, an error is raised.
+
+=item $value = $row->get_bare ($column_name)
+
+Get the serialized value (or the value in SQL) for the specified
+column.  If the row does not contain the column with the specified
+name, an error is raised.
+
+=back
+
+You are encouraged to use the C<get> method in general, but there
+might also be cases the C<get_bare> method could be useful.
+
+=over 4
+
+=item $values = $row->primary_key_bare_values
+
+Return the name/value pairs for the columns in the primary key for the
+table, as a hash reference.  Serialized values are returned by this
+method.
+
+If no primary keys are specified in the table schema, the method would
+raise an error.  If the serialized value for a column in the primary
+key is missing or is C<undef>, the method would raise an error.
+
+=item $row = $row->reload (%args)
+
+Retrieve the current row from the database using primary key values of
+the row (i.e. the values returned by the C<primary_key_bare_values>
+method of the table row object) and update values of the I<current>
+row object by them.
+
+This method would raises an error if there is no longer the row for
+the primary key values or there are multiple rows for the values.
+
+Following options for the C<select> method of the database object also
+applies to this method: C<source_name>, C<fields>, and C<lock>.
+
+=back
 
 =head2 Modifying values
 
