@@ -686,9 +686,9 @@ sub _fields_valid : Test(29) {
     [['a', 'bcd'], '`a`, `bcd`'],
     [['a', "\x{4010}\x{124}ab"], qq{`a`, `\x{4010}\x{124}ab`}],
     [['a', ['b', ['c']]] => '`a`, `b`, `c`'],
-    [\'ab cde' => 'ab cde'],
-    [\"ab\x{8000} cde" => "ab\x{8000} cde"],
-    [['a', \'count(b) as c'] => '`a`, count(b) as c'],
+    [$db->bare_sql_fragment ('ab cde') => 'ab cde'],
+    [$db->bare_sql_fragment ("ab\x{8000} cde") => "ab\x{8000} cde"],
+    [['a', $db->bare_sql_fragment ('count(b) as c')] => '`a`, count(b) as c'],
     [{-count => undef} => 'COUNT(*)'],
     [{-count => 1} => 'COUNT(`1`)'],
     [{-count => 'a'} => 'COUNT(`a`)'],
@@ -857,7 +857,8 @@ sub _select_fields_bare : Test(1) {
   
   my $result = $db->select
       ('foo', {id => {'>', 0}},
-       fields => \'min(id) as min, max(id) as max, min(id) + max(id) as mm');
+       fields => $db->bare_sql_fragment
+           ('min(id) as min, max(id) as max, min(id) + max(id) as mm'));
   eq_or_diff $result->all->to_a,
       [{min => 10, max => 12, mm => 22}];
 } # _select_fields_bare
@@ -871,7 +872,8 @@ sub _select_fields_column_error : Test(1) {
   $db->execute ('create table foo (id int, v1 text, v2 text)');
 
   dies_ok {
-    my $result = $db->select ('foo', {id => {'>', 0}}, fields => \'hoge');
+    my $result = $db->select ('foo', {id => {'>', 0}},
+                              fields => $db->bare_sql_fragment ('hoge'));
   };
 } # _select_fields_column_error
 
@@ -884,7 +886,8 @@ sub _select_fields_struct_error : Test(1) {
   $db->execute ('create table foo (id int, v1 text, v2 text)');
 
   dies_ok {
-    my $result = $db->select ('foo', {id => {'>', 0}}, fields => [\\'hoge']);
+    my $result = $db->select ('foo', {id => {'>', 0}},
+                              fields => [$db->bare_sql_fragment (\'hoge')]);
   };
 } # _select_fields_struct_error
 

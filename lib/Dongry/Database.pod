@@ -484,6 +484,9 @@ columns, i.e. C<*>, are selected.
 
 If a string is specified, that is considered as a column name.
 
+If a bare SQL fragment object (returned by the C<bare_sql_fragment>
+method) is specified, the specified string is used as is.
+
 Hash references with name-value pairs are converted to function calls
 whose function name is specified by the key and the argument is
 specified by the value.  Following function names are available:
