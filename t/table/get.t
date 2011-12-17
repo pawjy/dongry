@@ -253,6 +253,31 @@ sub _get_data_from_insert : Test(4) {
   ng ref $str1;
 } # _get_data_from_insert
 
+sub _get_bare_sql_fragment : Test(2) {
+  my $schema = {
+    table1 => {
+      type => {
+        col3 => 'timestamp_as_DateTime',
+      },
+      _create => 'create table table1 (col3 timestamp, col2 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  
+  my $date0 = DateTime->new (year => 2001, month => 4, day => 1);
+  my $row = $db->table ('table1')->create
+      ({col3 => $date0, col2 => 'abc def'});
+  $row->{data}->{col3} = $db->bare_sql_fragment ('NOW()');
+
+  dies_ok {
+    my $date1 = $row->get ('col3');
+  };
+
+  dies_ok {
+    my $str1 = $row->get_bare ('col3');
+  };
+} # _get_bare_sql_fragment
+
 # ------ |primary_key_bare_values| ------
 
 sub _primary_key_bare_values_multiple_column_key_1 : Test(1) {
@@ -426,6 +451,27 @@ sub _primary_key_bare_values_no_schema : Test(1) {
     my $pk = $row->primary_key_bare_values;
   };
 } # _primary_key_bare_values_no_schema
+
+sub _primary_key_bare_values_bare_sql_fragment : Test(1) {
+  my $schema = {
+    table1 => {
+      primary_keys => [qw/col3/],
+      type => {
+        col3 => 'timestamp_as_DateTime',
+      },
+      _create => 'create table table1 (col3 timestamp, col2 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->insert ('table1', [{col3 => '2001-04-01 00:00:00', col2 => 'abc def'}]);
+
+  my $row = $db->select ('table1', {col2 => 'abc def'})->first_as_row;
+  $row->{data}->{col3} = $db->bare_sql_fragment ('NOW()');
+
+  dies_ok {
+    my $pk = $row->primary_key_bare_values;
+  };
+} # _primary_key_bare_values_a_key
 
 # ------ |reload| ------
 

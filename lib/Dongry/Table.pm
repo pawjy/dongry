@@ -189,8 +189,10 @@ sub flags ($) {
 
 sub get ($$) {
   my ($self, $name) = @_;
+  croak "No data for column |$name|"
+      if not exists $self->{data}->{$name} or
+         ref $self->{data}->{$name} eq 'Dongry::Database::BareSQLFragment';
   return $self->{parsed_data}->{$name} if exists $self->{parsed_data}->{$name};
-  croak "No data for column |$name|" unless exists $self->{data}->{$name};
 
   my $schema = $self->table_schema || do {
     carp "No schema for table |$self->{table_name}|";
@@ -209,7 +211,9 @@ sub get ($$) {
 } # get
 
 sub get_bare ($$) {
-  croak "No data for column |$_[1]|" unless exists $_[0]->{data}->{$_[1]};
+  croak "No data for column |$_[1]|"
+      if not exists $_[0]->{data}->{$_[1]} or
+         ref $_[0]->{data}->{$_[1]} eq 'Dongry::Database::BareSQLFragment';
   return $_[0]->{data}->{$_[1]};
 } # get_bare
 
@@ -220,7 +224,9 @@ sub primary_key_bare_values ($) {
   croak "No primary key" if not $pk or not @$pk;
   my $data = $self->{data};
   return {map {
-    croak "Primary key |$_| has no value" unless defined $data->{$_};
+    croak "Primary key |$_| has no value"
+        if not defined $data->{$_} or
+           ref $data->{$_} eq 'Dongry::Database::BareSQLFragment';
     ($_ => $data->{$_});
   } @$pk};
 } # primary_key_bare_values
