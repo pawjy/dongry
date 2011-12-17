@@ -29,7 +29,8 @@ Return the I<table name> for the table object.
 =item $table_schema = $table->schema
 
 Return the definition applied for the table in the schema specified
-for the database object associated with the table object.
+for the database object associated with the table object.  If no such
+definition is available, C<undef> is returned instead.
 
 =back
 
@@ -92,7 +93,7 @@ row object for the inserted row rather than generic result object.
 
 This method applies an extract feature to flag the row object.  If you
 specify a hash reference as the value of the C<flags> option to the
-method, you can access them via the C<flag> method of the table row
+method, you can access them via the C<flags> method of the table row
 object returned by the C<create> method.
 
 Example:
@@ -108,6 +109,64 @@ Example:
   print $row->get ('id'), "\t", $row->get ('date'), "\n";
 
 =back
+
+XXX
+
+=head1 METHODS OF TABLE ROW OBJECT
+
+The table row object represents a row in the table, i.e. pairs of
+column names and values bound to a specific table name in a particular
+database.
+
+Please note that what the table row object represents might or might
+not be same as the table row in the actual database depending on how
+the object has been created.  If the table row object is retrieved
+from the result object of the C<insert> method, the table row object
+is created from the argument given by the application, not from the
+actual data from the database.  If the table row object is retrieved
+from the result object of the C<select> method with the C<fields>
+option specified, the set of columns included in the table row object
+could be slightly different from those of the table.  Once the table
+row is updated by a call to the C<set> method with a bare SQL fragment
+object, the table row object would contain a bare SQL fragment object
+as the value, rather than the result of the modification happened at
+the database.  Ignoring these inconsistency would cause your data
+broken, or at least it would cause your application acting wrongly.
+
+You can retrieve table row objects from various methods of the result
+object.  Methods providing access to the row object is suffixed by
+C<_as_row> or C<_as_rows>.  For more information see
+L<Dongry::Database> documentation.
+
+=head2 Properties
+
+=over 4
+
+=item $name = $row->table_name
+
+The I<table name> to which the row object is bound.
+
+=item $name = $row->table_schema
+
+The table schema definition for the table to which the row object is
+bound.  It would be same value as the C<schema> method of the table
+object with the same I<table name> as the row object returns.  If no
+such definition is available, C<undef> is returned instead.
+
+=item $value = $row->flags->{$key}
+
+=item $row->flags->{$key} = $value
+
+Get or set an application-specific key-value pair.  The flags can also
+be set by the C<create> method of the table object.
+
+=back
+
+=head2 Accessing values
+
+XXX
+
+=head2 Modifying values
 
 XXX
 

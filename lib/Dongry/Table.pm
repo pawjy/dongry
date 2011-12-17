@@ -7,10 +7,14 @@ use List::Rubyish;
 
 push our @CARP_NOT, qw(Dongry::Database);
 
+# ------------ Tables ------------
+
 sub new ($;%) {
   my $class = shift;
   return bless {@_}, $class;
 } # new
+
+# ------ Property accessors ------
 
 sub name ($) {
   return $_[0]->{name};
@@ -20,6 +24,8 @@ sub schema ($) {
   my $schema = $_[0]->{db}->schema or return undef;
   return $schema->{$_[0]->{name}}; # or undef
 } # schema
+
+# ------ Serialization ------
 
 sub _serialize_values ($$) {
   my ($self, $values) = @_;
@@ -94,6 +100,8 @@ sub create ($$;%) {
 
 # ------ Retrieval ------
 
+# XXX tests
+
 sub find ($$;%) {
   my ($self, $values, %args) = @_;
   #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
@@ -105,6 +113,8 @@ sub find ($$;%) {
                 lock => $args{lock})
       ->first_as_row;
 } # find
+
+# XXX search
 
 sub search_and_fill_as_row ($$$$$$;%) {
   my ($self,
@@ -152,11 +162,15 @@ sub search_and_fill_pair_as_row ($$$$$$$$;%) {
       for @$list;
 } # search_and_fill_pair_as_row
 
+# ------------ Table rows ------------
+
 package Dongry::Table::Row;
 our $VERSION = '1.0';
 use Carp;
 
 our $CARP_NOT = qw(Dongry::Table);
+
+# ------ Property accessors ------
 
 sub table_name ($) {
   return $_[0]->{table_name};
@@ -166,6 +180,12 @@ sub table_schema ($) {
   my $schema = $_[0]->{db}->schema or return undef;
   return $schema->{$_[0]->{table_name}}; # or undef
 } # table_schema
+
+sub flags ($) {
+  return $_[0]->{flags} ||= {};
+} # flags
+
+# ------ Value accessors ------
 
 sub get ($$) {
   my ($self, $name) = @_;
@@ -191,10 +211,8 @@ sub get_bare ($$) {
   return $_[0]->{data}->{$_[1]};
 } # get_bare
 
-sub primary_key_values ($) {
+sub primary_key_bare_values ($) {
   my $self = shift;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-
   my $schema = $self->table_schema or croak "No schema";
   my $pk = $schema->{primary_keys};
   croak "No primary key" if not $pk or not @$pk;
@@ -203,14 +221,21 @@ sub primary_key_values ($) {
     croak "Primary key |$_| has no value" unless defined $data->{$_};
     ($_ => $data->{$_});
   } @$pk};
-} # primary_key_values
+} # primary_key_bare_values
+
+sub reload ($;%) {
+  my ($self, %args) = @_;
+  my $pk_values = $self->primary_key_bare_values;
+  return $self->{db}->select ($self->table_name, $pk_values)->first_as_row;
+} # reload
+
+# ------ Modifications ------
 
 sub set ($$;%) {
   my ($self, $values, %args) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
   croak "No value to set" unless keys %$values;
 
-  my $pk_values = $self->primary_key_values;
+  my $pk_values = $self->primary_key_bare_values;
   for (keys %$pk_values) {
     croak "Cannot modify primary key column |$_|" if exists $values->{$_};
   }
@@ -238,16 +263,6 @@ sub set ($$;%) {
     $self->{parsed_data}->{$_} = $values->{$_};
   }
 } # set
-
-sub flags ($) {
-  return $_[0]->{flags} ||= {};
-} # flags
-
-sub reload ($;%) {
-  my ($self, %args) = @_;
-  my $pk_values = $self->primary_key_values;
-  return $self->{db}->select ($self->table_name, $pk_values)->first_as_row;
-} # reload
 
 1;
 

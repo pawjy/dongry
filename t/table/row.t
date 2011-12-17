@@ -42,6 +42,26 @@ sub _table_schema_found : Test(1) {
   eq_or_diff $row->table_schema, {abac => 1};
 } # _table_schema_found
 
+sub _flags_none : Test(2) {
+  my $db = Dongry::Database->new;
+  my $row = new_row db => $db, table_name => 'hoge';
+
+  is $row->flags->{hoge}, undef;
+  
+  $row->flags->{hoge} = 1253;
+  is $row->flags->{hoge}, 1253;
+} # _flags_none
+
+sub _flags_specified : Test(2) {
+  my $db = Dongry::Database->new;
+  my $row = new_row db => $db, table_name => 'hoge', flags => {foo => 124};
+
+  is $row->flags->{foo}, 124;
+  
+  $row->flags->{foo} = 1253;
+  is $row->flags->{foo}, 1253;
+} # _flags_specified
+
 __PACKAGE__->runtests;
 
 1;
