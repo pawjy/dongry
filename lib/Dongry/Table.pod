@@ -1,0 +1,129 @@
+=head1 NAME
+
+Dongry::Table - Database tables and rows
+
+=head1 DESCRIPTION
+
+XXX
+
+=head1 METHODS OF TABLE OBJECT
+
+The table object represents a table in some database.  The table is
+bound to a database object and has a I<table name>.
+
+A table object can be retrieved from the database object using the
+C<table> method as follows:
+
+  $table = $db->table ('table_name');
+
+=head2 Properties
+
+There are following accessors for the table object:
+
+=over 4
+
+=item $name = $table->name
+
+Return the I<table name> for the table object.
+
+=item $table_schema = $table->schema
+
+Return the definition applied for the table in the schema specified
+for the database object associated with the table object.
+
+=back
+
+=head2 Insertion
+
+There are two methods to insert rows into the table, where one is a
+shorthand for the other method:
+
+=over 4
+
+=item $result = $table->insert ([$values1, $values2, ...], %args)
+
+Insert one or more rows specified in the first argument to the table.
+Unlike the C<insert> method of the I<database> object, the C<insert>
+method of the table object serialize the given values according to the
+schema definition of the table.  The C<insert> method also fills the
+default values defined in the table definition.
+
+Options C<source_name> and C<duplicate> are also applied to this
+method.  See the C<insert> method of the database object for more
+information.  In addition, when a I<values> hash reference is
+specified as the C<duplicate> option, the I<values> is serialized as
+per the table schema as well.
+
+The rows objects accessible from the result object returned by this
+method would hold both I<parsed> and I<serialized> values - the
+I<parsed> values are the values specified as the argument to this
+method, while the I<serialized> values are stringified representation
+of them.  Both set of values would contain any default values.
+
+See the following section on the serialization for more information on
+how values are converted into SQL statements.
+
+Example:
+
+  $db->schema ({
+    mytable1 => {
+      type => {date => 'timestamp_as_DateTime'},
+      default => {id => sub { return generate_unique_id () }},
+    },
+  });
+  my $table = $db->table ('mytable1');
+  my $result = $table->insert
+      ([{value => 123, date => DateTime->now},
+        {value => 124, date => DateTime->now->add (days => 1)}]);
+  $result->each_row (sub {
+    my $row = $_;
+    print $row->get ('id'), "\t", $row->get ('date'), "\n";
+  });
+
+=item $row = $table->create ($values, %args)
+
+Insert a row specified as the first argument.  This is just a
+shorthand for the most common use of the C<insert> method and
+therefore all consideration for the C<insert> method also applies to
+this method.  Unlike the generic C<insert> method this method only
+inserts a row, and receives it directly as the first argument, not as
+an array reference.  In addition, this method directly returns a table
+row object for the inserted row rather than generic result object.
+
+This method applies an extract feature to flag the row object.  If you
+specify a hash reference as the value of the C<flags> option to the
+method, you can access them via the C<flag> method of the table row
+object returned by the C<create> method.
+
+Example:
+
+  $db->schema ({
+    mytable1 => {
+      type => {date => 'timestamp_as_DateTime'},
+      default => {id => sub { return generate_unique_id () }},
+    },
+  });
+  my $table = $db->table ('mytable1');
+  my $row = $table->create ({date => DateTime->now});
+  print $row->get ('id'), "\t", $row->get ('date'), "\n";
+
+=back
+
+XXX
+
+=head1 SERIALIZATION OF VALUES
+
+XXX
+
+=head1 AUTHOR
+
+Wakaba <w@suika.fam.cx>.
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

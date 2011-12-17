@@ -49,6 +49,8 @@ sub _serialize_values ($$) {
   return $s_values;
 } # _serialize_values
 
+# ------ Insertion ------
+
 sub insert ($$;%) {
   my ($self, $data, %args) = @_;
 
@@ -85,11 +87,12 @@ sub insert ($$;%) {
 
 sub create ($$;%) {
   my ($self, $values, %args) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
   my $row = $self->insert ([$values], %args)->first_as_row;
   $row->{flags} = $args{flags} if $args{flags};
   return $row;
 } # create
+
+# ------ Retrieval ------
 
 sub find ($$;%) {
   my ($self, $values, %args) = @_;

@@ -25,6 +25,8 @@ sub new_db (%) {
   return $db;
 } # new_db
 
+# ------ |insert| ------
+
 sub _insert_fully_serialized : Test(1) {
   my $schema = {
     table1 => {
@@ -51,6 +53,34 @@ sub _insert_fully_serialized : Test(1) {
      [{col1 => '2001-12-02 15:00:00', col2 => 'abc def'},
       {col1 => '2001-03-12 00:00:00', col2 => undef}];
 } # _insert_fully_serialized
+
+sub _insert_fully_serialized_list : Test(1) {
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  $table->insert
+      (List::Rubyish->new
+           ([{col1 => DateTime->new (year => 2001, month => 12, day => 3,
+                                    time_zone => 'Asia/Tokyo'),
+             col2 => \"abc def"},
+            {col1 => DateTime->new (year => 2001, month => 3, day => 12,
+                                    time_zone => 'UTC'),
+             col2 => \undef}]));
+  
+  eq_or_diff $db->execute
+     ('select * from table1 order by col1 desc')->all->to_a,
+     [{col1 => '2001-12-02 15:00:00', col2 => 'abc def'},
+      {col1 => '2001-03-12 00:00:00', col2 => undef}];
+} # _insert_fully_serialized_list
 
 sub _insert_not_serialized : Test(1) {
   my $schema = {
@@ -386,6 +416,40 @@ sub _insert_return_all : Test(5) {
   eq_or_diff $rows->[1],
       {col1 => '2005-12-04 00:00:00', col2 => undef};
 } # _insert_return_all
+
+sub _insert_return_all_list : Test(5) {
+  my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      default => {
+        col1 => sub { $date0 },
+        col2 => sub { \"ab cd" },
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob, col3 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+  my $result = $table->insert
+      (List::Rubyish->new ([{col1 => $date1, col2 => undef, col3 => 'abc'},
+                            {col2 => \undef}]));
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 2;
+  my $rows = $result->all;
+  isa_list_n_ok $rows, 2;
+
+  eq_or_diff $rows->[0],
+      {col1 => '2001-12-02 15:00:00', col2 => 'ab cd', col3 => 'abc'};
+  eq_or_diff $rows->[1],
+      {col1 => '2005-12-04 00:00:00', col2 => undef};
+} # _insert_return_all_list
 
 sub _insert_return_all_as_rows : Test(11) {
   my $date0 = DateTime->new (year => 2005, month => 12, day => 4);
@@ -831,6 +895,200 @@ sub _insert_not_writable_source : Test(2) {
      ('select * from table1 order by col2 desc')->all->to_a,
      [];
 } # _insert_not_writable_source
+
+sub _insert_not_arrayref : Test(2) {
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  dies_ok { 
+    $table->insert
+        ({col1 => DateTime->new (year => 2001, month => 12, day => 3,
+                                 time_zone => 'Asia/Tokyo'),
+          col2 => \"abc def"});
+  };
+  
+  eq_or_diff $db->execute
+     ('select * from table1 order by col1 desc')->all->to_a,
+     [];
+} # _insert_not_arrayref
+
+# ------ |create| ------
+
+sub _create_inserted_serialized : Test(6) {
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 blob, col2 int unique key)
+                  engine = InnoDB',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
+                             time_zone => 'Asia/Tokyo');
+
+  my $v2 = \11;
+  my $row = $table->create ({col1 => $date1, col2 => $v2});
+  isa_ok $row, 'Dongry::Table::Row';
+  is $row->table_name, 'table1';
+  is $row->{db}, $db;
+  eq_or_diff $row->{data}, {col1 => '2001-12-02 15:00:00', col2 => 11};
+  eq_or_diff $row->{parsed_data}, {col1 => $date1, col2 => $v2};
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [{col1 => '2001-12-02 15:00:00', col2 => 11}];
+} # _create_inserted_serialized
+
+sub _create_inserted_not_serialized : Test(6) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (col1 blob, col2 int unique key)
+                  engine = InnoDB',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  my $row = $table->create ({col1 => '2001-12-02 15:00:00', col2 => 11});
+  isa_ok $row, 'Dongry::Table::Row';
+  is $row->table_name, 'table1';
+  is $row->{db}, $db;
+  eq_or_diff $row->{data}, {col1 => '2001-12-02 15:00:00', col2 => 11};
+  eq_or_diff $row->{parsed_data}, {col1 => '2001-12-02 15:00:00', col2 => 11};
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [{col1 => '2001-12-02 15:00:00', col2 => 11}];
+} # _create_inserted_not_serialized
+
+sub _create_inserted_semi_serialized : Test(6) {
+  my $schema = {
+    table1 => {
+      type => {col1 => 'as_ref'},
+      _create => 'create table table1 (col1 blob, col2 int unique key)
+                  engine = InnoDB',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  my $col1 = \'2001-12-02 15:00:00';
+  my $row = $table->create ({col1 => $col1, col2 => 11});
+  isa_ok $row, 'Dongry::Table::Row';
+  is $row->table_name, 'table1';
+  is $row->{db}, $db;
+  eq_or_diff $row->{data}, {col1 => '2001-12-02 15:00:00', col2 => 11};
+  eq_or_diff $row->{parsed_data}, {col1 => $col1, col2 => 11};
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [{col1 => '2001-12-02 15:00:00', col2 => 11}];
+} # _create_inserted_semi_serialized
+
+sub _create_duplicate_error : Test(2) {
+  my $schema = {
+    table1 => {
+      type => {col1 => 'as_ref'},
+      _create => 'create table table1 (col1 blob, col2 int unique key)
+                  engine = InnoDB',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->execute ('insert into table1 (col1, col2) values ("", 11)');
+
+  my $table = $db->table ('table1');
+  my $col1 = \'2001-12-02 15:00:00';
+  dies_ok {
+    my $row = $table->create ({col1 => $col1, col2 => 11});
+  };
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [{col1 => '', col2 => 11}];
+} # _create_duplicate_error
+
+sub _create_duplicate_ignore : Test(6) {
+  my $schema = {
+    table1 => {
+      type => {col1 => 'as_ref'},
+      _create => 'create table table1 (col1 blob, col2 int unique key)
+                  engine = InnoDB',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->execute ('insert into table1 (col1, col2) values ("", 11)');
+
+  my $table = $db->table ('table1');
+  my $col1 = \'2001-12-02 15:00:00';
+  my $row = $table->create ({col1 => $col1, col2 => 11},
+                            duplicate => 'ignore');
+  isa_ok $row, 'Dongry::Table::Row';
+  is $row->table_name, 'table1';
+  is $row->{db}, $db;
+  eq_or_diff $row->{data}, {col1 => '2001-12-02 15:00:00', col2 => 11};
+  eq_or_diff $row->{parsed_data}, {col1 => $col1, col2 => 11};
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [{col1 => '', col2 => 11}];
+} # _create_duplicate_ignore
+
+sub _create_inserted_flags : Test(7) {
+  my $schema = {
+    table1 => {
+      type => {col1 => 'as_ref'},
+      _create => 'create table table1 (col1 blob, col2 int unique key)
+                  engine = InnoDB',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  my $col1 = \'2001-12-02 15:00:00';
+  my $flags = {hoge => [1, 44]};
+  my $row = $table->create ({col1 => $col1, col2 => 11}, flags => $flags);
+  isa_ok $row, 'Dongry::Table::Row';
+  is $row->table_name, 'table1';
+  is $row->{db}, $db;
+  eq_or_diff $row->{data}, {col1 => '2001-12-02 15:00:00', col2 => 11};
+  eq_or_diff $row->{parsed_data}, {col1 => $col1, col2 => 11};
+  eq_or_diff $row->{flags}, $flags;
+
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [{col1 => '2001-12-02 15:00:00', col2 => 11}];
+} # _create_inserted_flags
+
+sub _create_no_value : Test(1) {
+  my $schema = {
+    table1 => {
+      type => {col1 => 'as_ref'},
+      _create => 'create table table1 (col1 blob, col2 int unique key)
+                  engine = InnoDB',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $table = $db->table ('table1');
+  my $row = $table->create ({});
+  eq_or_diff $db->execute
+     ('select * from table1 order by col2 desc')->all->to_a,
+     [{col1 => undef, col2 => undef}];
+} # _create_no_value
 
 __PACKAGE__->runtests;
 
