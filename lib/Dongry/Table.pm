@@ -152,11 +152,6 @@ sub search_and_fill_pair_as_row ($$$$$$$$;%) {
       for @$list;
 } # search_and_fill_pair_as_row
 
-sub new_row ($%) {
-  my $class = shift;
-  return bless {@_}, $class . '::Row';
-} # new
-
 package Dongry::Table::Row;
 our $VERSION = '1.0';
 use Carp;

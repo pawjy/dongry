@@ -499,8 +499,8 @@ sub each_as_row ($$) {
   my $db = $self->{db};
   require Dongry::Table;
   $self->each (sub {
-    local $_ = Dongry::Table->new_row
-        (db => $db, table_name => $tn, data => $_);
+    local $_ = bless {db => $db, table_name => $tn, data => $_},
+        'Dongry::Table::Row';
     $code->();
   });
 } # each_as_row
@@ -517,7 +517,8 @@ sub all_as_rows ($) {
   my $db = $_[0]->{db};
   require Dongry::Table;
   return scalar $_[0]->all->map(sub {
-    return Dongry::Table->new_row (db => $db, table_name => $tn, data => $_);
+    return bless {db => $db, table_name => $tn, data => $_},
+        'Dongry::Table::Row';
   });
 } # all_as_rows
 
@@ -533,10 +534,9 @@ sub first_as_row ($) {
   croak 'Table name is not known' unless $self->{table_name};
   my $data = $self->first or return undef;
   require Dongry::Table;
-  return Dongry::Table->new_row
-      (db => $self->{db},
-       table_name => $self->{table_name},
-       data => $data);
+  return bless {db => $self->{db},
+                table_name => $self->{table_name},
+                data => $data}, 'Dongry::Table::Row';
 } # first_as_row
 
 sub DESTROY {
@@ -564,10 +564,10 @@ sub each_as_row ($$) {
   my $db = $self->{db};
   require Dongry::Table;
   for (0..$#$data) {
-    local $_ = Dongry::Table->new_row
-        (db => $db, table_name => $tn, data => $data->[$_],
-         $self->{parsed_data}
-             ? (parsed_data => $self->{parsed_data}->[$_]) : ());
+    local $_ = bless {db => $db, table_name => $tn, data => $data->[$_],
+                      $self->{parsed_data}
+                          ? (parsed_data => $self->{parsed_data}->[$_]) : ()},
+                     'Dongry::Table::Row';
     $code->();
   }
 } # each_as_row
@@ -588,10 +588,10 @@ sub all_as_rows ($) {
   my $db = $self->{db};
   require Dongry::Table;
   return List::Rubyish->new([map {
-    Dongry::Table->new_row
-        (db => $db, table_name => $tn, data => $data->[$_],
-         $self->{parsed_data}
-             ? (parsed_data => $self->{parsed_data}->[$_]) : ());
+    bless {db => $db, table_name => $tn, data => $data->[$_],
+           $self->{parsed_data}
+               ? (parsed_data => $self->{parsed_data}->[$_]) : ()},
+          'Dongry::Table::Row';
   } 0..$#$data]);
 } # all_as_rows
 
@@ -611,12 +611,13 @@ sub first_as_row ($) {
   return undef unless $data->[0];
 
   require Dongry::Table;
-  return Dongry::Table->new_row
-      (db => $self->{db},
+  return bless 
+      {db => $self->{db},
        table_name => $self->{table_name},
        data => $data->[0],
        ($self->{parsed_data}
-            ? (parsed_data => $self->{parsed_data}->[0]) : ()));
+           ? (parsed_data => $self->{parsed_data}->[0]) : ())},
+      'Dongry::Table::Row';
 } # first_as_row
 
 # ------ Transaction ------
