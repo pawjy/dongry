@@ -251,20 +251,27 @@ sub set ($$;%) {
   croak "No value to set" unless keys %$values;
 
   my $pk_values = $self->primary_key_bare_values;
-  for (keys %$pk_values) {
-    croak "Cannot modify primary key column |$_|" if exists $values->{$_};
-  }
 
   my $schema = $self->table_schema || {};
   my $s_values = {};
   for my $name (keys %$values) {
+    if (defined $values->{$name} and
+        ref $values->{$name} eq 'Dongry::Database::BareSQLFragment') {
+      $s_values->{$name} = $values->{$name};
+      next;
+    }
+
     my $type = $schema->{type}->{$name};
     if ($type) {
       my $handler = $Dongry::Types->{$type}
           or croak "Type handler for |$type| is not defined";
       $s_values->{$name} = $handler->{serialize}->($values->{$name});
     } else {
-      $s_values->{$name} = $values->{$name};
+      if (defined $values->{$name} and ref $values->{$name}) {
+        croak "Type for |$name| is not defined but a reference is specified";
+      } else {
+        $s_values->{$name} = $values->{$name};
+      }
     }
   }
 
