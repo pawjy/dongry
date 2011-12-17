@@ -435,10 +435,10 @@ $Dongry::Types ||= {};
 
 $Dongry::Types->{as_ref} = {
   parse => sub {
-    return \($_[0]);
+    return defined $_[0] ? \($_[0]) : undef;
   },
   serialize => sub {
-    return ${$_[0]};
+    return defined $_[0] ? ${$_[0]} : undef;
   },
 }; # as_ref
 
