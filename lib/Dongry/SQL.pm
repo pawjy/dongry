@@ -7,6 +7,8 @@ use Exporter::Lite;
 
 our @EXPORT;
 
+our $SortKeys;
+
 ## <http://dev.mysql.com/doc/refman/5.6/en/identifiers.html>.
 push @EXPORT, qw(quote);
 sub quote ($) {
@@ -52,8 +54,8 @@ sub fields ($) {
 } # fields
 
 push @EXPORT, qw(where);
-sub where ($$) {
-  my ($self, $values) = @_;
+sub where ($;$) {
+  my ($values, $table_schema) = @_;
 
   if (ref $values eq 'HASH') {
     my @and;
@@ -95,6 +97,13 @@ sub where ($$) {
         push @placeholder, $values->{$key};
       }
       push @and, $sql;
+    }
+
+    if (@and) {
+      @and = sort { $a cmp $b } @and if $SortKeys;
+      return ((join ' AND ', @and), \@placeholder);
+    } else {
+      return (undef, []);
     }
   }
 
