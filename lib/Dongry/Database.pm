@@ -11,6 +11,7 @@ push our @CARP_NOT, qw(
   Dongry::Database::Executed Dongry::Database::Executed::Inserted
   Dongry::Database::Transaction 
   Dongry::Table Dongry::Table::Row Dongry::Query
+  Dongry::SQL
   SQL::Abstract SQL::NamedPlaceholder
 );
 
@@ -177,6 +178,13 @@ sub execute ($$;$%) {
 
 # ------ Structured SQL executions ------
 
+use Dongry::SQL ();
+BEGIN {
+  *_quote = \&Dongry::SQL::quote;
+  *_fields = \&Dongry::SQL::fields;
+  *_order = \&Dongry::SQL::order;
+}
+
 sub set_tz ($;$%) {
   my ($self, $tz, %args) = @_;
   $tz ||= '+00:00';
@@ -184,13 +192,6 @@ sub set_tz ($;$%) {
                   source_name => $args{source_name},
                   even_if_read_only => 1);
 } # set_tz
-
-## <http://dev.mysql.com/doc/refman/5.6/en/identifiers.html>.
-sub _quote ($) {
-  my $s = $_[0];
-  $s =~ s/`/``/g;
-  return q<`> . $s . q<`>;
-} # _quote
 
 sub insert ($$$;%) {
   my ($self, $table_name, $data, %args) = @_;
@@ -253,41 +254,6 @@ sub last_insert_id ($) {
   return $dbh->last_insert_id (undef, undef, undef, undef);
 } # last_insert_id
 
-sub _fields ($);
-sub _fields ($) {
-  if (not defined $_[0]) {
-    return '*';
-  } elsif (not ref $_[0]) {
-    return _quote $_[0];
-  } elsif (ref $_[0] eq 'ARRAY') {
-    if (@{$_[0]}) {
-      return join ', ', map { _fields ($_) } @{$_[0]};
-    } else {
-      croak 'Array reference cannot be empty';
-    }
-  } elsif (ref $_[0] eq 'HASH') {
-    my $func = [grep { /^-/ } keys %{$_[0]}]->[0] || '';
-    if ($func =~ /\A-(count|min|max|sum)\z/) {
-      my $v = (uc $1) . '(';
-      $v .= 'DISTINCT ' if $_[0]->{distinct};
-      $v .= _fields ($_[0]->{$func});
-      $v .= ')';
-      $v .= ' AS ' . _quote $_[0]->{as} if defined $_[0]->{as};
-      return $v;
-    } else {
-      if ($func) {
-        croak sprintf 'Field function %s is not supported', $func;
-      } else {
-        croak 'Hash reference must contain a field function name';
-      }
-    }
-  } elsif (ref $_[0] eq 'Dongry::Database::BareSQLFragment') {
-    return ${$_[0]};
-  } else {
-    croak sprintf 'Field value %s is not supported', $_[0];
-  }
-} # _fields
-
 sub _where ($$) {
   my $self = shift;
   #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
@@ -305,29 +271,6 @@ sub _where ($$) {
     croak 'Where parameter is broken';
   }
 } # _where
-
-sub _order ($$) {
-  if (defined $_[1]) {
-    my @s;
-    for (0..(int (($#{$_[1]} + 2) / 2) - 1)) {
-      push @s, (_quote $_[1]->[$_ * 2]) . ' ' . (
-        {
-          'ASC' => 'ASC',
-          'asc' => 'ASC',
-          '1' => 'ASC',
-          '+1' => 'ASC',
-          'DESC' => 'DESC',
-          'desc' => 'DESC',
-          '-1' => 'DESC',
-        }->{$_[1]->[$_ * 2 + 1] || 'ASC'} or
-        (croak sprintf 'Unknown order: %s', $_[1]->[$_ * 2 + 1])
-      );
-    }
-    return ' ORDER BY ' . join ', ', @s;
-  } else {
-    return '';
-  }
-} # _order
 
 sub select ($$$;%) {
   my ($self, $table_name, $where, %args) = @_;
