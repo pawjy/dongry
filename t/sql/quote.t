@@ -5,7 +5,7 @@ use Path::Class;
 use lib file (__FILE__)->dir->parent->subdir ('lib')->stringify;
 use Test::Dongry;
 use base qw(Test::Class);
-use Dongry::SQL;
+use Dongry::SQL qw(quote);
 use Encode;
 
 sub _quote : Test(8) {
@@ -21,7 +21,24 @@ sub _quote : Test(8) {
   ) {
     is quote $_->[0] => $_->[1];
   }
-} # _version
+} # _quote
+
+sub _like : Test(10) {
+  for (
+      [undef, undef],
+      ['' => ''],
+      ['abc' => 'abc'],
+      ['abv def' => 'abv def'],
+      ['a`bc\\' => 'a`bc\\\\'],
+      ['```' => '```'],
+      ["\x{5000}" => "\x{5000}"],
+      [(encode 'utf-8', "\x{5000}") => (encode 'utf-8', "\x{5000}")],
+      ['\%_' => '\\\\\\%\\_'],
+      ['aq%%_b%ca%AX\e' => 'aq\\%\\%\\_b\\%ca\\%AX\\\\e'],
+  ) {
+    is Dongry::SQL::like $_->[0] => $_->[1];
+  }
+} # _like
 
 __PACKAGE__->runtests;
 

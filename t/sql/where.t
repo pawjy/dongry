@@ -9,7 +9,7 @@ use Dongry::SQL;
 
 $Dongry::SQL::SortKeys = 1;
 
-sub _where_valid_hashref_string : Test(2) {
+sub _where_valid_hashref : Test(35) {
   for (
       [{} => [undef, []]],
       [{foo => undef} => ['`foo` IS NULL', []]],
@@ -32,6 +32,19 @@ sub _where_valid_hashref_string : Test(2) {
       [{foo => {'>' => 'bar'}} => ['`foo` > ?', ['bar']]],
       [{foo => {-ge => 'bar'}} => ['`foo` >= ?', ['bar']]],
       [{foo => {'>=' => 'bar'}} => ['`foo` >= ?', ['bar']]],
+      [{foo => {-regexp => '^b.*\+ar?'}} => ['`foo` REGEXP ?', ['^b.*\+ar?']]],
+      [{foo => {-like => 'b\%a_ar'}} => ['`foo` LIKE ?', ['b\%a_ar']]],
+      [{foo => {-prefix => 'b\%a_a'}} => ['`foo` LIKE ?', ['b\\\\\\%a\\_a%']]],
+      [{foo => {-suffix => 'b\%a_a'}} => ['`foo` LIKE ?', ['%b\\\\\\%a\\_a']]],
+      [{foo => {-infix => 'b\%a_a'}} => ['`foo` LIKE ?', ['%b\\\\\\%a\\_a%']]],
+      [{foo => {-in => ['a']}} => ['`foo` IN (?)', ['a']]],
+      [{foo => {-in => [1, 'a']}} => ['`foo` IN (?, ?)', ['1', 'a']]],
+      [{foo => {-in => [1, 'a', 33]}}
+           => ['`foo` IN (?, ?, ?)', ['1', 'a', 33]]],
+      [{foo => {-in => bless [1, 'a', 33], 'List::Rubyish'}}
+           => ['`foo` IN (?, ?, ?)', ['1', 'a', 33]]],
+      [{foo => {-in => bless [1, 'a', 33], 'DBIx::MoCo::List'}}
+           => ['`foo` IN (?, ?, ?)', ['1', 'a', 33]]],
       [{foo => 'bar', 'baz' => 'hoge'}
            => ['`baz` = ? AND `foo` = ?', ['hoge', 'bar']]],
       [{foo => 'bar', 'baz' => undef}
@@ -44,7 +57,7 @@ sub _where_valid_hashref_string : Test(2) {
   ) {
     eq_or_diff [where ($_->[0])], $_->[1];
   }
-} # _where_valid_hashref_string
+} # _where_valid_hashref
 
 __PACKAGE__->runtests;
 

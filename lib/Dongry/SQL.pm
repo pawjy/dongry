@@ -17,6 +17,14 @@ sub quote ($) {
   return q<`> . $s . q<`>;
 } # quote
 
+## <http://dev.mysql.com/doc/refman/5.6/en/string-literals.html>.
+push @EXPORT, qw(like);
+sub like ($) {
+  my $s = $_[0];
+  $s =~ s/([\\%_])/\\$1/g;
+  return $s;
+} # like
+
 push @EXPORT, qw(fields);
 sub fields ($);
 sub fields ($) {
@@ -73,6 +81,10 @@ sub where ($;$) {
             -le => '<=', '<=' => '<=',
             -gt => '>',  '>'  => '>',
             -ge => '>=', '>=' => '>=',
+            -like => 'LIKE',
+            -prefix => 'LIKE', -infix => 'LIKE', -suffix => 'LIKE',
+            -regexp => 'REGEXP',
+            -in => '-in',
         }->{$type} || '';
         if (not $op) {
           croak "...";
@@ -84,11 +96,28 @@ sub where ($;$) {
           } else {
             croak "...";
           }
+        } elsif ($op eq '-in') {
+          my $list = $values->{$key}->{$type};
+          croak "List for -in is empty" unless @$list;
+          $sql .= ' IN (' . (join ', ', ('?') x @$list) . ')';
+          push @placeholder, grep {
+            croak "An undef is found in -in list" if not defined $_;
+            croak "A reference is found in -in list" if ref $_;
+            1;
+          } @$list;
         } elsif (ref $values->{$key}->{$type}) {
           croak "...";
         } else {
           $sql .= ' ' . $op . ' ?';
-          push @placeholder, $values->{$key}->{$type};
+          if ($type eq '-prefix') {
+            push @placeholder, like ($values->{$key}->{$type}) . '%';
+          } elsif ($type eq '-suffix') {
+            push @placeholder, '%' . like ($values->{$key}->{$type});
+          } elsif ($type eq '-infix') {
+            push @placeholder, '%' . like ($values->{$key}->{$type}) . '%';
+          } else {
+            push @placeholder, $values->{$key}->{$type};
+          }
         }
       } elsif (ref $values->{$key}) {
         croak "...";
