@@ -265,6 +265,60 @@ sub _where_named_unknown_instruction : Test(1) {
   };
 } # _where_named_unknown_instruction
 
+sub _where_named_sub : Test(3) {
+  for (
+    [['foo = ? AND :bar:sub',
+      foo => 1254,
+      bar => {hoge => 1, fuga => {'!=', 2}}]
+         => ['foo = ? AND (`fuga` != ? AND `hoge` = ?)', [1254, 2, 1]]],
+    [['foo = ? AND :bar:optsub',
+      foo => 1254,
+      bar => {hoge => 1, fuga => {'!=', 2}}]
+         => ['foo = ? AND (`fuga` != ? AND `hoge` = ?)', [1254, 2, 1]]],
+    [['foo = ? AND :bar:optsub', foo => 1254, bar => {}]
+         => ['foo = ? AND (1 = 1)', [1254]]],
+  ) {
+    eq_or_diff [where $_->[0]], $_->[1];
+  }
+} # _where_named_sub
+
+sub _where_named_sub_bad_value : Test(17) {
+  for (
+    [':foo:sub' => undef],
+    [':foo:sub' => 'abc'],
+    [':foo:sub' => \'xyz'],
+    [':foo:sub' => []],
+    [':foo:sub' => [foo => 124]],
+    [':foo:sub' => ['hoge => :abc', abc => 123]],
+    [':foo:sub' => {}],
+    [':foo:sub' => bless {}, 'test:foo'],
+    [':foo:sub' => {foo => {-unknown => 12}}],
+    [':foo:optsub' => undef],
+    [':foo:optsub' => 'abc'],
+    [':foo:optsub' => \'xyz'],
+    [':foo:optsub' => []],
+    [':foo:optsub' => [foo => 124]],
+    [':foo:optsub' => ['hoge => :abc', abc => 123]],
+    [':foo:optsub' => bless {}, 'test:foo'],
+    [':foo:optsub' => {foo => {-unknown => 12}}],
+  ) {
+    dies_here_ok {
+      where $_;
+    };
+  }
+} # _where_named_sub_bad_value
+
+sub _where_bad_values : Test(8) {
+  dies_here_ok { where undef };
+  dies_here_ok { where '' };
+  dies_here_ok { where 0 };
+  dies_here_ok { where 'foo' };
+  dies_here_ok { where \'foo' };
+  dies_here_ok { where bless {}, 'test::hoge' };
+  dies_here_ok { where bless [], 'test::foo' };
+  dies_here_ok { where bless [], 'List::Rubyish' };
+} # _where_bad_values
+
 __PACKAGE__->runtests;
 
 1;

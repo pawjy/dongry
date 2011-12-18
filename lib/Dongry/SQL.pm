@@ -62,9 +62,9 @@ sub fields ($) {
 } # fields
 
 push @EXPORT, qw(where);
+sub where ($;$);
 sub where ($;$) {
   my ($values, $table_schema) = @_;
-
   if (ref $values eq 'HASH') {
     my @and;
     my @placeholder;
@@ -159,16 +159,28 @@ sub where ($;$) {
       my $type = ref ($bind{$key});
       delete $unused{$key};
 
-      if ($instruction eq 'sub' or $instruction eq 'optsub') {
-        # XXX
+      if (not defined $bind{$key}) {
+        croak "Value for |$key| is not defined";
+      } elsif ($instruction eq 'sub' or $instruction eq 'optsub') {
+        croak "A non-reference value is specified for |$key|" unless $type;
+        croak "A reference is specified for |$key|" if $type ne 'HASH';
+
+        if (keys %{$bind{$key}}) {
+          my ($sql, $bind) = where $bind{$key}, $table_schema;
+          push @placeholder, @$bind;
+          '(' . $sql . ')';
+        } else {
+          if ($instruction eq 'optsub') {
+            '(1 = 1)';
+          } else {
+            croak "An empty hash reference is specified for |$key|";
+          }
+        }
       } elsif ($instruction eq 'id') {
-        croak "An undef is specified for |$key|" if not defined $bind{$key};
         croak "A reference is specified for |$key|" if $type;
         quote $bind{$key};
       } elsif (length $instruction) {
         croak "Instruction |$instruction| is unknown";
-      } elsif (not defined $bind{$key}) {
-        croak "Value for |$key| is not defined";
       } elsif ($type eq 'ARRAY') {
         if (@{$bind{$key}}) {
           push @placeholder, grep { 
@@ -194,10 +206,9 @@ sub where ($;$) {
     }
 
     return ($sql, \@placeholder);
+  } else {
+    croak "Unknown where value |$values| is specified";
   }
-
-  # XXX
-
 } # where
 
 push @EXPORT, qw(order);
