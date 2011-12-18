@@ -145,6 +145,7 @@ sub where ($;$) {
 
     $sql =~ s{((`?)(\w+?)\2\s*(=|<=?|>=?|<>|!=|<=>)\s*)\?\s*}{$1:$3 }g;
 
+    my %unused = map { $_ => 1 } keys %bind;
     my @placeholder;
     $sql =~ s{:(\w+)(?::(:?\w+))?}{
       my $key = $1;
@@ -153,6 +154,7 @@ sub where ($;$) {
         croak "Value for |$key| is not defined";
       }
       my $type = ref ($bind{$key});
+      delete $unused{$key};
       if ($type eq 'ARRAY') {
         if (@{$bind{$key}}) {
           push @placeholder, grep { 
@@ -171,6 +173,11 @@ sub where ($;$) {
         '?';
       }
     }eg;
+
+    if (keys %unused) {
+      croak sprintf "Values %s are not used",
+          join ', ', map { "|$_|" } keys %unused;
+    }
 
     return ($sql, \@placeholder);
   }

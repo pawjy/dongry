@@ -205,30 +205,41 @@ sub _where_named_not_specified : Test(2) {
   dies_here_ok { where [''] };
 } # _where_named_not_specified
 
-sub _where_named_not_defined : Test(4) {
+sub _where_named_not_defined : Test(6) {
   dies_here_ok { where [':hoge'] };
   dies_here_ok { where [':hoge', fuga => 1] };
   dies_here_ok { where ['hoge fuga = ?', fuga => undef] };
   dies_here_ok { where ['(:hoge)', hoge => [1, undef]] };
+  dies_here_ok { where [':hoge' => 124] };
+  dies_here_ok { where [':hoge and :foo', foo => (), hoge => 124] };
 } # _where_named_not_defined
 
 sub _where_named_ref : Test(9) {
   for (
-    [':hoge' => \undef],
-    [':hoge' => \'abc'],
-    [':hoge' => {foo => 'bar'}],
-    [':hoge' => bless [], 'test::hoge'],
-    ['(:hoge)' => [undef]],
-    ['(:hoge)' => [12, 44, \'']],
-    ['(:hoge)' => [12, 44, [foo => 443]]],
-    ['(:hoge)' => [12, 44, {foo => 52}]],
-    ['(:hoge)' => [12, 44, bless {}, 'test::hogexs']],
+    [':hoge', hoge => \undef],
+    [':hoge', hoge => \'abc'],
+    [':hoge', hoge => {foo => 'bar'}],
+    [':hoge', hoge => bless [], 'test::hoge'],
+    ['(:hoge)', hoge => [undef]],
+    ['(:hoge)', hoge => [12, 44, \'']],
+    ['(:hoge)', hoge => [12, 44, [foo => 443]]],
+    ['(:hoge)', hoge => [12, 44, {foo => 52}]],
+    ['(:hoge)', hoge => [12, 44, bless {}, 'test::hogexs']],
   ) {
     dies_here_ok {
       where $_;
     };
   }
 } # _where_named_ref
+
+sub _where_named_unused : Test(2) {
+  dies_here_ok {
+    where ['hoge', hoge => 123];
+  };
+  dies_here_ok {
+    where ['hoge = :fuga', fuga => 123, foo => 51];
+  };
+} # _where_named_unused
 
 __PACKAGE__->runtests;
 
