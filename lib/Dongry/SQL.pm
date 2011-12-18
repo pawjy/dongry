@@ -138,6 +138,41 @@ sub where ($;$) {
     } else {
       croak "No condition is specified";
     }
+  } elsif (ref $values eq 'ARRAY') {
+    my ($sql, %bind) = @$values;
+    croak 'No SQL template is specified'
+        if not defined $sql or not length $sql;
+
+    $sql =~ s{((`?)(\w+?)\2\s*(=|<=?|>=?|<>|!=|<=>)\s*)\?\s*}{$1:$3 }g;
+
+    my @placeholder;
+    $sql =~ s{:(\w+)(?::(:?\w+))?}{
+      my $key = $1;
+      my $column = defined $2 ? $2 : $key;
+      if (not defined $bind{$key}) {
+        croak "Value for |$key| is not defined";
+      }
+      my $type = ref ($bind{$key});
+      if ($type eq 'ARRAY') {
+        if (@{$bind{$key}}) {
+          push @placeholder, grep { 
+            croak "An undef is found in |$key| list" if not defined $_;
+            croak "A reference is found in |$key| list" if ref $_;
+            1;
+          } @{$bind{$key}};
+          join ', ', map { '?' } @{$bind{$key}};
+        } else {
+          croak "List for |$key| is empty";
+        }
+      } elsif ($type) {
+        croak "A reference is specified for |$key|";
+      } else {
+        push @placeholder, $bind{$key};
+        '?';
+      }
+    }eg;
+
+    return ($sql, \@placeholder);
   }
 
   # XXX

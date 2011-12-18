@@ -6,6 +6,7 @@ use lib file (__FILE__)->dir->parent->subdir ('lib')->stringify;
 use Test::Dongry;
 use base qw(Test::Class);
 use Dongry::SQL;
+use Encode;
 
 $Dongry::SQL::SortKeys = 1;
 
@@ -163,6 +164,71 @@ sub _where_empty : Test(1) {
     where {};
   };
 } # _where_empty
+
+sub _where_named : Test(25) {
+  for (
+    [[' '] => [' ', []]],
+    [['hoge fuga'] => ['hoge fuga', []]],
+    [['hoge :fuga', fuga => 'abc'] => ['hoge ?', ['abc']]],
+    [['hoge :fuga :fuga', fuga => 'abc'] => ['hoge ? ?', ['abc', 'abc']]],
+    [['hoge :fuga:fuga', fuga => 'abc'] => ['hoge ?', ['abc']]],
+    [['hoge :fug_a', fug_a => 'abc'] => ['hoge ?', ['abc']]],
+    [['hoge :fuga :foo', fuga => 'abc', foo => 124]
+         => ['hoge ? ?', ['abc', '124']]],
+    [['hoge fuga ?'] => ['hoge fuga ?', []]],
+    [['hoge fuga = ?', fuga => 'abc'] => ['hoge fuga = ? ', ['abc']]],
+    [['hoge fuga = ?', fuga => "\x{500}"] => ['hoge fuga = ? ', ["\x{500}"]]],
+    [['hoge fuga = ?', fuga => encode 'utf-8', "\x{500}"]
+         => ['hoge fuga = ? ', [encode 'utf-8', "\x{500}"]]],
+    [['hoge fu_ga = ?', fu_ga => 'abc'] => ['hoge fu_ga = ? ', ['abc']]],
+    [['hoge `fuga` = ?', fuga => 'abc'] => ['hoge `fuga` = ? ', ['abc']]],
+    [['hoge fuga < ?', fuga => 151] => ['hoge fuga < ? ', [151]]],
+    [['hoge fuga <= ?', fuga => 151] => ['hoge fuga <= ? ', [151]]],
+    [['hoge fuga > ?', fuga => 151] => ['hoge fuga > ? ', [151]]],
+    [['hoge fuga >= ?', fuga => 151] => ['hoge fuga >= ? ', [151]]],
+    [['hoge fuga <> ?', fuga => 151] => ['hoge fuga <> ? ', [151]]],
+    [['hoge fuga != ?', fuga => 151] => ['hoge fuga != ? ', [151]]],
+    [['hoge fuga <=> ?', fuga => 151] => ['hoge fuga <=> ? ', [151]]],
+    [['foo=?and (bar=?)', foo => 1, bar => 2]
+         => ['foo=? and (bar=? )', [1, 2]]],
+    [['fuga IN (:foo)', foo => [1]] => ['fuga IN (?)', [1]]],
+    [['fuga IN (:foo)', foo => [1, 2]] => ['fuga IN (?, ?)', [1, 2]]],
+    [['fuga IN (:foo)', foo => [1, 2, 4]] => ['fuga IN (?, ?, ?)', [1, 2, 4]]],
+    [['hoge = ?and', hoge => 'abc'] => ['hoge = ? and', ['abc']]],
+  ) {
+    eq_or_diff [where $_->[0]], $_->[1];
+  }
+} # _where_named
+
+sub _where_named_not_specified : Test(2) {
+  dies_here_ok { where [] };
+  dies_here_ok { where [''] };
+} # _where_named_not_specified
+
+sub _where_named_not_defined : Test(4) {
+  dies_here_ok { where [':hoge'] };
+  dies_here_ok { where [':hoge', fuga => 1] };
+  dies_here_ok { where ['hoge fuga = ?', fuga => undef] };
+  dies_here_ok { where ['(:hoge)', hoge => [1, undef]] };
+} # _where_named_not_defined
+
+sub _where_named_ref : Test(9) {
+  for (
+    [':hoge' => \undef],
+    [':hoge' => \'abc'],
+    [':hoge' => {foo => 'bar'}],
+    [':hoge' => bless [], 'test::hoge'],
+    ['(:hoge)' => [undef]],
+    ['(:hoge)' => [12, 44, \'']],
+    ['(:hoge)' => [12, 44, [foo => 443]]],
+    ['(:hoge)' => [12, 44, {foo => 52}]],
+    ['(:hoge)' => [12, 44, bless {}, 'test::hogexs']],
+  ) {
+    dies_here_ok {
+      where $_;
+    };
+  }
+} # _where_named_ref
 
 __PACKAGE__->runtests;
 
