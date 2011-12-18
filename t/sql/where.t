@@ -9,16 +9,21 @@ use Dongry::SQL;
 
 $Dongry::SQL::SortKeys = 1;
 
-sub _where_valid_hashref : Test(35) {
+sub _where_valid_hashref : Test(48) {
   for (
-      [{} => [undef, []]],
       [{foo => undef} => ['`foo` IS NULL', []]],
+      [{foo => ''} => ['`foo` = ?', ['']]],
+      [{foo => '0'} => ['`foo` = ?', ['0']]],
       [{foo => 'bar'} => ['`foo` = ?', ['bar']]],
       [{foo => {-eq => undef}} => ['`foo` IS NULL', []]],
+      [{foo => {-eq => ''}} => ['`foo` = ?', ['']]],
+      [{foo => {-eq => '0'}} => ['`foo` = ?', ['0']]],
       [{foo => {-eq => 'bar'}} => ['`foo` = ?', ['bar']]],
       [{foo => {'==' => undef}} => ['`foo` IS NULL', []]],
       [{foo => {'==' => 'bar'}} => ['`foo` = ?', ['bar']]],
       [{foo => {-ne => undef}} => ['`foo` IS NOT NULL', []]],
+      [{foo => {-ne => ''}} => ['`foo` != ?', ['']]],
+      [{foo => {-ne => '0'}} => ['`foo` != ?', ['0']]],
       [{foo => {-ne => 'bar'}} => ['`foo` != ?', ['bar']]],
       [{foo => {-not => undef}} => ['`foo` IS NOT NULL', []]],
       [{foo => {-not => 'bar'}} => ['`foo` != ?', ['bar']]],
@@ -34,9 +39,17 @@ sub _where_valid_hashref : Test(35) {
       [{foo => {'>=' => 'bar'}} => ['`foo` >= ?', ['bar']]],
       [{foo => {-regexp => '^b.*\+ar?'}} => ['`foo` REGEXP ?', ['^b.*\+ar?']]],
       [{foo => {-like => 'b\%a_ar'}} => ['`foo` LIKE ?', ['b\%a_ar']]],
+      [{foo => {-prefix => ''}} => ['`foo` LIKE ?', ['%']]],
+      [{foo => {-prefix => '0'}} => ['`foo` LIKE ?', ['0%']]],
       [{foo => {-prefix => 'b\%a_a'}} => ['`foo` LIKE ?', ['b\\\\\\%a\\_a%']]],
+      [{foo => {-suffix => ''}} => ['`foo` LIKE ?', ['%']]],
+      [{foo => {-suffix => '0'}} => ['`foo` LIKE ?', ['%0']]],
       [{foo => {-suffix => 'b\%a_a'}} => ['`foo` LIKE ?', ['%b\\\\\\%a\\_a']]],
+      [{foo => {-infix => ''}} => ['`foo` LIKE ?', ['%%']]],
+      [{foo => {-infix => '0'}} => ['`foo` LIKE ?', ['%0%']]],
       [{foo => {-infix => 'b\%a_a'}} => ['`foo` LIKE ?', ['%b\\\\\\%a\\_a%']]],
+      [{foo => {-in => ['']}} => ['`foo` IN (?)', ['']]],
+      [{foo => {-in => ['0']}} => ['`foo` IN (?)', ['0']]],
       [{foo => {-in => ['a']}} => ['`foo` IN (?)', ['a']]],
       [{foo => {-in => [1, 'a']}} => ['`foo` IN (?, ?)', ['1', 'a']]],
       [{foo => {-in => [1, 'a', 33]}}
@@ -58,6 +71,98 @@ sub _where_valid_hashref : Test(35) {
     eq_or_diff [where ($_->[0])], $_->[1];
   }
 } # _where_valid_hashref
+
+sub _where_bad_operator : Test(6) {
+  for (
+      {foo => {}},
+      {foo => {-hoge => 1243}},
+      {foo => {eq => 1243}},
+      {foo => {'-' => 1243}},
+      {foo => {-0 => 1243}},
+      {foo => {0 => 1243}},
+  ) {
+    dies_here_ok {
+      where $_;
+    };
+  }
+} # _where_bad_operator
+
+sub _where_undef_value : Test(11) {
+  for (
+      {foo => {-le => undef}},
+      {foo => {-ge => undef}},
+      {foo => {-lt => undef}},
+      {foo => {-gt => undef}},
+      {foo => {-like => undef}},
+      {foo => {-prefix => undef}},
+      {foo => {-suffix => undef}},
+      {foo => {-infix => undef}},
+      {foo => {-in => undef}},
+      {foo => {-in => [undef]}},
+      {foo => {-in => [124, undef]}},
+  ) {
+    dies_here_ok {
+      where $_;
+    };
+  }
+} # _where_undef_value
+
+sub _where_ref_value : Test(18) {
+  for (
+      {foo => \'abc'},
+      {foo => ['abc']},
+      {foo => bless ['abc'], 'test::hoge'},
+      {foo => {-lt => \'abc'}},
+      {foo => {-lt => ['abc']}},
+      {foo => {-lt => {'abc' => 4}}},
+      {foo => {-lt => bless {'abc' => 4}, 'test::hoge'}},
+      {foo => {-regexp => \'abc'}},
+      {foo => {-prefix => \'abc'}},
+      {foo => {-prefix => ['abc']}},
+      {foo => {-prefix => ['abc', {cd => 12}]}},
+      {foo => {-in => [\'']}},
+      {foo => {-in => [\'abc']}},
+      {foo => {-in => [bless [], 'test::hoge']}},
+      {foo => {-in => [{'abc' => 5}]}},
+      {foo => {-in => [['abc']]}},
+      {foo => {-in => [124, \'abc']}},
+      {foo => {-in => [124, \'abc', bless {}, 'test::hofe']}},
+  ) {
+    dies_here_ok {
+      where $_;
+    };
+  }
+} # _where_ref_value
+
+sub _where_empty_value : Test(3) {
+  for (
+      {foo => {-in => []}},
+      {foo => {-in => bless [], 'List::Rubyish'}},
+      {foo => {-in => bless [], 'DBIx::MoCo::List'}},
+  ) {
+    dies_here_ok {
+      where $_;
+    };
+  }
+} # _where_empty_value
+
+sub _where_bad_value : Test(3) {
+  for (
+      {foo => {-in => 'abc'}},
+      {foo => {-in => {}}},
+      {foo => {-in => bless {}, 'test::hofe'}},
+  ) {
+    dies_ok {
+      where $_;
+    };
+  }
+} # _where_bad_value
+
+sub _where_empty : Test(1) {
+  dies_here_ok {
+    where {};
+  };
+} # _where_empty
 
 __PACKAGE__->runtests;
 

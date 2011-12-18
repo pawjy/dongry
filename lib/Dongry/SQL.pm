@@ -85,28 +85,32 @@ sub where ($;$) {
             -prefix => 'LIKE', -infix => 'LIKE', -suffix => 'LIKE',
             -regexp => 'REGEXP',
             -in => '-in',
-        }->{$type} || '';
+        }->{$type || ''} || '';
         if (not $op) {
-          croak "...";
+          if (defined $type) {
+            croak "Unknown operator |$type|";
+          } else {
+            croak "No operator specified";
+          }
         } elsif (not defined $values->{$key}->{$type}) {
           if ($op eq '=') {
             $sql .= ' IS NULL';
           } elsif ($op eq '!=') {
             $sql .= ' IS NOT NULL';
           } else {
-            croak "...";
+            croak "Operator |$type| does not allow an undef value";
           }
         } elsif ($op eq '-in') {
           my $list = $values->{$key}->{$type};
-          croak "List for -in is empty" unless @$list;
+          croak "List for |-in| is empty" unless @$list;
           $sql .= ' IN (' . (join ', ', ('?') x @$list) . ')';
           push @placeholder, grep {
-            croak "An undef is found in -in list" if not defined $_;
-            croak "A reference is found in -in list" if ref $_;
+            croak "An undef is found in |-in| list" if not defined $_;
+            croak "A reference is found in |-in| list" if ref $_;
             1;
           } @$list;
         } elsif (ref $values->{$key}->{$type}) {
-          croak "...";
+          croak "A reference is specified for |$key|";
         } else {
           $sql .= ' ' . $op . ' ?';
           if ($type eq '-prefix') {
@@ -120,7 +124,7 @@ sub where ($;$) {
           }
         }
       } elsif (ref $values->{$key}) {
-        croak "...";
+        croak "A reference is specified for |$key|";
       } else {
         $sql .= ' = ?';
         push @placeholder, $values->{$key};
@@ -132,7 +136,7 @@ sub where ($;$) {
       @and = sort { $a cmp $b } @and if $SortKeys;
       return ((join ' AND ', @and), \@placeholder);
     } else {
-      return (undef, []);
+      croak "No condition is specified";
     }
   }
 

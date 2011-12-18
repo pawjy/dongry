@@ -8,10 +8,11 @@ use base qw(Test::Class);
 use Dongry::SQL qw(quote);
 use Encode;
 
-sub _quote : Test(8) {
+sub _quote : Test(9) {
   for (
       [undef, '``'],
       ['' => '``'],
+      ['0' => '`0`'],
       ['abc' => '`abc`'],
       ['abv def' => '`abv def`'],
       ['a`bc\\' => '`a``bc\`'],
@@ -23,10 +24,11 @@ sub _quote : Test(8) {
   }
 } # _quote
 
-sub _like : Test(10) {
+sub _like : Test(11) {
   for (
       [undef, undef],
       ['' => ''],
+      ['0' => '0'],
       ['abc' => 'abc'],
       ['abv def' => 'abv def'],
       ['a`bc\\' => 'a`bc\\\\'],
