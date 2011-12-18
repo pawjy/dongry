@@ -6,6 +6,7 @@ use lib file (__FILE__)->dir->parent->subdir ('lib')->stringify;
 use Test::Dongry;
 use base qw(Test::Class);
 use Dongry::SQL;
+use Dongry::Type::DateTime;
 use Encode;
 
 $Dongry::SQL::SortKeys = 1;
@@ -318,6 +319,72 @@ sub _where_bad_values : Test(8) {
   dies_here_ok { where bless [], 'test::foo' };
   dies_here_ok { where bless [], 'List::Rubyish' };
 } # _where_bad_values
+
+sub _where_hashref_parsed : Test(17) {
+  for (
+    [{foo => undef},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` = ?', ['0000-00-00 00:00:00']]],
+    [{foo => DateTime->new (year => 2001, month => 12, day => 3)},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` = ?', ['2001-12-03 00:00:00']]],
+    [{foo => {-eq => DateTime->new (year => 2001, month => 12, day => 3)}},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` = ?', ['2001-12-03 00:00:00']]],
+    [{foo => {-ne => DateTime->new (year => 2001, month => 12, day => 3)}},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` != ?', ['2001-12-03 00:00:00']]],
+    [{foo => {-lt => DateTime->new (year => 2001, month => 12, day => 3)}},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` < ?', ['2001-12-03 00:00:00']]],
+    [{foo => {-le => DateTime->new (year => 2001, month => 12, day => 3)}},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` <= ?', ['2001-12-03 00:00:00']]],
+    [{foo => {-gt => DateTime->new (year => 2001, month => 12, day => 3)}},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` > ?', ['2001-12-03 00:00:00']]],
+    [{foo => {-ge => DateTime->new (year => 2001, month => 12, day => 3)}},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` >= ?', ['2001-12-03 00:00:00']]],
+    [{foo => {-like => DateTime->new (year => 2001, month => 12, day => 3)}},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` LIKE ?', ['2001-12-03 00:00:00']]],
+    [{foo => {-prefix => DateTime->new (year => 2001, month => 12, day => 3)}},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` LIKE ?', ['2001-12-03 00:00:00%']]],
+    [{foo => {-suffix => DateTime->new (year => 2001, month => 12, day => 3)}},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` LIKE ?', ['%2001-12-03 00:00:00']]],
+    [{foo => {-infix => DateTime->new (year => 2001, month => 12, day => 3)}},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` LIKE ?', ['%2001-12-03 00:00:00%']]],
+    [{foo => {-regexp => DateTime->new (year => 2001, month => 12, day => 3)}},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` REGEXP ?', ['2001-12-03 00:00:00']]],
+    [{foo => {-in => [DateTime->new (year => 2001, month => 12, day => 3),
+                      DateTime->new (year => 2010, month => 10, day => 21)]}},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` IN (?, ?)', ['2001-12-03 00:00:00', '2010-10-21 00:00:00']]],
+    [{foo => {-in => [DateTime->new (year => 2001, month => 12, day => 3),
+                      DateTime->new (year => 2010, month => 10, day => 21),
+                      undef]}},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` IN (?, ?, ?)', ['2001-12-03 00:00:00',
+                             '2010-10-21 00:00:00',
+                             '0000-00-00 00:00:00']]],
+    [{foo => {-lt => undef}},
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['`foo` < ?', ['0000-00-00 00:00:00']]],
+    [['1 AND :hoge:sub',
+      hoge => {foo => DateTime->new (year => 2001, month => 12, day => 3)}],
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['1 AND (`foo` = ?)', ['2001-12-03 00:00:00']]],
+  ) {
+    eq_or_diff [where $_->[0], $_->[1]] => $_->[2];
+  }
+} # _where_hashref_parsed
+
+# XXX tests for croaked cases
 
 __PACKAGE__->runtests;
 

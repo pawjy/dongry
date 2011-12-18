@@ -70,11 +70,12 @@ sub where ($;$) {
     my @placeholder;
     for my $key (keys %$values) {
       my $sql = quote $key;
-      if (not defined $values->{$key}) {
-        $sql .= ' IS NULL';
-      } elsif (ref $values->{$key} eq 'HASH') {
-        my $type = [grep { /^[-<>!=]/ } keys %{$values->{$key}}]->[0];
-        my $op = {
+      my $type;
+      my $op;
+      my $value;
+      if (defined $values->{$key} and ref $values->{$key} eq 'HASH') {
+        $type = [grep { /^[-<>!=]/ } keys %{$values->{$key}}]->[0];
+        $op = {
             -eq => '=',  '==' => '=',
             -ne => '!=', '!=' => '!=', -not => '!=',
             -lt => '<',  '<'  => '<',
@@ -85,14 +86,50 @@ sub where ($;$) {
             -prefix => 'LIKE', -infix => 'LIKE', -suffix => 'LIKE',
             -regexp => 'REGEXP',
             -in => '-in',
-        }->{$type || ''} || '';
-        if (not $op) {
-          if (defined $type) {
-            croak "Unknown operator |$type|";
-          } else {
-            croak "No operator specified";
+        }->{$type || ''} or croak "No known operator is specified for |$key|";
+
+        if ($op eq '-in') {
+          my $list = $values->{$key}->{$type};
+          croak "List for |-in| is empty" if not $list or not @$list;
+          $sql .= ' IN (' . (join ', ', ('?') x @$list) . ')';
+          my $coltype = $table_schema->{type}->{$key};
+          my $handler;
+          if ($coltype) {
+            $handler = $Dongry::Types->{$coltype}
+                or croak "Type handler for |$coltype| is not defined";
           }
-        } elsif (not defined $values->{$key}->{$type}) {
+          push @placeholder, grep {
+            croak "An undef is found in |-in| list" if not defined $_;
+            croak "A reference is found in |-in| list" if ref $_;
+            1;
+          } map {
+            if ($coltype) {
+              $handler->{serialize}->($_);
+            } else {
+              $_;
+            }
+          } @$list;
+        } else {
+          $value = $values->{$key}->{$type};
+        } # $op
+      } else {
+        $type = '-eq';
+        $op = '=';
+        $value = $values->{$key};
+      } # $values->{$key}
+
+      unless ($type eq '-in') {
+        my $coltype = $table_schema->{type}->{$key};
+        if ($coltype) {
+          my $handler = $Dongry::Types->{$coltype}
+              or croak "Type handler for |$coltype| is not defined";
+          $value = $handler->{serialize}->($value);
+        } else {
+          if (defined $value and ref $value) {
+            croak "Type for |$key| is not defined but a reference is specified";
+          }
+        }
+        if (not defined $value) {
           if ($op eq '=') {
             $sql .= ' IS NULL';
           } elsif ($op eq '!=') {
@@ -100,37 +137,22 @@ sub where ($;$) {
           } else {
             croak "Operator |$type| does not allow an undef value";
           }
-        } elsif ($op eq '-in') {
-          my $list = $values->{$key}->{$type};
-          croak "List for |-in| is empty" unless @$list;
-          $sql .= ' IN (' . (join ', ', ('?') x @$list) . ')';
-          push @placeholder, grep {
-            croak "An undef is found in |-in| list" if not defined $_;
-            croak "A reference is found in |-in| list" if ref $_;
-            1;
-          } @$list;
-        } elsif (ref $values->{$key}->{$type}) {
-          croak "A reference is specified for |$key|";
         } else {
           $sql .= ' ' . $op . ' ?';
           if ($type eq '-prefix') {
-            push @placeholder, like ($values->{$key}->{$type}) . '%';
+            push @placeholder, like ($value) . '%';
           } elsif ($type eq '-suffix') {
-            push @placeholder, '%' . like ($values->{$key}->{$type});
+            push @placeholder, '%' . like ($value);
           } elsif ($type eq '-infix') {
-            push @placeholder, '%' . like ($values->{$key}->{$type}) . '%';
+            push @placeholder, '%' . like ($value) . '%';
           } else {
-            push @placeholder, $values->{$key}->{$type};
+            push @placeholder, $value;
           }
-        }
-      } elsif (ref $values->{$key}) {
-        croak "A reference is specified for |$key|";
-      } else {
-        $sql .= ' = ?';
-        push @placeholder, $values->{$key};
-      }
+        } # $value
+      } # $type
+
       push @and, $sql;
-    }
+    } # $values
 
     if (@and) {
       @and = sort { $a cmp $b } @and if $SortKeys;
