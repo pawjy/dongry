@@ -16,7 +16,14 @@ sub _version : Test(4) {
 
 sub _inheritance : Test(1) {
   ok +Dongry::Database::Executed::Inserted->isa ('Dongry::Database::Executed');
-}
+} # _inheritance
+
+sub _not_imported : Test(4) {
+  dies_ok { Dongry::Database->quote };
+  dies_ok { Dongry::Database->fields };
+  dies_ok { Dongry::Database->where };
+  dies_ok { Dongry::Database->order };
+} # _not_imported
 
 # ------ Instantiation ------
 

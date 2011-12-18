@@ -1,0 +1,37 @@
+package test::Dongry::SQL::quote;
+use strict;
+use warnings;
+use Path::Class;
+use lib file (__FILE__)->dir->parent->subdir ('lib')->stringify;
+use Test::Dongry;
+use base qw(Test::Class);
+use Dongry::SQL;
+use Encode;
+
+sub _quote : Test(8) {
+  for (
+      [undef, '``'],
+      ['' => '``'],
+      ['abc' => '`abc`'],
+      ['abv def' => '`abv def`'],
+      ['a`bc\\' => '`a``bc\`'],
+      ['```' => '````````'],
+      ["\x{5000}" => "`\x{5000}`"],
+      [(encode 'utf-8', "\x{5000}") => (encode 'utf-8', "`\x{5000}`")],
+  ) {
+    is quote $_->[0] => $_->[1];
+  }
+} # _version
+
+__PACKAGE__->runtests;
+
+1;
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

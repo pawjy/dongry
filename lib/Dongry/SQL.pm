@@ -3,14 +3,19 @@ use strict;
 use warnings;
 our $VERSION = '1.0';
 use Carp;
+use Exporter::Lite;
+
+our @EXPORT;
 
 ## <http://dev.mysql.com/doc/refman/5.6/en/identifiers.html>.
+push @EXPORT, qw(quote);
 sub quote ($) {
   my $s = $_[0];
   $s =~ s/`/``/g;
   return q<`> . $s . q<`>;
 } # quote
 
+push @EXPORT, qw(fields);
 sub fields ($);
 sub fields ($) {
   if (not defined $_[0]) {
@@ -46,7 +51,8 @@ sub fields ($) {
   }
 } # fields
 
-sub where2 ($$) {
+push @EXPORT, qw(where);
+sub where ($$) {
   my ($self, $values) = @_;
 
   if (ref $values eq 'HASH') {
@@ -96,6 +102,7 @@ sub where2 ($$) {
 
 } # where
 
+push @EXPORT, qw(order);
 sub order ($$) {
   if (defined $_[1]) {
     my @s;
