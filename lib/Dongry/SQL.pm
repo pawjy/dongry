@@ -149,13 +149,27 @@ sub where ($;$) {
     my @placeholder;
     $sql =~ s{:(\w+)(?::(:?\w+))?}{
       my $key = $1;
-      my $column = defined $2 ? $2 : $key;
-      if (not defined $bind{$key}) {
-        croak "Value for |$key| is not defined";
+      my $instruction = defined $2 ? $2 : '';
+      my $column = $key;
+      if (length $instruction and $instruction =~ s/^://) {
+        $column = $instruction;
+        undef $instruction;
       }
+
       my $type = ref ($bind{$key});
       delete $unused{$key};
-      if ($type eq 'ARRAY') {
+
+      if ($instruction eq 'sub' or $instruction eq 'optsub') {
+        # XXX
+      } elsif ($instruction eq 'id') {
+        croak "An undef is specified for |$key|" if not defined $bind{$key};
+        croak "A reference is specified for |$key|" if $type;
+        quote $bind{$key};
+      } elsif (length $instruction) {
+        croak "Instruction |$instruction| is unknown";
+      } elsif (not defined $bind{$key}) {
+        croak "Value for |$key| is not defined";
+      } elsif ($type eq 'ARRAY') {
         if (@{$bind{$key}}) {
           push @placeholder, grep { 
             croak "An undef is found in |$key| list" if not defined $_;

@@ -171,7 +171,7 @@ sub _where_named : Test(25) {
     [['hoge fuga'] => ['hoge fuga', []]],
     [['hoge :fuga', fuga => 'abc'] => ['hoge ?', ['abc']]],
     [['hoge :fuga :fuga', fuga => 'abc'] => ['hoge ? ?', ['abc', 'abc']]],
-    [['hoge :fuga:fuga', fuga => 'abc'] => ['hoge ?', ['abc']]],
+    [['hoge :fuga:', fuga => 'abc'] => ['hoge ?:', ['abc']]],
     [['hoge :fug_a', fug_a => 'abc'] => ['hoge ?', ['abc']]],
     [['hoge :fuga :foo', fuga => 'abc', foo => 124]
          => ['hoge ? ?', ['abc', '124']]],
@@ -205,16 +205,18 @@ sub _where_named_not_specified : Test(2) {
   dies_here_ok { where [''] };
 } # _where_named_not_specified
 
-sub _where_named_not_defined : Test(6) {
+sub _where_named_not_defined : Test(8) {
   dies_here_ok { where [':hoge'] };
   dies_here_ok { where [':hoge', fuga => 1] };
   dies_here_ok { where ['hoge fuga = ?', fuga => undef] };
   dies_here_ok { where ['(:hoge)', hoge => [1, undef]] };
   dies_here_ok { where [':hoge' => 124] };
   dies_here_ok { where [':hoge and :foo', foo => (), hoge => 124] };
+  dies_here_ok { where [':hoge:id', hoge => undef] };
+  dies_here_ok { where [':hoge:id', 'hoge:id' => 333] };
 } # _where_named_not_defined
 
-sub _where_named_ref : Test(9) {
+sub _where_named_ref : Test(10) {
   for (
     [':hoge', hoge => \undef],
     [':hoge', hoge => \'abc'],
@@ -225,6 +227,7 @@ sub _where_named_ref : Test(9) {
     ['(:hoge)', hoge => [12, 44, [foo => 443]]],
     ['(:hoge)', hoge => [12, 44, {foo => 52}]],
     ['(:hoge)', hoge => [12, 44, bless {}, 'test::hogexs']],
+    [':hoge:id', hoge => \undef],
   ) {
     dies_here_ok {
       where $_;
@@ -240,6 +243,27 @@ sub _where_named_unused : Test(2) {
     where ['hoge = :fuga', fuga => 123, foo => 51];
   };
 } # _where_named_unused
+
+sub _where_named_id : Test(7) {
+  for (
+    [[':foo:id = 124', foo => ''] => ['`` = 124', []]],
+    [[':foo:id = 124', foo => '123'] => ['`123` = 124', []]],
+    [[':foo:id = 124', foo => 'abc'] => ['`abc` = 124', []]],
+    [[':foo:id = 124', foo => '`\\%'] => ['```\\%` = 124', []]],
+    [[':foo:id = 124', foo => "\x{5001}"] => ["`\x{5001}` = 124", []]],
+    [[':foo:id = 124', foo => encode 'utf-8', "\x{5001}"]
+         => [(encode 'utf-8', "`\x{5001}` = 124"), []]],
+    [[':foo:id = :foo', foo => '`\\%'] => ['```\\%` = ?', ['`\\%']]],
+  ) {
+    eq_or_diff [where $_->[0]], $_->[1];
+  }
+} # _where_named_id
+
+sub _where_named_unknown_instruction : Test(1) {
+  dies_here_ok {
+    where ['hoge :fuga:fuga', fuga => 'abc'];
+  };
+} # _where_named_unknown_instruction
 
 __PACKAGE__->runtests;
 
