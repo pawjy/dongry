@@ -27,7 +27,7 @@ sub _schema_non_null : Test(3) {
 
 sub _table_no_name : Test(1) {
   my $db = Dongry::Database->new;
-  dies_ok {
+  dies_here_ok {
     my $table = $db->table;
   };
 } # _table_no_name

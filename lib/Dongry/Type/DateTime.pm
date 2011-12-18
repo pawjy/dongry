@@ -2,13 +2,20 @@ package Dongry::Type::DateTime;
 use strict;
 use warnings;
 use DateTime::Format::MySQL;
+use Carp;
+
+# XXX
+push @Dongry::Table::CARP_NOT, __PACKAGE__;
+push @Dongry::Table::Row::CARP_NOT, __PACKAGE__;
 
 $Dongry::Types->{timestamp_as_DateTime} = {
   parse => sub {
     if (not defined $_[0] or $_[0] eq '0000-00-00 00:00:00') {
       return undef;
     } else {
-      my $dt = DateTime::Format::MySQL->parse_datetime ($_[0]);
+      my $dt = eval { DateTime::Format::MySQL->parse_datetime ($_[0]) } or do {
+        croak $@; # XXX
+      };
       $dt->set_time_zone ('UTC');
       return $dt;
     }

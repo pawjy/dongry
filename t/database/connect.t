@@ -81,7 +81,7 @@ sub _onerror_new : Test(2) {
     dsn => $test_dsn_1,
     password => 'foo',
   });
-  dies_ok { $db->connect ('hoge') };
+  dies_here_ok { $db->connect ('hoge') };
   is $onerror_self, $db;
 } # _onerror_new
 
@@ -89,12 +89,12 @@ sub _onerror_new : Test(2) {
 
 sub _connect_without_name : Test(1) {
   my $db = Dongry::Database->new;
-  dies_ok { $db->connect };
+  dies_here_ok { $db->connect };
 } # _connect_without_name
 
 sub _connect_with_unknown_name : Test(1) {
   my $db = Dongry::Database->new;
-  dies_ok { $db->connect ('unknown') };
+  dies_here_ok { $db->connect ('unknown') };
 } # _connect_with_unknown_name
 
 sub _connect_unknown_name_onerror : Test(2) {
@@ -103,7 +103,7 @@ sub _connect_unknown_name_onerror : Test(2) {
   $db->onerror (sub {
     ($onerror_self, %onerror_args) = @_;
   });
-  dies_ok { $db->connect ('hoge') };
+  dies_here_ok { $db->connect ('hoge') };
   is $onerror_self, undef;
 } # _connect_unknown_name_onerror
 
@@ -112,7 +112,7 @@ sub _connect_unknown_ds : Test(1) {
   $db->source (hoge => {
     dsn => 'bad dsn',
   });
-  dies_ok { $db->connect ('hoge') };
+  dies_here_ok { $db->connect ('hoge') };
 } # _connect_with_unknown_ds
 
 sub _connect_with_unknown_ds_onerror : Test(2) {
@@ -124,7 +124,7 @@ sub _connect_with_unknown_ds_onerror : Test(2) {
   $db->source (hoge => {
     dsn => 'bad dsn',
   });
-  dies_ok { $db->connect ('hoge') };
+  dies_here_ok { $db->connect ('hoge') };
   is $onerror_self, undef;
 } # _connect_with_unknown_ds_onerror
 
@@ -139,7 +139,7 @@ sub _connect_wrong_mysql_dsn_onerror : Test(5) {
   $db->source (hoge => {
     dsn => 'dbi:mysql:bad dsn',
   });
-  dies_ok { $db->connect ('hoge') };
+  dies_here_ok { $db->connect ('hoge') };
   is $onerror_self, $db;
   is $onerror_args{source_name}, 'hoge';
   like $onerror_args{text}, qr{DBI connect.*failed};
@@ -163,7 +163,7 @@ sub _connect_wrong_username : Test(1) {
     dsn => $dsn,
     username => 'hoge',
   });
-  dies_ok { $db->connect ('hoge') };
+  dies_here_ok { $db->connect ('hoge') };
 } # _connect_wrong_username
 
 sub _connect_wrong_username_onerror : Test(5) {
@@ -178,7 +178,7 @@ sub _connect_wrong_username_onerror : Test(5) {
     dsn => $dsn,
     username => 'hoge',
   });
-  dies_ok { $db->connect ('hoge') };
+  dies_here_ok { $db->connect ('hoge') };
   is $onerror_self, $db;
   is $onerror_args{source_name}, 'hoge';
   like $onerror_args{text}, qr{DBI connect.*failed};
@@ -191,7 +191,7 @@ sub _connect_wrong_password : Test(1) {
     dsn => $test_dsn_1,
     password => 'hoge',
   });
-  dies_ok { $db->connect ('hoge') };
+  dies_here_ok { $db->connect ('hoge') };
 } # _connect_wrong_password
 
 sub _connect_wrong_password_onerror : Test(5) {
@@ -204,7 +204,7 @@ sub _connect_wrong_password_onerror : Test(5) {
     dsn => $test_dsn_1,
     password => 'hoge',
   });
-  dies_ok { $db->connect ('hoge') };
+  dies_here_ok { $db->connect ('hoge') };
   is $onerror_self, $db;
   is $onerror_args{source_name}, 'hoge';
   like $onerror_args{text}, qr{DBI connect.*failed};

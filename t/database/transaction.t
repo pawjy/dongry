@@ -78,7 +78,7 @@ sub _transaction_committed_twice : Test(2) {
 
   $transaction->commit;
 
-  dies_ok { $transaction->commit };
+  dies_here_ok { $transaction->commit };
 
   my $result = $db->execute ('select * from foo order by id asc');
   eq_or_diff $result->all->to_a,
@@ -100,7 +100,7 @@ sub _transaction_committed_twice_2 : Test(2) {
   $transaction->commit;
 
   $db->insert ('foo', [{id => 5431, v1 => "hoge", v2 => undef}]);
-  dies_ok { $transaction->commit };
+  dies_here_ok { $transaction->commit };
 
   my $result = $db->execute ('select * from foo order by id asc');
   eq_or_diff $result->all->to_a,
@@ -122,7 +122,7 @@ sub _transaction_committed_rollbacked : Test(2) {
   $transaction->commit;
 
   $db->insert ('foo', [{id => 5431, v1 => "hoge", v2 => undef}]);
-  dies_ok { $transaction->rollback };
+  dies_here_ok { $transaction->rollback };
 
   my $result = $db->execute ('select * from foo order by id asc');
   eq_or_diff $result->all->to_a,
@@ -144,7 +144,7 @@ sub _transaction_rollbacked_comitted : Test(2) {
   $transaction->rollback;
 
   $db->insert ('foo', [{id => 5431, v1 => "hoge", v2 => undef}]);
-  dies_ok { $transaction->commit };
+  dies_here_ok { $transaction->commit };
 
   my $result = $db->execute ('select * from foo order by id asc');
   eq_or_diff $result->all->to_a,
@@ -184,7 +184,7 @@ sub _transaction_insert_blocked : Test(3) {
 
   my $db2 = Dongry::Database->new
       (sources => {master => {dsn => $dsn, writable => 1}});
-  dies_ok {
+  dies_here_ok {
     $db2->insert ('foo', [{id => 1243, v1 => "hoge2"}]);
   };
 
@@ -243,7 +243,7 @@ sub _transaction_select_lock_for_update_no_key : Test(5) {
 
   my $db3 = Dongry::Database->new
       (sources => {master => {dsn => $dsn, writable => 1}});
-  dies_ok {
+  dies_here_ok {
     $db3->update ('foo', {id => 1245}, {id => 1243});
   };
 
@@ -280,7 +280,7 @@ sub _transaction_select_lock_for_update_with_pkey : Test(6) {
 
   my $db3 = Dongry::Database->new
       (sources => {master => {dsn => $dsn, writable => 1}});
-  dies_ok {
+  dies_here_ok {
     $db3->update ('foo', {id => 1245}, {id => 1243});
   };
 
@@ -313,11 +313,11 @@ sub _transaction_select_lock_count_1 : Test(5) {
   my $transaction = $db->transaction;
   my $count = $db->select ('foo', {id => 1}, lock => 'update')->first->{v1};
 
-  dies_ok {
+  dies_here_ok {
     $db2->select ('foo', {id => 1}, lock => 'update');
   };
 
-  dies_ok {
+  dies_here_ok {
     $db2->select ('foo', {id => 1}, lock => 'share');
   };
 
@@ -360,11 +360,11 @@ sub _transaction_select_lock_count_2 : Test(5) {
 
   $db->update ('foo', {v1 => $count + 1}, {id => 1});
 
-  dies_ok {
+  dies_here_ok {
     $db2->update ('foo', {v1 => $count2 + 10}, {id => 1});
   };
 
-  dies_ok {
+  dies_here_ok {
     $db3->update ('foo', {v1 => $count3 + 100}, {id => 1});
   };
 
@@ -404,7 +404,7 @@ sub _transaction_select_lock_count_3 : Test(5) {
   $db->update ('foo', {v1 => $count + 1}, {id => 1});
 
   my $transaction2 = $db2->transaction;
-  dies_ok {
+  dies_here_ok {
     $db2->select ('foo', {id => 1}, lock => 'share');
   };
 
@@ -440,11 +440,11 @@ sub _transaction_select_lock_insert_1 : Test(3) {
   my $transaction = $db->transaction;
   $db->select ('foo', {id => {'<', 10}}, lock => 'update');
 
-  dies_ok {
+  dies_here_ok {
     $db2->insert ('foo', [{id => 5, v1 => 4}]);
   };
 
-  dies_ok {
+  dies_here_ok {
     $db2->insert ('foo', [{id => 16, v1 => 2}]);
   };
 
@@ -470,11 +470,11 @@ sub _transaction_select_lock_insert_2 : Test(3) {
   my $transaction = $db->transaction;
   $db->select ('foo', {id => 10}, lock => 'update');
 
-  dies_ok {
+  dies_here_ok {
     $db2->insert ('foo', [{id => 10, v1 => 4}]);
   };
   
-  dies_ok {
+  dies_here_ok {
     $db2->insert ('foo', [{id => 16, v1 => 2}]);
   };
 
@@ -500,11 +500,11 @@ sub _transaction_select_lock_insert_3 : Test(3) {
   my $transaction = $db->transaction;
   $db->select ('foo', {id => 10}, lock => 'share');
 
-  dies_ok {
+  dies_here_ok {
     $db2->insert ('foo', [{id => 10, v1 => 4}]);
   };
   
-  dies_ok {
+  dies_here_ok {
     $db2->insert ('foo', [{id => 16, v1 => 2}]);
   };
 
@@ -531,7 +531,7 @@ sub _transaction_select_lock_insert_4 : Test(2) {
   my $transaction = $db->transaction;
   $db->select ('foo', {id => 10}, lock => 'share');
 
-  dies_ok {
+  dies_here_ok {
     $db2->update ('foo', {id => 10, v1 => 4}, {id => 10});
   };
   
@@ -556,11 +556,11 @@ sub _transaction_source_name : Test(2) {
 
   my $transaction = $db->transaction;
 
-  dies_ok {
+  dies_here_ok {
     $db->insert ('foo', [{id => 10}], source_name => 'default');
   };
 
-  dies_ok {
+  dies_here_ok {
     $db->select ('foo', {id => 10}, source_name => 'default');
   };
 
@@ -600,7 +600,7 @@ sub _transaction_in_transaction : Test(2) {
 
   my $transaction = $db->transaction;
 
-  dies_ok {
+  dies_here_ok {
     $db->transaction;
   };
 
@@ -618,7 +618,7 @@ sub _transaction_no_master : Test(1) {
   my $db = Dongry::Database->new
       (sources => {default => {dsn => $dsn}});
 
-  dies_ok {
+  dies_here_ok {
     my $transaction = $db->transaction;
   };
 } # _transaction_no_master

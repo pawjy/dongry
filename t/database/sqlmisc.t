@@ -59,7 +59,7 @@ sub _set_tz_bad : Test(2) {
                    default => {dsn => $dsn}});
   $db->set_tz ('+09:00');
 
-  dies_ok {
+  dies_here_ok {
     $db->set_tz ('unknown');
   };
 

@@ -15,25 +15,25 @@ sub _update_nop : Test(66) {
       (sources => {master => {dsn => $dsn, writable => 1}});
   $db->execute ('create table foo (id int)');
   
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     my $result = $db->update ('foo', {id => 23}, {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 0;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
   }
 } # _update_nop
 
 sub _update_a_row_updated : Test(72) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -46,14 +46,14 @@ sub _update_a_row_updated : Test(72) {
     is $result->row_count, 1;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
@@ -62,7 +62,7 @@ sub _update_a_row_updated : Test(72) {
 } # _update_a_row_updated
 
 sub _update_two_row_updated : Test(72) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -75,14 +75,14 @@ sub _update_two_row_updated : Test(72) {
     is $result->row_count, 2;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->select
         ('foo', ['1 = 1'],
@@ -93,7 +93,7 @@ sub _update_two_row_updated : Test(72) {
 } # _update_two_rows_updated
 
 sub _update_a_row_updated_utf8_flagged_value : Test(72) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -106,14 +106,14 @@ sub _update_a_row_updated_utf8_flagged_value : Test(72) {
     is $result->row_count, 1;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
@@ -122,7 +122,7 @@ sub _update_a_row_updated_utf8_flagged_value : Test(72) {
 } # _update_a_row_updated_utf8_flagged_value
 
 sub _update_a_row_updated_utf8_unflagged_value : Test(72) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -136,14 +136,14 @@ sub _update_a_row_updated_utf8_unflagged_value : Test(72) {
     is $result->row_count, 1;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
@@ -152,7 +152,7 @@ sub _update_a_row_updated_utf8_unflagged_value : Test(72) {
 } # _update_a_row_updated_utf8_unflagged_value
 
 sub _update_a_row_updated_stupid_value : Test(72) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -165,14 +165,14 @@ sub _update_a_row_updated_stupid_value : Test(72) {
     is $result->row_count, 1;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
@@ -181,7 +181,7 @@ sub _update_a_row_updated_stupid_value : Test(72) {
 } # _update_a_row_updated_stupid_value
 
 sub _update_a_row_updated_utf8_flagged_column : Test(72) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -194,14 +194,14 @@ sub _update_a_row_updated_utf8_flagged_column : Test(72) {
     is $result->row_count, 1;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
@@ -210,7 +210,7 @@ sub _update_a_row_updated_utf8_flagged_column : Test(72) {
 } # _update_a_row_updated_utf8_flagged_column
 
 sub _update_a_row_updated_utf8_unflagged_column : Test(72) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -225,14 +225,14 @@ sub _update_a_row_updated_utf8_unflagged_column : Test(72) {
     is $result->row_count, 1;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
@@ -241,7 +241,7 @@ sub _update_a_row_updated_utf8_unflagged_column : Test(72) {
 } # _update_a_row_updated_utf8_unflagged_column
 
 sub _update_a_row_updated_stupid_column : Test(12) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -249,7 +249,7 @@ sub _update_a_row_updated_stupid_column : Test(12) {
     $db->execute ("create table foo (```ab(;` blob)");
     $db->execute ("insert into foo (```ab(;`) values (12)");
     
-    dies_ok {
+    dies_here_ok {
       my $result = $db->update
           ('foo', {(encode 'utf-8', "`ab(;") => 23},
            {(encode 'utf-8', "`ab(;") => 12});
@@ -268,14 +268,14 @@ sub _update_a_row_updated_stupid_column : Test(12) {
     is $result->row_count, 1;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
@@ -349,7 +349,7 @@ sub _update_values_bad_column : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
-  dies_ok {
+  dies_here_ok {
     my $result = $db->update
         ('foo', {mid => 100}, ['id = 25']);
   };
@@ -411,7 +411,7 @@ sub _update_values_empty : Test(2) {
   $db->execute ("insert into foo (id, v1) values (22, 2)");
   $db->execute ("insert into foo (id, v1) values (32, 3)");
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->update
         ('foo', {}, {id => 12}, duplicate => 'ignore');
   };
@@ -512,7 +512,7 @@ sub _update_where_bad_column : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
-  dies_ok {
+  dies_here_ok {
     my $result = $db->update
         ('foo', {id => 100}, ['mid > 23']);
   };
@@ -532,7 +532,7 @@ sub _update_where_bad_sql : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
-  dies_ok {
+  dies_here_ok {
     my $result = $db->update
         ('foo', {id => 100}, ['id id id ']);
   };
@@ -552,7 +552,7 @@ sub _update_where_bad_arg : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
-  dies_ok {
+  dies_here_ok {
     my $result = $db->update
         ('foo', {id => 100}, 'id > 23');
   };
@@ -572,7 +572,7 @@ sub _update_where_empty_arg : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
-  dies_ok {
+  dies_here_ok {
     my $result = $db->update
         ('foo', {id => 100}, {});
   };
@@ -592,7 +592,7 @@ sub _update_where_no_arg : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
-  dies_ok {
+  dies_here_ok {
     my $result = $db->update
         ('foo', {id => 100});
   };
@@ -670,7 +670,7 @@ sub _update_source_name_implicit_not_writable : Test(4) {
                    default => {dsn => $dsn2, writable => 1},
                    heavy => {dsn => $dsn3, writable => 1}});
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->update ('foo', {id => 100}, {v1 => 'ab cde'});
   };
 
@@ -752,7 +752,7 @@ sub _update_source_name_default_not_writable : Test(4) {
       (sources => {master => {dsn => $dsn1, writable => 1},
                    default => {dsn => $dsn2, writable => 0},
                    heavy => {dsn => $dsn3, writable => 1}});
-  dies_ok {
+  dies_here_ok {
     my $result = $db->update ('foo', {id => 100}, {v1 => 'ab cde'},
                               source_name => 'default');
   };
@@ -799,7 +799,7 @@ sub _update_offset_0 : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 2)");
   $db->execute ("insert into foo (id, v1) values (12, 3)");
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->update
         ('foo', {v2 => 'changed'}, {id => 12},
          order => [v1 => 1], offset => 0);
@@ -822,7 +822,7 @@ sub _update_offset_1 : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 2)");
   $db->execute ("insert into foo (id, v1) values (12, 3)");
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->update
         ('foo', {v2 => 'changed'}, {id => 12},
          order => [v1 => 1], offset => 1);
@@ -955,7 +955,7 @@ sub _update_offset_limit : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 2)");
   $db->execute ("insert into foo (id, v1) values (12, 3)");
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->update
         ('foo', {v2 => 'changed'}, {id => 12},
          order => [v1 => 1], offset => 1, limit => 2);
@@ -1000,7 +1000,7 @@ sub _update_duplicate_error : Test(2) {
   $db->execute ("insert into foo (id, v1) values (22, 2)");
   $db->execute ("insert into foo (id, v1) values (32, 3)");
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->update
         ('foo', {id => 22}, {id => 12});
   };

@@ -24,13 +24,13 @@ sub _select_nothing_each : Test(11) {
   my $invoked = 0;
   $result->each (sub { $invoked++ });
   is $invoked, 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _select_nothing_each
 
 sub _select_nothing_each_as_row : Test(11) {
@@ -48,13 +48,13 @@ sub _select_nothing_each_as_row : Test(11) {
   my $invoked = 0;
   $result->each_as_row (sub { $invoked++ });
   is $invoked, 0;
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
-  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _select_nothing_each_as_row
 
 sub _select_nothing_first : Test(11) {
@@ -70,14 +70,14 @@ sub _select_nothing_first : Test(11) {
   is $result->row_count, 0;
   is $result->table_name, 'foo';
   is $result->first, undef;
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
 } # _select_nothing_first
 
 sub _select_nothing_first_as_row : Test(11) {
@@ -93,14 +93,14 @@ sub _select_nothing_first_as_row : Test(11) {
   is $result->row_count, 0;
   is $result->table_name, 'foo';
   is $result->first_as_row, undef;
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
-  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
 } # _select_nothing_first_as_row
 
 sub _select_nothing_all : Test(11) {
@@ -116,13 +116,13 @@ sub _select_nothing_all : Test(11) {
   is $result->row_count, 0;
   is $result->table_name, 'foo';
   isa_list_n_ok $result->all, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
 } # _select_nothing_all
 
@@ -139,13 +139,13 @@ sub _select_nothing_all_as_rows : Test(11) {
   is $result->row_count, 0;
   is $result->table_name, 'foo';
   isa_list_n_ok $result->all_as_rows, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
-  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
   is $invoked, 0;
 } # _select_nothing_first_as_row
 
@@ -167,13 +167,13 @@ sub _select_a_row_each : Test(12) {
   $result->each (sub { push @value, $_; $invoked++ });
   is $invoked, 1;
   eq_or_diff \@value, [{id => 12, v1 => 'abc', v2 => '322'}];
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 1;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _select_a_row_each
 
 sub _select_a_row_each_as_row : Test(15) {
@@ -197,13 +197,13 @@ sub _select_a_row_each_as_row : Test(15) {
   is $value[0]->{db}, $db;
   is $value[0]->{table_name}, 'foo';
   eq_or_diff $value[0]->{data}, {id => 12, v1 => 'abc', v2 => '322'};
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
-  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
   is $invoked, 1;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _select_a_row_each_as_row
 
 sub _select_a_row_first : Test(12) {
@@ -221,13 +221,13 @@ sub _select_a_row_first : Test(12) {
   is $result->table_name, 'foo';
   my $invoked = 0;
   eq_or_diff $result->first, {id => 12, v1 => 'abc', v2 => '322'};
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
 } # _select_a_row_first
 
 sub _select_a_row_first_as_row : Test(14) {
@@ -249,13 +249,13 @@ sub _select_a_row_first_as_row : Test(14) {
   is $value->{db}, $db;
   is $value->{table_name}, 'foo';
   eq_or_diff $value->{data}, {id => 12, v1 => 'abc', v2 => '322'};
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
-  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
 } # _select_a_row_first_as_row
 
 sub _select_a_row_all : Test(12) {
@@ -275,12 +275,12 @@ sub _select_a_row_all : Test(12) {
   my $list = $result->all;
   isa_list_n_ok $list, 1;
   eq_or_diff $list->to_a, [{id => 12, v1 => 'abc', v2 => '322'}];
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
 } # _select_a_row_all
 
@@ -305,12 +305,12 @@ sub _select_a_row_all_as_rows : Test(15) {
   is $values->[0]->{db}, $db;
   is $values->[0]->{table_name}, 'foo';
   eq_or_diff $values->[0]->{data}, {id => 12, v1 => 'abc', v2 => '322'};
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
-  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
   is $invoked, 0;
 } # _select_a_row_all_as_rows
 
@@ -335,13 +335,13 @@ sub _select_multiple_rows_each : Test(12) {
   eq_or_diff [sort { $a->{id} <=> $b->{id} } @value],
              [{id => 12, v1 => 'abc', v2 => '322'},
               {id => 23, v1 => undef, v2 => 'xyxa'}];
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 2;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _select_multiple_rows_each
 
 sub _select_multiple_rows_each_as_row : Test(19) {
@@ -371,13 +371,13 @@ sub _select_multiple_rows_each_as_row : Test(19) {
   is $value[1]->{db}, $db;
   is $value[1]->{table_name}, 'foo';
   eq_or_diff $value[1]->{data}, {id => 23, v1 => undef, v2 => 'xyxa'};
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
-  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
   is $invoked, 2;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _select_multiple_rows_each_as_row
 
 sub _select_multiple_rows_first : Test(12) {
@@ -399,13 +399,13 @@ sub _select_multiple_rows_first : Test(12) {
   eq_or_diff $value,
       $value->{id} == 12 ? {id => 12, v1 => 'abc', v2 => '322'}
                          : {id => 23, v1 => undef, v2 => 'xyxa'};
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
 } # _select_multiple_rows_first
 
 sub _select_multiple_rows_first_as_row : Test(14) {
@@ -430,13 +430,13 @@ sub _select_multiple_rows_first_as_row : Test(14) {
   eq_or_diff $value->{data},
       $value->{data}->{id} == 12 ? {id => 12, v1 => 'abc', v2 => '322'}
                                  : {id => 23, v1 => undef, v2 => 'xyxa'};
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
-  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
 } # _select_multiple_rows_first_as_row
 
 sub _select_multiple_rows_all : Test(12) {
@@ -459,12 +459,12 @@ sub _select_multiple_rows_all : Test(12) {
   eq_or_diff $list->sort (sub { $_[0]->{id} <=> $_[1]->{id} })->to_a,
       [{id => 12, v1 => 'abc', v2 => '322'},
        {id => 23, v1 => undef, v2 => 'xyxa'}];
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
 } # _select_multiple_rows_all
 
@@ -495,12 +495,12 @@ sub _select_multiple_rows_all_as_rows : Test(19) {
   is $values->[1]->{db}, $db;
   is $values->[1]->{table_name}, 'foo';
   eq_or_diff $values->[1]->{data}, {id => 23, v1 => undef, v2 => 'xyxa'};
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
-  dies_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
   is $invoked, 0;
 } # _select_multiple_rows_all_as_rows
 
@@ -526,7 +526,7 @@ sub _select_multiple_rows_no_return : Test(2) {
 
 sub _select_no_source : Test(2) {
   my $db = Dongry::Database->new;
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', {id => {-in => [12, 23]}});
   };
 } # _select_no_source
@@ -569,7 +569,7 @@ sub _select_sources : Test(5) {
                              source_name => 'heavy');
   is $result4->first->{id}, 3;
   
-  dies_ok {
+  dies_here_ok {
     my $result5 = $db->select ('foo', {id => {'>=', 0}},
                                source_name => 'notfound');
   };
@@ -632,7 +632,7 @@ sub _select_must_be_writable_no : Test(1) {
   $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
   $db->execute ('insert into foo (id, v1, v2) values (23, NULL, "xyxa")');
   
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', {id => {-in => [12, 23]}},
                               source_name => 'default',
                               must_be_writable => 1);
@@ -649,7 +649,7 @@ sub _select_must_be_writable_no_2 : Test(1) {
   $db->execute ('insert into foo (id, v1, v2) values (12, "abc", 322)');
   $db->execute ('insert into foo (id, v1, v2) values (23, NULL, "xyxa")');
   
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', {id => {-in => [12, 23]}},
                               source_name => 'default',
                               must_be_writable => 1);
@@ -725,7 +725,7 @@ sub _fields_invalid : Test(5) {
     {count => 1},
     [bless {}, 'hoge'],
   ) {
-    dies_ok {
+    dies_here_ok {
       Dongry::Database::_fields $_;
     };
   }
@@ -871,7 +871,7 @@ sub _select_fields_column_error : Test(1) {
                    master => {dsn => $dsn, writable => 1}});
   $db->execute ('create table foo (id int, v1 text, v2 text)');
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', {id => {'>', 0}},
                               fields => $db->bare_sql_fragment ('hoge'));
   };
@@ -885,7 +885,7 @@ sub _select_fields_struct_error : Test(1) {
                    master => {dsn => $dsn, writable => 1}});
   $db->execute ('create table foo (id int, v1 text, v2 text)');
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', {id => {'>', 0}},
                               fields => [$db->bare_sql_fragment (\'hoge')]);
   };
@@ -899,7 +899,7 @@ sub _select_fields_function_error : Test(1) {
                    master => {dsn => $dsn, writable => 1}});
   $db->execute ('create table foo (id int, v1 text, v2 text)');
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', {id => {'>', 0}}, fields => {-hoge => 1});
   };
 } # _select_fields_function_error
@@ -959,7 +959,7 @@ sub _select_where_sqla_empty : Test(1) {
   $db->execute ('insert into foo (id, v1) values (12, "abvc")');
   $db->execute ('insert into foo (id, v1) values (23, "xyvc")');
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', {});
   };
 } # _select_where_sqla_empty
@@ -1200,7 +1200,7 @@ sub _select_where_sqla_stupid_column : Test(1) {
   $db->execute (qq{insert into foo (id, `v1 ``2`) values (23, "abc")});
 
   ## SQL::Abstract does not support "``".
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select
         ('foo', {'v1 `2' => {-not => undef}},
          order => [id => 'ASC']);
@@ -1220,7 +1220,7 @@ sub _select_where_sqla_bad : Test(1) {
   $db->execute ('insert into foo (id, v1) values (12, "abc")');
   $db->execute ('insert into foo (id, v1) values (23, "de f")');
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', {v1 => {-hoge => []}});
   };
 } # _select_where_sqla_bad
@@ -1364,7 +1364,7 @@ sub _select_where_bad_args : Test(1) {
                    master => {dsn => $dsn, writable => 1}});
   $db->execute ('create table foo (id int, v1 blob)');
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', 'id = 12');
   };
 } # _select_where_bad_args
@@ -1377,7 +1377,7 @@ sub _select_where_no_args : Test(1) {
                    master => {dsn => $dsn, writable => 1}});
   $db->execute ('create table foo (id int, v1 blob)');
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', undef);
   };
 } # _select_where_no_args
@@ -1491,7 +1491,7 @@ sub _select_where_group_by_bad_column : Test(1) {
   $db->execute ('insert into foo (id, v1) values (12, "def")');
   $db->execute ('insert into foo (id, v1) values (23, "def")');
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', {id => {-not => undef}}, group => ['v2']);
   };
 } # _select_where_group_by_bad_column
@@ -1665,7 +1665,7 @@ sub _select_where_order_by_a_column_desc_bad_order : Test(1) {
   $db->execute ('insert into foo (id, v1) values (12, "def")');
   $db->execute ('insert into foo (id, v1) values (23, "def")');
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', {id => {-not => undef}},
                               order => ['id' => -10]);
   };
@@ -1682,7 +1682,7 @@ sub _select_where_order_by_a_column_desc_bad_order_2 : Test(1) {
   $db->execute ('insert into foo (id, v1) values (12, "def")');
   $db->execute ('insert into foo (id, v1) values (23, "def")');
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', {id => {-not => undef}},
                               order => ['id' => 'random']);
   };
@@ -1795,7 +1795,7 @@ sub _select_where_order_by_bad_column : Test(1) {
   $db->execute ('insert into foo (id, v1) values (12, "def")');
   $db->execute ('insert into foo (id, v1) values (23, "def")');
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', {id => {-not => undef}},
                               order => [id => 1, v2 => -1]);
   };
@@ -1812,7 +1812,7 @@ sub _select_where_order_by_empty_arg : Test(1) {
   $db->execute ('insert into foo (id, v1) values (12, "def")');
   $db->execute ('insert into foo (id, v1) values (23, "def")');
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->select ('foo', {id => {-not => undef}},
                               order => []);
   };

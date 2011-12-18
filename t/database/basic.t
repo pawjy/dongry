@@ -39,7 +39,7 @@ sub _new_with_args : Test(2) {
 } # _new_with_args
 
 sub _load_not_defined : Test(1) {
-  dies_ok { Dongry::Database->load ('notfound') };
+  dies_here_ok { Dongry::Database->load ('notfound') };
 } # _load_not_defined
 
 sub _load_found : Test(6) {

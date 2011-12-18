@@ -28,14 +28,14 @@ sub _execute_create_table_no_return_no_master : Test(2) {
   my $db = Dongry::Database->new
       (sources => {default => {dsn => $dsn, writable => 1}});
 
-  dies_ok {
+  dies_here_ok {
     $db->execute
         ('create table table1 (id int unsigned not null primary key)');
   };
 
   my $db2 = Dongry::Database->new
       (sources => {default => {dsn => $dsn}});
-  dies_ok { $db2->execute ('select * from table1') };
+  dies_here_ok { $db2->execute ('select * from table1') };
 } # _execute_create_table_no_master
 
 sub _execute_create_table_not_writable : Test(2) {
@@ -44,14 +44,14 @@ sub _execute_create_table_not_writable : Test(2) {
   my $db = Dongry::Database->new
       (sources => {master => {dsn => $dsn, writable => 0}});
 
-  dies_ok {
+  dies_here_ok {
     $db->execute
         ('create table table1 (id int unsigned not null primary key)');
   };
 
   my $db2 = Dongry::Database->new
       (sources => {default => {dsn => $dsn}});
-  dies_ok { $db2->execute ('select * from table1') };
+  dies_here_ok { $db2->execute ('select * from table1') };
 } # _execute_create_table_not_writable
 
 sub _execute_insert_no_return : Test(1) {
@@ -100,7 +100,7 @@ sub _execute_insert_no_return_not_writable : Test(2) {
 
   my $db = Dongry::Database->new
       (sources => {master => {dsn => $dsn, writable => 0}});
-  dies_ok {
+  dies_here_ok {
     $db->execute ('insert into table1 (id) values (5)');
   };
 
@@ -152,7 +152,7 @@ sub _execute_select_no_return_no_default : Test(1) {
   my $db = Dongry::Database->new
       (sources => {test => {dsn => $dsn}});
 
-  dies_ok {
+  dies_here_ok {
     $db->execute ('select * from table1');
   };
 } # _execute_select_no_return_no_default
@@ -205,13 +205,13 @@ sub _execute_select_return_no_rows_each : Test(11) {
   my $invoked = 0;
   $result->each (sub { $invoked++ });
   is $invoked, 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _execute_select_return_no_rows_each
 
 sub _execute_select_return_no_rows_each_as_row : Test(12) {
@@ -230,15 +230,15 @@ sub _execute_select_return_no_rows_each_as_row : Test(12) {
   is $result->row_count, 0;
   is $result->table_name, undef;
   my $invoked = 0;
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
   lives_ok { $result->each (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _execute_select_return_no_rows_each_as_row
 
 sub _execute_select_return_no_rows_all : Test(11) {
@@ -259,13 +259,13 @@ sub _execute_select_return_no_rows_all : Test(11) {
   my $all = $result->all;
   isa_list_n_ok $all, 0;
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _execute_select_return_no_rows_all
 
 sub _execute_select_return_no_rows_all_as_rows : Test(12) {
@@ -283,17 +283,17 @@ sub _execute_select_return_no_rows_all_as_rows : Test(12) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 0;
   is $result->table_name, undef;
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all_as_rows };
   my $all = $result->all;
   isa_list_n_ok $all, 0;
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->all };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _execute_select_return_no_rows_all_as_rows
 
 sub _execute_select_return_no_rows_first : Test(11) {
@@ -313,14 +313,14 @@ sub _execute_select_return_no_rows_first : Test(11) {
   is $result->table_name, undef;
   my $first = $result->first;
   is $first, undef;
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
 } # _execute_select_return_no_rows_first
 
 sub _execute_select_return_no_rows_first_as_row : Test(11) {
@@ -338,16 +338,16 @@ sub _execute_select_return_no_rows_first_as_row : Test(11) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 0;
   is $result->table_name, undef;
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->first_as_row };
   my $first = $result->first;
   is $first, undef;
-  dies_ok { $result->first };
+  dies_here_ok { $result->first };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
 } # _execute_select_return_no_rows_first_as_row
 
 sub _execute_select_return_a_row_each : Test(12) {
@@ -373,13 +373,13 @@ sub _execute_select_return_a_row_each : Test(12) {
   $result->each (sub { push @value, $_; $invoked++ });
   is $invoked, 1;
   eq_or_diff \@value, [{id => 1253, value => undef}];
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 1;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _execute_select_return_a_row_each
 
 sub _execute_select_return_a_row_each_as_row : Test(12) {
@@ -401,15 +401,15 @@ sub _execute_select_return_a_row_each_as_row : Test(12) {
   is $result->row_count, 1;
   is $result->table_name, undef;
   my $invoked = 0;
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
   lives_ok { $result->each (sub { $invoked++ }) };
   is $invoked, 1;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _execute_select_return_a_row_each_as_row
 
 sub _execute_select_return_a_row_all : Test(12) {
@@ -434,13 +434,13 @@ sub _execute_select_return_a_row_all : Test(12) {
   isa_list_n_ok $all, 1;
   eq_or_diff $all->to_a, [{id => 1253, value => undef}];
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _execute_select_return_a_row_all
 
 sub _execute_select_return_a_row_all_as_rows : Test(12) {
@@ -461,17 +461,17 @@ sub _execute_select_return_a_row_all_as_rows : Test(12) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 1;
   is $result->table_name, undef;
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all_as_rows };
   my $all = $result->all;
   isa_list_n_ok $all, 1;
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->all };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _execute_select_return_a_row_all_as_rows
 
 sub _execute_select_return_a_row_first : Test(11) {
@@ -494,14 +494,14 @@ sub _execute_select_return_a_row_first : Test(11) {
   is $result->table_name, undef;
   my $first = $result->first;
   eq_or_diff $first, {id => 1253, value => undef};
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
 } # _execute_select_return_a_row_first
 
 sub _execute_select_return_a_row_first_as_row : Test(11) {
@@ -522,16 +522,16 @@ sub _execute_select_return_a_row_first_as_row : Test(11) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 1;
   is $result->table_name, undef;
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->first_as_row };
   my $first = $result->first;
   eq_or_diff $first, {id => 1253, value => undef};
-  dies_ok { $result->first };
+  dies_here_ok { $result->first };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
 } # _execute_select_return_a_row_first_as_row
 
 sub _execute_select_return_multiple_rows_each : Test(12) {
@@ -560,13 +560,13 @@ sub _execute_select_return_multiple_rows_each : Test(12) {
   eq_or_diff \@value, [{id => 10, value => 333},
                        {id => 1253, value => undef},
                        {id => 3113, value => 'hoge'}];
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 3;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _execute_select_return_multiple_rows_each
 
 sub _execute_select_return_multiple_rows_each_as_row : Test(12) {
@@ -589,15 +589,15 @@ sub _execute_select_return_multiple_rows_each_as_row : Test(12) {
   is $result->row_count, 3;
   is $result->table_name, undef;
   my $invoked = 0;
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
   lives_ok { $result->each (sub { $invoked++ }) };
   is $invoked, 3;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _execute_select_return_multiple_rows_each_as_row
 
 sub _execute_select_return_multiple_rows_all : Test(12) {
@@ -625,13 +625,13 @@ sub _execute_select_return_multiple_rows_all : Test(12) {
                        {id => 1253, value => undef},
                        {id => 3113, value => 'hoge'}];
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _execute_select_return_multiple_rows_all
 
 sub _execute_select_return_multiple_rows_all_as_rows : Test(12) {
@@ -653,17 +653,17 @@ sub _execute_select_return_multiple_rows_all_as_rows : Test(12) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 3;
   is $result->table_name, undef;
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all_as_rows };
   my $all = $result->all;
   isa_list_n_ok $all, 3;
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->all };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _execute_select_return_multiple_rows_all_as_rows
 
 sub _execute_select_return_multiple_rows_first : Test(11) {
@@ -687,14 +687,14 @@ sub _execute_select_return_multiple_rows_first : Test(11) {
   is $result->table_name, undef;
   my $first = $result->first;
   eq_or_diff $first, {id => 10, value => '333'};
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
 } # _execute_select_return_multiple_rows_first
 
 sub _execute_select_return_multiple_rows_first_as_row : Test(11) {
@@ -716,16 +716,16 @@ sub _execute_select_return_multiple_rows_first_as_row : Test(11) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 3;
   is $result->table_name, undef;
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->first_as_row };
   my $first = $result->first;
   eq_or_diff $first, {id => 10, value => 333};
-  dies_ok { $result->first };
+  dies_here_ok { $result->first };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
 } # _execute_select_return_multiple_rows_first_as_row
 
 sub _execute_insert_return_a_row_each : Test(10) {
@@ -746,13 +746,13 @@ sub _execute_insert_return_a_row_each : Test(10) {
   is $result->row_count, 1;
   is $result->table_name, undef;
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _execute_insert_return_a_row_each
 
 sub _execute_insert_return_a_row_all : Test(10) {
@@ -772,13 +772,13 @@ sub _execute_insert_return_a_row_all : Test(10) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 1;
   is $result->table_name, undef;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
 } # _execute_insert_return_a_row_all
 
@@ -799,14 +799,14 @@ sub _execute_insert_return_a_row_first : Test(10) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 1;
   is $result->table_name, undef;
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
 } # _execute_insert_return_a_row_first
 
 sub _execute_insert_return_multiple_row_all : Test(10) {
@@ -827,13 +827,13 @@ sub _execute_insert_return_multiple_row_all : Test(10) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 3;
   is $result->table_name, undef;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
 } # _execute_insert_return_multiple_row_all
 
@@ -857,13 +857,13 @@ sub _execute_update_return_no_row_all : Test(10) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 0;
   is $result->table_name, undef;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
 } # _execute_update_return_no_row_all
 
@@ -887,13 +887,13 @@ sub _execute_update_return_a_row_all : Test(10) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 1;
   is $result->table_name, undef;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
 } # _execute_update_return_a_row_all
 
@@ -917,13 +917,13 @@ sub _execute_update_return_multiple_rows_all : Test(10) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 3;
   is $result->table_name, undef;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
 } # _execute_update_return_multiple_rows_all
 
@@ -941,7 +941,7 @@ sub _execute_update_return_multiple_rows_error : Test(2) {
 
   my $db = Dongry::Database->new
       (sources => {master => {dsn => $dsn, writable => 1}});
-  dies_ok { $db->execute ('update table1 set id = 20') };
+  dies_here_ok { $db->execute ('update table1 set id = 20') };
 
   my $db2 = Dongry::Database->new
       (sources => {default => {dsn => $dsn, writable => 0}});
@@ -970,13 +970,13 @@ sub _execute_delete_return_no_row_all : Test(10) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 0;
   is $result->table_name, undef;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
 } # _execute_delete_return_no_row_all
 
@@ -1000,13 +1000,13 @@ sub _execute_delete_return_a_row_all : Test(10) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 1;
   is $result->table_name, undef;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
 } # _execute_delete_return_a_row_all
 
@@ -1029,13 +1029,13 @@ sub _execute_delete_return_multiple_rows_all : Test(10) {
   isa_ok $result, 'Dongry::Database::Executed';
   is $result->row_count, 3;
   is $result->table_name, undef;
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
 } # _execute_delete_return_multiple_rows_all
 
@@ -1056,12 +1056,12 @@ sub _execute_show_tables_return_multiple_rows_all : Test(10) {
   is $result->row_count, 1;
   is $result->table_name, undef;
   eq_or_diff [values %{$result->all->to_a->[0]}], ['table1'];
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
   my $invoked = 0;
-  dies_ok { $result->each (sub { $invoked++ }) };
-  dies_ok { $result->each_as_row (sub { $invoked++ }) };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   is $invoked, 0;
 } # _execute_show_all_return_multiple_rows_all
 
@@ -1295,30 +1295,30 @@ sub _execute_delete_source : Test(3) {
 
 sub _execute_unknown_source_name : Test(1) {
   my $db = Dongry::Database->new;
-  dies_ok { $db->execute ('select * from foo', [], source_name => 'foo') };
+  dies_here_ok { $db->execute ('select * from foo', [], source_name => 'foo') };
 } # _execute_unknown_source_name
 
 sub _execute_unknown_source_name_2 : Test(1) {
   my $db = Dongry::Database->new (sources => {master => {dsn => 'foo'}});
-  dies_ok { $db->execute ('select * from foo', [], source_name => 'foo') };
+  dies_here_ok { $db->execute ('select * from foo', [], source_name => 'foo') };
 } # _execute_unknown_source_name_2
 
 sub _execute_bad_source_definition_1 : Test(1) {
   my $db = Dongry::Database->new
       (sources => {default => {dsn => 'bad'}});
-  dies_ok { $db->execute ('select * from foo', []) };
+  dies_here_ok { $db->execute ('select * from foo', []) };
 } # _execute_bad_source_definition_1
 
 sub _execute_bad_source_definition_2 : Test(1) {
   my $db = Dongry::Database->new
       (sources => {hoge => {dsn => 'bad'}});
-  dies_ok { $db->execute ('select * from foo', [], source_name => 'hoge') };
+  dies_here_ok { $db->execute ('select * from foo', [], source_name => 'hoge') };
 } # _execute_bad_source_definition_2
 
 sub _execute_bad_source_definition_3 : Test(1) {
   my $db = Dongry::Database->new
       (sources => {hoge => {dsn => 'dbi:mysql:bad'}});
-  dies_ok { $db->execute ('select * from foo', [], source_name => 'hoge') };
+  dies_here_ok { $db->execute ('select * from foo', [], source_name => 'hoge') };
 } # _execute_bad_source_definition_3
 
 sub _execute_must_be_writable_1 : Test(1) {
@@ -1344,7 +1344,7 @@ sub _execute_must_be_writable_2 : Test(1) {
   $db->execute ('insert into hoge1 (id) values (1)', [],
                 source_name => 'writable');
 
-  dies_ok {
+  dies_here_ok {
     $db->execute ('select * from hoge1', [], must_be_writable => 1);
   };
 } # _execute_must_be_writable_2
@@ -1387,7 +1387,7 @@ sub _execute_must_be_writable_5 : Test(1) {
                    writable => {dsn => $dsn, writable => 1}});
   $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
 
-  dies_ok {
+  dies_here_ok {
     $db->execute ('insert into hoge1 (id) values (1)', [],
                   must_be_writable => 1);
   };
@@ -1482,7 +1482,7 @@ sub _execute_even_if_read_only_default_source : Test(1) {
                    writable => {dsn => $dsn, writable => 1}});
   $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
 
-  dies_ok {
+  dies_here_ok {
     $db->execute ('select * from hoge1', [],
                   even_if_read_only => 1);
   };
@@ -1497,7 +1497,7 @@ sub _execute_even_if_read_only_default_source_2 : Test(1) {
                    writable => {dsn => $dsn, writable => 1}});
   $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
 
-  dies_ok {
+  dies_here_ok {
     $db->execute ('insert into hoge1 (id) values (0)', [],
                   even_if_read_only => 1);
   };
@@ -1624,7 +1624,7 @@ sub _execute_placeholder_too_many : Test(2) {
   $db->execute ('create table hoge1 (id int, value text)', undef,
                 source_name => 'writable');
 
-  dies_ok { 
+  dies_here_ok { 
     $db->execute ('insert into hoge1 (id,value) values (?, ?)',
                   [10, undef, 4],
                   source_name => 'writable');
@@ -1643,7 +1643,7 @@ sub _execute_placeholder_too_few : Test(2) {
   $db->execute ('create table hoge1 (id int, value text)', undef,
                 source_name => 'writable');
 
-  dies_ok { 
+  dies_here_ok { 
     $db->execute ('insert into hoge1 (id,value) values (?, ?)',
                   [10],
                   source_name => 'writable');

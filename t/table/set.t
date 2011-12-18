@@ -95,7 +95,7 @@ sub _set_unparsable_but_ref : Test(2) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     $row->set ({col3 => \'abc xyz'});
   };
 
@@ -174,7 +174,7 @@ sub _set_unknown_type : Test(2) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     $row->set ({col2 => 124222});
   };
 
@@ -199,7 +199,7 @@ sub _set_empty_primary_keys : Test(2) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     $row->set ({col2 => 124222});
   };
 
@@ -223,7 +223,7 @@ sub _set_no_primary_keys : Test(2) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     $row->set ({col2 => 124222});
   };
 
@@ -240,7 +240,7 @@ sub _set_no_schema : Test(2) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     $row->set ({col2 => 124222});
   };
 
@@ -262,7 +262,7 @@ sub _set_unknown_column : Test(2) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     $row->set ({col4 => 121});
   };
 
@@ -323,7 +323,7 @@ sub _set_no_row : Test(2) {
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
   $db->delete ('table1', {col1 => 120});
 
-  dies_ok {
+  dies_here_ok {
     $row->set ({col2 => 'aaa bbb'});
   };
 
@@ -346,7 +346,7 @@ sub _set_multiple_rows : Test(2) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     $row->set ({col2 => 'aaa bbb'});
   };
 
@@ -410,10 +410,10 @@ sub _set_changed_data_parsed_bare : Test(2) {
 
   $row->set ({col2 => $db->bare_sql_fragment ('col1 * 10')});
 
-  dies_ok {
+  dies_here_ok {
     $row->get ('col2');
   };
-  dies_ok {
+  dies_here_ok {
     $row->get_bare ('col2');
   };
 } # _set_changed_data_parsed_bare
@@ -453,7 +453,7 @@ sub _set_not_writable : Test(3) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     $row->set ({col2 => 'hoge'});
   };
 
@@ -495,7 +495,7 @@ sub _set_empty : Test(2) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     $row->set ({});
   };
 

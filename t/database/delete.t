@@ -15,25 +15,25 @@ sub _delete_nop : Test(66) {
       (sources => {master => {dsn => $dsn, writable => 1}});
   $db->execute ('create table foo (id int)');
   
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     my $result = $db->delete ('foo', {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 0;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
   }
 } # _delete_nop
 
 sub _delete_a_row_deleted : Test(72) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -46,14 +46,14 @@ sub _delete_a_row_deleted : Test(72) {
     is $result->row_count, 1;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
@@ -62,7 +62,7 @@ sub _delete_a_row_deleted : Test(72) {
 } # _delete_a_row_deleted
 
 sub _delete_two_row_deleted : Test(72) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -75,14 +75,14 @@ sub _delete_two_row_deleted : Test(72) {
     is $result->row_count, 2;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->select
         ('foo', ['1 = 1'],
@@ -93,7 +93,7 @@ sub _delete_two_row_deleted : Test(72) {
 } # _delete_two_rows_deleted
 
 sub _delete_a_row_deleted_utf8_flagged_value : Test(72) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -106,14 +106,14 @@ sub _delete_a_row_deleted_utf8_flagged_value : Test(72) {
     is $result->row_count, 1;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
@@ -122,7 +122,7 @@ sub _delete_a_row_deleted_utf8_flagged_value : Test(72) {
 } # _delete_a_row_deleted_utf8_flagged_value
 
 sub _delete_a_row_deleted_utf8_unflagged_value : Test(72) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -136,14 +136,14 @@ sub _delete_a_row_deleted_utf8_unflagged_value : Test(72) {
     is $result->row_count, 1;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
@@ -152,7 +152,7 @@ sub _delete_a_row_deleted_utf8_unflagged_value : Test(72) {
 } # _delete_a_row_deleted_utf8_unflagged_value
 
 sub _delete_a_row_deleted_stupid_value : Test(72) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -165,14 +165,14 @@ sub _delete_a_row_deleted_stupid_value : Test(72) {
     is $result->row_count, 1;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
@@ -181,7 +181,7 @@ sub _delete_a_row_deleted_stupid_value : Test(72) {
 } # _delete_a_row_deleted_stupid_value
 
 sub _delete_a_row_deleted_utf8_flagged_column : Test(72) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -194,14 +194,14 @@ sub _delete_a_row_deleted_utf8_flagged_column : Test(72) {
     is $result->row_count, 1;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
@@ -210,7 +210,7 @@ sub _delete_a_row_deleted_utf8_flagged_column : Test(72) {
 } # _delete_a_row_deleted_utf8_flagged_column
 
 sub _delete_a_row_deleted_utf8_unflagged_column : Test(72) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -224,14 +224,14 @@ sub _delete_a_row_deleted_utf8_unflagged_column : Test(72) {
     is $result->row_count, 1;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
@@ -240,7 +240,7 @@ sub _delete_a_row_deleted_utf8_unflagged_column : Test(72) {
 } # _delete_a_row_deleted_utf8_unflagged_column
 
 sub _delete_a_row_deleted_stupid_column : Test(12) {
-  for my $method (qw(all all_as_rows each each_as_rows first first_as_row)) {
+  for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
     my $db = Dongry::Database->new
@@ -248,7 +248,7 @@ sub _delete_a_row_deleted_stupid_column : Test(12) {
     $db->execute ("create table foo (```ab(;` blob)");
     $db->execute ("insert into foo (```ab(;`) values (12)");
     
-    dies_ok {
+    dies_here_ok {
       my $result = $db->delete
           ('foo', {(encode 'utf-8', "`ab(;") => 12});
     };
@@ -265,14 +265,14 @@ sub _delete_a_row_deleted_stupid_column : Test(12) {
     is $result->row_count, 1;
     is $result->table_name, 'foo';
     my $invoked = 0;
-    dies_ok { $result->$method (sub { $invoked++ }) };
-    dies_ok { $result->all };
-    dies_ok { $result->all_as_rows };
-    dies_ok { $result->each (sub { $invoked++ }) };
-    dies_ok { $result->each_as_row (sub { $invoked++ }) };
+    dies_here_ok { $result->$method (sub { $invoked++ }) };
+    dies_here_ok { $result->all };
+    dies_here_ok { $result->all_as_rows };
+    dies_here_ok { $result->each (sub { $invoked++ }) };
+    dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
     is $invoked, 0;
-    dies_ok { $result->first };
-    dies_ok { $result->first_as_row };
+    dies_here_ok { $result->first };
+    dies_here_ok { $result->first_as_row };
 
     eq_or_diff $db->execute
         ('select * from foo', undef, source_name => 'master')->all->to_a,
@@ -384,7 +384,7 @@ sub _delete_where_bad_column : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
-  dies_ok {
+  dies_here_ok {
     my $result = $db->delete
         ('foo', ['mid > 23']);
   };
@@ -404,7 +404,7 @@ sub _delete_where_bad_sql : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
-  dies_ok {
+  dies_here_ok {
     my $result = $db->delete
         ('foo', ['id id id ']);
   };
@@ -424,9 +424,8 @@ sub _delete_where_bad_arg : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
-  dies_ok {
-    my $result = $db->delete
-        ('foo', 'id > 23');
+  dies_here_ok {
+    my $result = $db->delete ('foo', 'id > 23');
   };
 
   eq_or_diff $db->execute
@@ -444,7 +443,7 @@ sub _delete_where_empty_arg : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
-  dies_ok {
+  dies_here_ok {
     my $result = $db->delete ('foo', {});
   };
 
@@ -463,7 +462,7 @@ sub _delete_where_no_arg : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 'ab cde')");
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
-  dies_ok {
+  dies_here_ok {
     my $result = $db->delete ('foo');
   };
 
@@ -540,7 +539,7 @@ sub _delete_source_name_implicit_not_writable : Test(4) {
                    default => {dsn => $dsn2, writable => 1},
                    heavy => {dsn => $dsn3, writable => 1}});
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->delete ('foo', {v1 => 'ab cde'});
   };
 
@@ -622,7 +621,7 @@ sub _delete_source_name_default_not_writable : Test(4) {
       (sources => {master => {dsn => $dsn1, writable => 1},
                    default => {dsn => $dsn2, writable => 0},
                    heavy => {dsn => $dsn3, writable => 1}});
-  dies_ok {
+  dies_here_ok {
     my $result = $db->delete ('foo', {v1 => 'ab cde'},
                               source_name => 'default');
   };
@@ -667,7 +666,7 @@ sub _delete_offset_0 : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 2)");
   $db->execute ("insert into foo (id, v1) values (12, 3)");
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->delete
         ('foo', {id => 12},
          order => [v1 => 1], offset => 0);
@@ -690,7 +689,7 @@ sub _delete_offset_1 : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 2)");
   $db->execute ("insert into foo (id, v1) values (12, 3)");
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->delete
         ('foo', {id => 12},
          order => [v1 => 1], offset => 1);
@@ -815,7 +814,7 @@ sub _delete_offset_limit : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 2)");
   $db->execute ("insert into foo (id, v1) values (12, 3)");
 
-  dies_ok {
+  dies_here_ok {
     my $result = $db->delete
         ('foo', {id => 12},
          order => [v1 => 1], offset => 1, limit => 2);

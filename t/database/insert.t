@@ -49,7 +49,7 @@ sub _insert_zero_rows : Test(2) {
                    default => {dsn => $dsn}});
   $db->execute ('create table foo (id int, v1 text, v2 text)');
   
-  dies_ok { $db->insert ('foo', []) };
+  dies_here_ok { $db->insert ('foo', []) };
 
   my $result = $db->execute ('select * from foo order by id asc');
   is $result->row_count, 0;
@@ -80,7 +80,7 @@ sub _insert_not_writable : Test(2) {
   $db->execute ('create table foo (id int, v1 text, v2 text)', [],
                 source_name => 'writable');
   
-  dies_ok { $db->insert ('foo', [{id => 31}]) };
+  dies_here_ok { $db->insert ('foo', [{id => 31}]) };
 
   my $result = $db->execute ('select * from foo order by id asc');
   is $result->row_count, 0;
@@ -220,13 +220,13 @@ sub _insert_source_heavy : Test(3) {
 
 sub _insert_source_not_defined : Test(1) {
   my $db = Dongry::Database->new;
-  dies_ok { $db->insert ('foo', [{id => 444}]) };
+  dies_here_ok { $db->insert ('foo', [{id => 444}]) };
 } # _insert_source_not_defined
 
 sub _insert_source_not_found : Test(1) {
   my $db = Dongry::Database->new
       (sources => {hoge => {dsn => 'foo'}});
-  dies_ok { $db->insert ('foo', [{id => 444}], source_name => 'fuga') };
+  dies_here_ok { $db->insert ('foo', [{id => 444}], source_name => 'fuga') };
 } # _insert_source_not_found
 
 sub _insert_bad_value_arg : Test(3) {
@@ -305,13 +305,13 @@ sub _insert_a_row_result_each : Test(12) {
   $result->each (sub { push @value, $_ });
   eq_or_diff \@value, [{id => 32}];
   @value = ();
-  dies_ok { $result->each (sub { push @value, $_ }) };
-  dies_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
   eq_or_diff \@value, [];
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _insert_a_row_result_each
 
 sub _insert_a_row_result_each_as_row : Test(16) {
@@ -335,13 +335,13 @@ sub _insert_a_row_result_each_as_row : Test(16) {
   eq_or_diff $value[0]->{data}, {id => 32};
   is $value[0]->{parsed_data}, undef;
   @value = ();
-  dies_ok { $result->each_as_row (sub { push @value, $_ }) };
-  dies_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
   eq_or_diff \@value, [];
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _insert_a_row_result_each_as_row
 
 sub _insert_a_row_result_all : Test(12) {
@@ -359,14 +359,14 @@ sub _insert_a_row_result_all : Test(12) {
   my $values = $result->all;
   isa_list_n_ok $values, 1;
   eq_or_diff $values->to_a, [{id => 32}];
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
   my @value;
-  dies_ok { $result->each (sub { push @value, $_ }) };
-  dies_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
   eq_or_diff \@value, [];
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _insert_a_row_result_all
 
 sub _insert_a_row_result_all_as_rows : Test(16) {
@@ -388,14 +388,14 @@ sub _insert_a_row_result_all_as_rows : Test(16) {
   is $values->[0]->{table_name}, 'foo';
   eq_or_diff $values->[0]->{data}, {id => 32};
   is $values->[0]->{parsed_data}, undef;
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
   my @value;
-  dies_ok { $result->each_as_row (sub { push @value, $_ }) };
-  dies_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
   eq_or_diff \@value, [];
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _insert_a_row_result_all_as_rows
 
 sub _insert_a_row_result_first : Test(12) {
@@ -412,13 +412,13 @@ sub _insert_a_row_result_first : Test(12) {
   is $result->table_name, 'foo';
   my $value = $result->first;
   eq_or_diff $value, {id => 32};
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
   my @value;
-  dies_ok { $result->each (sub { push @value, $_ }) };
-  dies_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
   eq_or_diff \@value, [];
 } # _insert_a_row_result_first
 
@@ -440,13 +440,13 @@ sub _insert_a_row_result_first_as_row : Test(16) {
   is $value->{table_name}, 'foo';
   eq_or_diff $value->{data}, {id => 32};
   is $value->{parsed_data}, undef;
-  dies_ok { $result->first_as_row };
-  dies_ok { $result->first };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->all };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
   my @value;
-  dies_ok { $result->each_as_row (sub { push @value, $_ }) };
-  dies_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
   eq_or_diff \@value, [];
 } # _insert_a_row_result_first_as_row
 
@@ -466,13 +466,13 @@ sub _insert_two_rows_result_each : Test(12) {
   $result->each (sub { push @value, $_ });
   eq_or_diff \@value, [{id => 32}, {id => 53}];
   @value = ();
-  dies_ok { $result->each (sub { push @value, $_ }) };
-  dies_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
   eq_or_diff \@value, [];
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _insert_two_rows_result_each
 
 sub _insert_two_rows_result_each_as_row : Test(21) {
@@ -501,13 +501,13 @@ sub _insert_two_rows_result_each_as_row : Test(21) {
   eq_or_diff $value[1]->{data}, {id => 53};
   is $value[1]->{parsed_data}, undef;
   @value = ();
-  dies_ok { $result->each_as_row (sub { push @value, $_ }) };
-  dies_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
   eq_or_diff \@value, [];
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _insert_two_rows_result_each_as_row
 
 sub _insert_two_rows_result_all : Test(12) {
@@ -525,14 +525,14 @@ sub _insert_two_rows_result_all : Test(12) {
   my $values = $result->all;
   isa_list_n_ok $values, 2;
   eq_or_diff $values->to_a, [{id => 32}, {id => 52}];
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
   my @value;
-  dies_ok { $result->each (sub { push @value, $_ }) };
-  dies_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
   eq_or_diff \@value, [];
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _insert_two_rows_result_all
 
 sub _insert_two_rows_result_all_as_rows : Test(21) {
@@ -559,14 +559,14 @@ sub _insert_two_rows_result_all_as_rows : Test(21) {
   is $values->[1]->{table_name}, 'foo';
   eq_or_diff $values->[1]->{data}, {id => 52};
   is $values->[1]->{parsed_data}, undef;
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
   my @value;
-  dies_ok { $result->each_as_row (sub { push @value, $_ }) };
-  dies_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
   eq_or_diff \@value, [];
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
 } # _insert_two_rows_result_all_as_rows
 
 sub _insert_two_rows_result_first : Test(11) {
@@ -583,13 +583,13 @@ sub _insert_two_rows_result_first : Test(11) {
   is $result->table_name, 'foo';
   my $value = $result->first;
   eq_or_diff $value, {id => 32};
-  dies_ok { $result->first };
-  dies_ok { $result->first_as_row };
-  dies_ok { $result->all };
-  dies_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
   my @value;
-  dies_ok { $result->each (sub { push @value, $_ }) };
-  dies_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
   eq_or_diff \@value, [];
 } # _insert_two_rows_result_first
 
@@ -611,13 +611,13 @@ sub _insert_two_rows_result_first_as_row : Test(15) {
   is $value->{table_name}, 'foo';
   eq_or_diff $value->{data}, {id => 32};
   is $value->{parsed_data}, undef;
-  dies_ok { $result->first_as_row };
-  dies_ok { $result->first };
-  dies_ok { $result->all_as_rows };
-  dies_ok { $result->all };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
   my @value;
-  dies_ok { $result->each_as_row (sub { push @value, $_ }) };
-  dies_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
   eq_or_diff \@value, [];
 } # _insert_two_rows_result_first_as_row
 
@@ -748,14 +748,14 @@ sub _insert_duplicate_error : Test(8) {
   $db->execute ('insert into foo (id) values (2)');
 
   my $messline;
-  dies_ok {
+  dies_here_ok {
     $messline = __LINE__; $db->insert ('foo', [{id => 2}]);
   };
 
   is $onerror_self, $db;
   is $onerror_args{source_name}, 'master';
   is $onerror_args{sql}, 'INSERT INTO `foo` (`id`) VALUES (?)';
-  ok $onerror_args{text};
+  is $onerror_args{text}, q{DBD::mysql::st execute failed: Duplicate entry '2' for key 1};
   is $invoked, 1;
   is $shortmess, ' at ' . __FILE__ . ' line ' . $messline . "\n";
   
@@ -830,7 +830,7 @@ sub _insert_column_error : Test(8) {
   $db->execute ('create table foo (id int unique key)');
 
   my $messline;
-  dies_ok {
+  dies_here_ok {
     $messline = __LINE__; $db->execute ('insert into foo (id2) values (2)');
   };
 

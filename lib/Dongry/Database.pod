@@ -214,6 +214,16 @@ An SQL statement being executed, if any.
 The default C<onerror> handler is to show the error message in the
 standard error output.
 
+Please don't do anything much more complex than just reporting the
+error to someone else.  In particular, don't try to execute another
+SQL statement in the error handler, as it would likely result in
+another SQL execution error, which would recursively invoke the same
+error handler.
+
+You can throw an exception (or simply C<die>) in the error handler.
+In anyway, an exception is thrown just after the error handler
+returns.
+
 =item $db->connect ($source_name)
 
 Connect to the data source specified by the argument, if any, or the

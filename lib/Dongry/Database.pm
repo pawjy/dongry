@@ -90,13 +90,16 @@ sub connect ($$) {
       ($source->{dsn}, $source->{username}, $source->{password},
        {RaiseError => 1, PrintError => 0, HandleError => sub {
           #my ($msg, $dbh, $returned) = @_:
-          local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-          $onerror_args->{db}->onerror
-              ->($onerror_args->{db},
-                 text => $_[0],
-                 source_name => $name,
-                 sql => $onerror_args->{db}->{last_sql});
-          return 0;
+          {
+            local $Carp::CarpLevel = $Carp::CarpLevel + 1; 
+            $onerror_args->{db}->onerror
+                ->($onerror_args->{db},
+                   text => $_[0],
+                   source_name => $name,
+                   sql => $onerror_args->{db}->{last_sql});
+          }
+          croak $_[0];
+          #return 0;
         }, AutoCommit => 1, ReadOnly => !$source->{writable}});
   {
     $self->onconnect->($self, source_name => $name);

@@ -118,10 +118,10 @@ sub _get_broken : Test(3) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     my $date1 = $row->get ('col1');
   };
-  dies_ok {
+  dies_here_ok {
     my $date2 = $row->get ('col1');
   };
 
@@ -145,11 +145,11 @@ sub _get_column_defined_but_not_found : Test(2) {
 
   my $row = $db->select ('table1', {col3 => {-not => undef}})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     my $date1 = $row->get ('col1');
   };
 
-  dies_ok {
+  dies_here_ok {
     my $str1 = $row->get_bare ('col1');
   };
 } # _get_column_defined_but_not_found
@@ -170,11 +170,11 @@ sub _get_column_not_found : Test(2) {
 
   my $row = $db->select ('table1', {col3 => {-not => undef}})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     $row->get ('col1');
   };
 
-  dies_ok {
+  dies_here_ok {
     $row->get_bare ('col1');
   };
 } # _get_column_not_found
@@ -195,7 +195,7 @@ sub _get_column_unknown_type : Test(3) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     my $date1 = $row->get ('col1');
   };
 
@@ -269,11 +269,11 @@ sub _get_bare_sql_fragment : Test(2) {
       ({col3 => $date0, col2 => 'abc def'});
   $row->{data}->{col3} = $db->bare_sql_fragment ('NOW()');
 
-  dies_ok {
+  dies_here_ok {
     my $date1 = $row->get ('col3');
   };
 
-  dies_ok {
+  dies_here_ok {
     my $str1 = $row->get_bare ('col3');
   };
 } # _get_bare_sql_fragment
@@ -353,7 +353,7 @@ sub _primary_key_bare_values_undef : Test(1) {
 
   my $row = $db->select ('table1', {col2 => 'abc def'})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     my $pk = $row->primary_key_bare_values;
   };
 } # _primary_key_bare_values_undef
@@ -374,7 +374,7 @@ sub _primary_key_bare_values_missing : Test(1) {
   my $row = $db->select ('table1', {col2 => 'abc def'},
                          fields => ['col2'])->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     my $pk = $row->primary_key_bare_values;
   };
 } # _primary_key_bare_values_missing
@@ -395,7 +395,7 @@ sub _primary_key_bare_values_missing_some : Test(1) {
   my $row = $db->select ('table1', {col2 => 'abc def'},
                          fields => ['col2'])->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     my $pk = $row->primary_key_bare_values;
   };
 } # _primary_key_bare_values_missing_some
@@ -415,7 +415,7 @@ sub _primary_key_bare_values_empty_primary_keys : Test(1) {
 
   my $row = $db->select ('table1', {col2 => 'abc def'})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     my $pk = $row->primary_key_bare_values;
   };
 } # _primary_key_bare_values_empty_primary_keys
@@ -434,7 +434,7 @@ sub _primary_key_bare_values_no_primary_keys : Test(1) {
 
   my $row = $db->select ('table1', {col2 => 'abc def'})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     my $pk = $row->primary_key_bare_values;
   };
 } # _primary_key_bare_values_no_primary_keys
@@ -447,7 +447,7 @@ sub _primary_key_bare_values_no_schema : Test(1) {
 
   my $row = $db->select ('table1', {col2 => 'abc def'})->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     my $pk = $row->primary_key_bare_values;
   };
 } # _primary_key_bare_values_no_schema
@@ -468,7 +468,7 @@ sub _primary_key_bare_values_bare_sql_fragment : Test(1) {
   my $row = $db->select ('table1', {col2 => 'abc def'})->first_as_row;
   $row->{data}->{col3} = $db->bare_sql_fragment ('NOW()');
 
-  dies_ok {
+  dies_here_ok {
     my $pk = $row->primary_key_bare_values;
   };
 } # _primary_key_bare_values_a_key
@@ -487,7 +487,7 @@ sub _reload_created_reloaded : Test(4) {
 
   my $row = $db->table ('table1')->create
       ({col3 => 'a e aaaa', col2 => 'abc def'});
-  dies_ok {
+  dies_here_ok {
     $row->get ('col1');
   };
 
@@ -536,7 +536,7 @@ sub _reload_from_partial : Test(4) {
                          fields => 'col2')->first_as_row;
   
   my $v1 = $row->get ('col2');
-  dies_ok {
+  dies_here_ok {
     $row->get ('col3');
   };
 
@@ -573,7 +573,7 @@ sub _reload_fields : Test(5) {
   my $v2 = $row->get ('col2');
   is $$v2, 2444 * 2;
   is $row->get ('col3'), 'aabre';
-  dies_ok {
+  dies_here_ok {
     $row->get ('col1');
   };
 } # _reload_fields
@@ -593,7 +593,7 @@ sub _reload_row_not_found : Test(3) {
   my $row = $db->select ('table1', ['1 = 1'])->first_as_row;
   $db->execute ('delete from table1');
 
-  dies_ok {
+  dies_here_ok {
     $row->reload;
   };
 
@@ -617,7 +617,7 @@ sub _reload_row_found_many : Test(3) {
   $db->execute ('insert into table1 (col2, col3) values (2444, "aa2")');
   $db->execute ('insert into table1 (col2, col3) values (2444, "aa3")');
 
-  dies_ok {
+  dies_here_ok {
     $row->reload;
   };
 
@@ -660,12 +660,12 @@ sub _reload_no_pk_values : Test(4) {
   my $row = $db->select ('table1', ['1 = 1'],
                          fields => ['col1', 'col3'])->first_as_row;
 
-  dies_ok {
+  dies_here_ok {
     $row->reload;
   };
 
   ok $row->get ('col1');
-  dies_ok {
+  dies_here_ok {
     $row->get ('col2');
   };
   is $row->get ('col3'), 'aabre';
@@ -720,7 +720,7 @@ sub _reload_bad_source_name : Test(3) {
   my $row = $db->select ('table1', ['1 = 1'])->first_as_row;
   is $row->get ('col3'), 'aa xy';
 
-  dies_ok {
+  dies_here_ok {
     $row->reload (source_name => 'notmaster');
   };
 
@@ -792,7 +792,7 @@ sub _reload_in_transaction_locked : Test(3) {
   $db1->execute ('select * from table1 for update');
 
   my $transaction = $db->transaction;
-  dies_ok {
+  dies_here_ok {
     $row->reload (source_name => 'master', lock => 'update');
   };
   

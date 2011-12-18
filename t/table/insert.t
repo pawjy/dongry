@@ -130,7 +130,7 @@ sub _insert_not_serialized_with_ref : Test(2) {
   my $db = new_db schema => $schema;
 
   my $table = $db->table ('table1');
-  dies_ok {
+  dies_here_ok {
     $table->insert
         ([{col1 => DateTime->new (year => 2001, month => 12, day => 3,
                                   time_zone => 'Asia/Tokyo'),
@@ -161,7 +161,7 @@ sub _insert_unknown_type : Test(2) {
   my $db = new_db schema => $schema;
 
   my $table = $db->table ('table1');
-  dies_ok {
+  dies_here_ok {
     $table->insert
         ([{col1 => DateTime->new (year => 2001, month => 12, day => 3,
                                   time_zone => 'Asia/Tokyo'),
@@ -221,7 +221,7 @@ sub _insert_no_table_schema_with_ref : Test(2) {
   my $db = new_db schema => $schema;
 
   my $table = $db->table ('table1');
-  dies_ok {
+  dies_here_ok {
     $table->insert
         ([{col1 => '2011-01-02 00:00:01',
            col2 => qr/abc def/,
@@ -266,7 +266,7 @@ sub _insert_no_schema_with_ref : Test(2) {
                                       col3 blob, col4 int)');
 
   my $table = $db->table ('table1');
-  dies_ok {
+  dies_here_ok {
     $table->insert
         ([{col1 => '2011-01-02 00:00:01',
            col2 => {abc => 'def'},
@@ -352,7 +352,7 @@ sub _insert_empty : Test(2) {
   my $db = new_db schema => $schema;
 
   my $table = $db->table ('table1');
-  dies_ok {
+  dies_here_ok {
     $table->insert ([]);
   };
 
@@ -373,7 +373,7 @@ sub _insert_empty_return : Test(2) {
   my $db = new_db schema => $schema;
 
   my $table = $db->table ('table1');
-  dies_ok {
+  dies_here_ok {
     my $return = $table->insert ([]);
   };
 
@@ -663,7 +663,7 @@ sub _insert_duplicate_error : Test(2) {
   my $table = $db->table ('table1');
   my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
                              time_zone => 'Asia/Tokyo');
-  dies_ok {
+  dies_here_ok {
     my $result = $table->insert
         ([{col1 => $date1, col2 => \11},
           {col2 => \4}]);
@@ -855,7 +855,7 @@ sub _insert_not_writable : Test(2) {
   my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
                              time_zone => 'Asia/Tokyo');
 
-  dies_ok {
+  dies_here_ok {
     my $result = $table->insert
         ([{col1 => $date1, col2 => \11},
           {col2 => \4}]);
@@ -884,7 +884,7 @@ sub _insert_not_writable_source : Test(2) {
   my $date1 = DateTime->new (year => 2001, month => 12, day => 3,
                              time_zone => 'Asia/Tokyo');
 
-  dies_ok {
+  dies_here_ok {
     my $result = $table->insert
         ([{col1 => $date1, col2 => \11},
           {col2 => \4}],
@@ -1012,7 +1012,7 @@ sub _create_duplicate_error : Test(2) {
 
   my $table = $db->table ('table1');
   my $col1 = \'2001-12-02 15:00:00';
-  dies_ok {
+  dies_here_ok {
     my $row = $table->create ({col1 => $col1, col2 => 11});
   };
 
