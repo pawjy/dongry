@@ -90,7 +90,7 @@ sub where ($;$) {
 
         if ($op eq '-in') {
           my $list = $values->{$key}->{$type};
-          croak "List for |-in| is empty" if not $list or not @$list;
+          croak "List for |-in| is empty" unless @{$list or []};
           $sql .= ' IN (' . (join ', ', ('?') x @$list) . ')';
           my $coltype = $table_schema->{type}->{$key};
           my $handler;
@@ -181,9 +181,8 @@ sub where ($;$) {
       my $type = ref ($bind{$key});
       delete $unused{$key};
 
-      if (not defined $bind{$key}) {
-        croak "Value for |$key| is not defined";
-      } elsif ($instruction eq 'sub' or $instruction eq 'optsub') {
+      if ($instruction eq 'sub' or $instruction eq 'optsub') {
+        croak "Value for |$key| is not defined" if not defined $bind{$key};
         croak "A non-reference value is specified for |$key|" unless $type;
         croak "A reference is specified for |$key|" if $type ne 'HASH';
 
@@ -199,25 +198,45 @@ sub where ($;$) {
           }
         }
       } elsif ($instruction eq 'id') {
+        croak "Value for |$key| is not defined" if not defined $bind{$key};
         croak "A reference is specified for |$key|" if $type;
         quote $bind{$key};
       } elsif (length $instruction) {
         croak "Instruction |$instruction| is unknown";
       } elsif ($type eq 'ARRAY') {
-        if (@{$bind{$key}}) {
-          push @placeholder, grep { 
-            croak "An undef is found in |$key| list" if not defined $_;
-            croak "A reference is found in |$key| list" if ref $_;
-            1;
-          } @{$bind{$key}};
-          join ', ', map { '?' } @{$bind{$key}};
-        } else {
-          croak "List for |$key| is empty";
+        croak "List for |$key| is empty" unless @{$bind{$key} or []};
+        my $coltype = $table_schema->{type}->{$column};
+        my $handler;
+        if ($coltype) {
+          $handler = $Dongry::Types->{$coltype}
+              or croak "Type handler for |$coltype| is not defined";
         }
-      } elsif ($type) {
-        croak "A reference is specified for |$key|";
+        push @placeholder, grep { 
+          croak "An undef is found in |$key| list" if not defined $_;
+          croak "A reference is found in |$key| list" if ref $_;
+          1;
+        } map {
+          if ($coltype) {
+            $handler->{serialize}->($_);
+          } else {
+            $_;
+          }
+        } @{$bind{$key}};
+        join ', ', map { '?' } @{$bind{$key}};
       } else {
-        push @placeholder, $bind{$key};
+        my $value = $bind{$key};
+        my $coltype = $table_schema->{type}->{$column};
+        if ($coltype) {
+          my $handler = $Dongry::Types->{$coltype}
+              or croak "Type handler for |$coltype| is not defined";
+          $value = $handler->{serialize}->($value);
+        } else {
+          if (defined $value and ref $value) {
+            croak "Type for |$column| is not defined but a reference is specified";
+          }
+        }
+        croak "Value for |$key| is not defined" if not defined $value;
+        push @placeholder, $value;
         '?';
       }
     }eg;

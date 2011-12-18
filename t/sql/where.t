@@ -5,7 +5,7 @@ use Path::Class;
 use lib file (__FILE__)->dir->parent->subdir ('lib')->stringify;
 use Test::Dongry;
 use base qw(Test::Class);
-use Dongry::SQL;
+use Dongry::SQL qw(where);
 use Dongry::Type::DateTime;
 use Encode;
 
@@ -384,7 +384,80 @@ sub _where_hashref_parsed : Test(17) {
   }
 } # _where_hashref_parsed
 
-# XXX tests for croaked cases
+sub _where_hashref_unknown_type : Test(4) {
+  dies_here_ok {
+    where {foo => 'abc'}, {type => {foo => 'as_unknown'}};
+  };
+  dies_here_ok {
+    where {foo => {-ne => 'abc'}}, {type => {foo => 'as_unknown'}};
+  };
+  dies_here_ok {
+    where {foo => {-in => ['abc']}}, {type => {foo => 'as_unknown'}};
+  };
+  dies_here_ok {
+    where [':hoge:sub', hoge => {foo => {-in => ['abc']}}],
+        {type => {foo => 'as_unknown'}};
+  };
+} # _where_hashref_unknown_type
+
+sub _where_hashref_type_error : Test(3) {
+  dies_ok {
+    where {foo => 'abc def'}, {type => {foo => 'timestamp_as_DateTime'}};
+  };
+  dies_ok {
+    where {foo => {-eq => 'abc def'}},
+        {type => {foo => 'timestamp_as_DateTime'}};
+  };
+  dies_ok {
+    where {foo => {-in => ['abc def']}},
+        {type => {foo => 'timestamp_as_DateTime'}};
+  };
+} # _where_hashref_type_error
+
+sub _where_named_parsed : Test(6) {
+  for (
+    [['foo = :foo',
+      foo => DateTime->new (year => 2001, month => 12, day => 3)],
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['foo = ?', ['2001-12-03 00:00:00']]],
+    [['foo = :foo', foo => undef],
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['foo = ?', ['0000-00-00 00:00:00']]],
+    [['foo IN (:foo)',
+      foo => [DateTime->new (year => 2001, month => 12, day => 3), undef]],
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['foo IN (?, ?)', ['2001-12-03 00:00:00', '0000-00-00 00:00:00']]],
+    [['foo = :bar::foo', bar => undef],
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['foo = ?', ['0000-00-00 00:00:00']]],
+    [['foo IN (:bar::foo)',
+      bar => [DateTime->new (year => 2001, month => 12, day => 3), undef]],
+     {type => {foo => 'timestamp_as_DateTime'}},
+     ['foo IN (?, ?)', ['2001-12-03 00:00:00', '0000-00-00 00:00:00']]],
+    [[':hoge1::hoge < foo AND foo < :hoge2::hoge',
+      hoge1 => DateTime->new (year => 2001, month => 10, day => 3),
+      hoge2 => DateTime->new (year => 2010, month => 10, day => 2)],
+     {type => {hoge => 'timestamp_as_DateTime', foo => 'as_unknown'}},
+     ['? < foo AND foo < ?', ['2001-10-03 00:00:00', '2010-10-02 00:00:00']]],
+  ) {
+    eq_or_diff [where $_->[0], $_->[1]] => $_->[2];
+  }
+} # _where_hashref_parsed
+
+sub _where_named_parsed_type_error : Test(3) {
+  dies_ok {
+    where ['foo = :foo', foo => 'abc'],
+        {type => {foo => 'timestamp_as_DateTime'}};
+  };
+  dies_ok {
+    where ['foo = :foo', foo => {-lt => 'abc'}],
+        {type => {foo => 'timestamp_as_DateTime'}};
+  };
+  dies_ok {
+    where ['foo IN (:foo)', foo => ['abc']],
+        {type => {foo => 'timestamp_as_DateTime'}};
+  };
+} # _where_named_parsed_type_error
 
 __PACKAGE__->runtests;
 
