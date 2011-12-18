@@ -33,7 +33,7 @@ sub _serialize_values ($$) {
   my $s_values = {};
   for my $name (keys %$values) {
     if (defined $values->{$name} and
-        ref $values->{$name} eq 'Dongry::Database::BareSQLFragment') {
+        ref $values->{$name} eq 'Dongry::SQL::BareFragment') {
       $s_values->{$name} = $values->{$name};
       next;
     }
@@ -191,7 +191,7 @@ sub get ($$) {
   my ($self, $name) = @_;
   croak "No data for column |$name|"
       if not exists $self->{data}->{$name} or
-         ref $self->{data}->{$name} eq 'Dongry::Database::BareSQLFragment';
+         ref $self->{data}->{$name} eq 'Dongry::SQL::BareFragment';
   return $self->{parsed_data}->{$name} if exists $self->{parsed_data}->{$name};
 
   my $schema = $self->table_schema || do {
@@ -213,7 +213,7 @@ sub get ($$) {
 sub get_bare ($$) {
   croak "No data for column |$_[1]|"
       if not exists $_[0]->{data}->{$_[1]} or
-         ref $_[0]->{data}->{$_[1]} eq 'Dongry::Database::BareSQLFragment';
+         ref $_[0]->{data}->{$_[1]} eq 'Dongry::SQL::BareFragment';
   return $_[0]->{data}->{$_[1]};
 } # get_bare
 
@@ -226,7 +226,7 @@ sub primary_key_bare_values ($) {
   return {map {
     croak "Primary key |$_| has no value"
         if not defined $data->{$_} or
-           ref $data->{$_} eq 'Dongry::Database::BareSQLFragment';
+           ref $data->{$_} eq 'Dongry::SQL::BareFragment';
     ($_ => $data->{$_});
   } @$pk};
 } # primary_key_bare_values
@@ -256,7 +256,7 @@ sub set ($$;%) {
   my $s_values = {};
   for my $name (keys %$values) {
     if (defined $values->{$name} and
-        ref $values->{$name} eq 'Dongry::Database::BareSQLFragment') {
+        ref $values->{$name} eq 'Dongry::SQL::BareFragment') {
       $s_values->{$name} = $values->{$name};
       next;
     }

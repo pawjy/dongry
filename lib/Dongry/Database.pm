@@ -227,7 +227,7 @@ sub insert ($$$;%) {
     my @sql_value;
     for (@col) {
       if (defined $value->{$_} and
-          ref $value->{$_} eq 'Dongry::Database::BareSQLFragment') {
+          ref $value->{$_} eq 'Dongry::SQL::BareFragment') {
         push @sql_value, (_quote $_), ${$value->{$_}};
       } else {
         push @sql_value, (_quote $_), '?';
@@ -326,7 +326,7 @@ sub update ($$$$;%) {
   my @bound_value;
   for (@col) {
     if (defined $value->{$_} and
-        ref $value->{$_} eq 'Dongry::Database::BareSQLFragment') {
+        ref $value->{$_} eq 'Dongry::SQL::BareFragment') {
       push @sql_value, (_quote $_), ${$value->{$_}};
     } else {
       push @sql_value, (_quote $_), '?';
@@ -369,7 +369,7 @@ sub delete ($$$;%) {
 } # delete
 
 sub bare_sql_fragment ($$) {
-  return bless \($_[1]), 'Dongry::Database::BareSQLFragment';
+  return bless \($_[1]), 'Dongry::SQL::BareFragment';
 } # bare_sql_fragment
 
 # ------ Schema-aware operations ------
@@ -596,11 +596,6 @@ sub DESTROY {
         Carp::shortmess;
   }
 } # DESTROY
-
-# ------ Bare SQL fragment ------
-
-package Dongry::Database::BareSQLFragment;
-our $VERSION = '1.0';
 
 1;
 

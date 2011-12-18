@@ -5,6 +5,6 @@ all:
 test: safetest
 
 safetest:
-	$(PROVE) t/database/*.t t/table/*.t
+	$(PROVE) t/sql/*.t t/database/*.t t/table/*.t
 
 ## License: Public Domain.

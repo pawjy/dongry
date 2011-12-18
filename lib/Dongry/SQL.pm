@@ -39,7 +39,7 @@ sub fields ($) {
         croak 'Hash reference must contain a field function name';
       }
     }
-  } elsif (ref $_[0] eq 'Dongry::Database::BareSQLFragment') {
+  } elsif (ref $_[0] eq 'Dongry::SQL::BareFragment') {
     return ${$_[0]};
   } else {
     croak sprintf 'Field value %s is not supported', $_[0];
@@ -118,5 +118,10 @@ sub order ($$) {
     return '';
   }
 } # order
+
+# ------ Bare SQL fragment ------
+
+package Dongry::SQL::BareFragment;
+our $VERSION = '1.0';
 
 1;
