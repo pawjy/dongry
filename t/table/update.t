@@ -1,4 +1,4 @@
-package test::Dongry::Table::set;
+package test::Dongry::Table::update;
 use strict;
 use warnings;
 use Path::Class;
@@ -25,9 +25,9 @@ sub new_db (%) {
   return $db;
 } # new_db
 
-# ------ |set| ------
+# ------ |update| ------
 
-sub _set_parsable : Test(1) {
+sub _update_parsable : Test(1) {
   my $schema = {
     table1 => {
       type => {
@@ -45,14 +45,14 @@ sub _set_parsable : Test(1) {
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
   my $date1 = DateTime->new (year => 2008, month => 10, day => 3);
-  $row->set ({col1 => $date1});
+  $row->update ({col1 => $date1});
 
   my $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   eq_or_diff $data,
       {col1 => '2008-10-03 00:00:00', col2 => 'abc def'};
-} # _set_parsable
+} # _update_parsable
 
-sub _set_unparsable : Test(1) {
+sub _update_unparsable : Test(1) {
   my $schema = {
     table1 => {
       type => {
@@ -70,14 +70,14 @@ sub _set_unparsable : Test(1) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  $row->set ({col3 => 'abc xyz'});
+  $row->update ({col3 => 'abc xyz'});
 
   my $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   eq_or_diff $data,
       {col1 => '2001-04-01 00:12:50', col2 => 'abc def', col3 => 'abc xyz'};
-} # _set_unparsable
+} # _update_unparsable
 
-sub _set_unparsable_but_ref : Test(2) {
+sub _update_unparsable_but_ref : Test(2) {
   my $schema = {
     table1 => {
       type => {
@@ -96,15 +96,15 @@ sub _set_unparsable_but_ref : Test(2) {
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
   dies_here_ok {
-    $row->set ({col3 => \'abc xyz'});
+    $row->update ({col3 => \'abc xyz'});
   };
 
   my $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   eq_or_diff $data,
       {col1 => '2001-04-01 00:12:50', col2 => 'abc def', col3 => undef};
-} # _set_unparsable_but_ref
+} # _update_unparsable_but_ref
 
-sub _set_undef : Test(1) {
+sub _update_undef : Test(1) {
   my $schema = {
     table1 => {
       type => {
@@ -121,14 +121,14 @@ sub _set_undef : Test(1) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  $row->set ({col2 => undef});
+  $row->update ({col2 => undef});
 
   my $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   eq_or_diff $data,
       {col1 => '2001-04-01 00:12:50', col2 => undef};
-} # _set_undef
+} # _update_undef
 
-sub _set_primary_key_value : Test(3) {
+sub _update_primary_key_value : Test(3) {
   my $schema = {
     table1 => {
       primary_keys => [qw/col1/],
@@ -141,23 +141,23 @@ sub _set_primary_key_value : Test(3) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  $row->set ({col1 => 121});
+  $row->update ({col1 => 121});
 
   my $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   eq_or_diff $data, {col1 => 121, col2 => 'abc def'};
 
-  $row->set ({col1 => 123});
+  $row->update ({col1 => 123});
 
   $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   eq_or_diff $data, {col1 => 123, col2 => 'abc def'};
 
-  $row->set ({col2 => 'xyz'});
+  $row->update ({col2 => 'xyz'});
 
   $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   eq_or_diff $data, {col1 => 123, col2 => 'xyz'};
-} # _set_primary_key_value
+} # _update_primary_key_value
 
-sub _set_unknown_type : Test(2) {
+sub _update_unknown_type : Test(2) {
   my $schema = {
     table1 => {
       type => {
@@ -175,15 +175,15 @@ sub _set_unknown_type : Test(2) {
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
   dies_here_ok {
-    $row->set ({col2 => 124222});
+    $row->update ({col2 => 124222});
   };
 
   my $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   eq_or_diff $data,
       {col1 => '2001-04-01 00:12:50', col2 => 'abc def'};
-} # _set_unknown_type
+} # _update_unknown_type
 
-sub _set_empty_primary_keys : Test(2) {
+sub _update_empty_primary_keys : Test(2) {
   my $schema = {
     table1 => {
       type => {
@@ -200,15 +200,15 @@ sub _set_empty_primary_keys : Test(2) {
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
   dies_here_ok {
-    $row->set ({col2 => 124222});
+    $row->update ({col2 => 124222});
   };
 
   my $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   eq_or_diff $data,
       {col1 => '2001-04-01 00:12:50', col2 => 'abc def'};
-} # _set_empty_primary_keys
+} # _update_empty_primary_keys
 
-sub _set_no_primary_keys : Test(2) {
+sub _update_no_primary_keys : Test(2) {
   my $schema = {
     table1 => {
       type => {
@@ -224,15 +224,15 @@ sub _set_no_primary_keys : Test(2) {
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
   dies_here_ok {
-    $row->set ({col2 => 124222});
+    $row->update ({col2 => 124222});
   };
 
   my $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   eq_or_diff $data,
       {col1 => '2001-04-01 00:12:50', col2 => 'abc def'};
-} # _set_no_primary_keys
+} # _update_no_primary_keys
 
-sub _set_no_schema : Test(2) {
+sub _update_no_schema : Test(2) {
   my $db = new_db schema => undef;
   $db->execute ('create table table1 (col1 timestamp default 0, col2 blob)');
   $db->execute ('insert into table1 (col1, col2)
@@ -241,15 +241,15 @@ sub _set_no_schema : Test(2) {
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
   dies_here_ok {
-    $row->set ({col2 => 124222});
+    $row->update ({col2 => 124222});
   };
 
   my $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   eq_or_diff $data,
       {col1 => '2001-04-01 00:12:50', col2 => 'abc def'};
-} # _set_no_schema
+} # _update_no_schema
 
-sub _set_unknown_column : Test(2) {
+sub _update_unknown_column : Test(2) {
   my $schema = {
     table1 => {
       primary_keys => [qw/col1/],
@@ -263,14 +263,14 @@ sub _set_unknown_column : Test(2) {
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
   dies_here_ok {
-    $row->set ({col4 => 121});
+    $row->update ({col4 => 121});
   };
 
   my $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   eq_or_diff $data, {col1 => 120, col2 => 'abc def'};
-} # _set_unknown_column
+} # _update_unknown_column
 
-sub _set_bare_sql_fragment : Test(2) {
+sub _update_bare_sql_fragment : Test(2) {
   my $schema = {
     table1 => {
       primary_keys => [qw/col1/],
@@ -283,13 +283,13 @@ sub _set_bare_sql_fragment : Test(2) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  $row->set ({col2 => $db->bare_sql_fragment ('col1 * 2')});
+  $row->update ({col2 => $db->bare_sql_fragment ('col1 * 2')});
 
   my $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   eq_or_diff $data, {col1 => 120, col2 => 240};
-} # _set_bare_sql_fragment
+} # _update_bare_sql_fragment
 
-sub _set_bare_sql_fragment_parsed : Test(2) {
+sub _update_bare_sql_fragment_parsed : Test(2) {
   my $schema = {
     table1 => {
       primary_keys => [qw/col1/],
@@ -303,13 +303,13 @@ sub _set_bare_sql_fragment_parsed : Test(2) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  $row->set ({col2 => $db->bare_sql_fragment ('col1 * 2')});
+  $row->update ({col2 => $db->bare_sql_fragment ('col1 * 2')});
 
   my $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   eq_or_diff $data, {col1 => 120, col2 => 240};
-} # _set_bare_sql_fragment_parsed
+} # _update_bare_sql_fragment_parsed
 
-sub _set_no_row : Test(2) {
+sub _update_no_row : Test(2) {
   my $schema = {
     table1 => {
       primary_keys => [qw/col1/],
@@ -324,14 +324,14 @@ sub _set_no_row : Test(2) {
   $db->delete ('table1', {col1 => 120});
 
   dies_here_ok {
-    $row->set ({col2 => 'aaa bbb'});
+    $row->update ({col2 => 'aaa bbb'});
   };
 
   my $data = $db->select ('table1', {col1 => {-not => undef}})->first;
   is $data, undef;
-} # _set_no_row
+} # _update_no_row
 
-sub _set_multiple_rows : Test(2) {
+sub _update_multiple_rows : Test(2) {
   my $schema = {
     table1 => {
       primary_keys => [qw/col1/],
@@ -347,14 +347,14 @@ sub _set_multiple_rows : Test(2) {
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
   dies_here_ok {
-    $row->set ({col2 => 'aaa bbb'});
+    $row->update ({col2 => 'aaa bbb'});
   };
 
   eq_or_diff $db->select ('table1', {col1 => {-not => undef}})->all->to_a,
       [{col1 => 120, col2 => 'aaa bbb'}, {col1 => 120, col2 => 'aaa bbb'}];
-} # _set_multiple_rows
+} # _update_multiple_rows
 
-sub _set_changed_data : Test(2) {
+sub _update_changed_data : Test(2) {
   my $schema = {
     table1 => {
       primary_keys => [qw/col1/],
@@ -367,13 +367,13 @@ sub _set_changed_data : Test(2) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  $row->set ({col2 => 'aaa bbb'});
+  $row->update ({col2 => 'aaa bbb'});
 
   is $row->get ('col2'), 'aaa bbb';
   is $row->get_bare ('col2'), 'aaa bbb';
-} # _set_changed_data
+} # _update_changed_data
 
-sub _set_changed_data_parsed : Test(2) {
+sub _update_changed_data_parsed : Test(2) {
   my $schema = {
     table1 => {
       primary_keys => [qw/col1/],
@@ -388,13 +388,13 @@ sub _set_changed_data_parsed : Test(2) {
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
   my $ref = \'zta qbv ';
-  $row->set ({col2 => $ref});
+  $row->update ({col2 => $ref});
 
   is $row->get ('col2'), $ref;
   is $row->get_bare ('col2'), 'zta qbv ';
-} # _set_changed_data_parsed
+} # _update_changed_data_parsed
 
-sub _set_changed_data_parsed_bare : Test(2) {
+sub _update_changed_data_parsed_bare : Test(2) {
   my $schema = {
     table1 => {
       primary_keys => [qw/col1/],
@@ -408,7 +408,7 @@ sub _set_changed_data_parsed_bare : Test(2) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  $row->set ({col2 => $db->bare_sql_fragment ('col1 * 10')});
+  $row->update ({col2 => $db->bare_sql_fragment ('col1 * 10')});
 
   dies_here_ok {
     $row->get ('col2');
@@ -416,9 +416,9 @@ sub _set_changed_data_parsed_bare : Test(2) {
   dies_here_ok {
     $row->get_bare ('col2');
   };
-} # _set_changed_data_parsed_bare
+} # _update_changed_data_parsed_bare
 
-sub _set_field_not_in_orig : Test(2) {
+sub _update_field_not_in_orig : Test(2) {
   my $schema = {
     table1 => {
       primary_keys => [qw/col1/],
@@ -433,13 +433,13 @@ sub _set_field_not_in_orig : Test(2) {
   my $row = $db->select ('table1', {col1 => {-not => undef}},
                          fields => 'col1')->first_as_row;
 
-  $row->set ({col3 => 'hoge'});
+  $row->update ({col3 => 'hoge'});
 
   is $row->get ('col3'), 'hoge';
   is $row->get_bare ('col3'), 'hoge';
-} # _set_field_not_in_orig
+} # _update_field_not_in_orig
 
-sub _set_not_writable : Test(3) {
+sub _update_not_writable : Test(3) {
   my $schema = {
     table1 => {
       primary_keys => [qw/col1/],
@@ -454,14 +454,14 @@ sub _set_not_writable : Test(3) {
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
   dies_here_ok {
-    $row->set ({col2 => 'hoge'});
+    $row->update ({col2 => 'hoge'});
   };
 
   is $row->get ('col2'), 'abc def';
   is $row->reload->get ('col2'), 'abc def';
-} # _set_not_writable
+} # _update_not_writable
 
-sub _set_source_name : Test(3) {
+sub _update_source_name : Test(3) {
   my $schema = {
     table1 => {
       primary_keys => [qw/col1/],
@@ -476,13 +476,13 @@ sub _set_source_name : Test(3) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  $row->set ({col2 => 'hoge'}, source_name => 'default');
+  $row->update ({col2 => 'hoge'}, source_name => 'default');
 
   is $row->get ('col2'), 'hoge';
   is $row->reload->get ('col2'), 'hoge';
-} # _set_source_name
+} # _update_source_name
 
-sub _set_empty : Test(2) {
+sub _update_empty : Test(2) {
   my $schema = {
     table1 => {
       primary_keys => [qw/col1/],
@@ -496,11 +496,11 @@ sub _set_empty : Test(2) {
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
   dies_here_ok {
-    $row->set ({});
+    $row->update ({});
   };
 
   is $row->get ('col2'), 'abc def';
-} # _set_empty
+} # _update_empty
 
 __PACKAGE__->runtests;
 

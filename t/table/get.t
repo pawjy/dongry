@@ -756,7 +756,7 @@ sub _reload_in_transaction : Test(4) {
 
   is $row->get ('col3'), 'aabre';
 
-  $row->set ({col3 => 'bbb'});
+  $row->update ({col3 => 'bbb'});
   
   is $db1->select ('table1', {col3 => 'bbb'})->row_count, 0;
   

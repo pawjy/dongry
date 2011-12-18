@@ -113,7 +113,7 @@ $db->execute ('select * from hoge where value is null and foo = ?',
 my $result = $db->execute ('select * from hoge where foo = 123');
 $result->table_name ('hoge');
 my $first = $result->first_as_row;
-$first->set ({value => 'abc def', value => undef, text => $db->bare_sql_fragment ("\x{1000}")});
+$first->update ({value => 'abc def', value => undef, text => $db->bare_sql_fragment ('"\x{1000}"')});
 
 my $row_orig = $db->table ('hoge')->insert ([{
   foo => 15222,
@@ -123,7 +123,7 @@ my $row_orig = $db->table ('hoge')->insert ([{
   foo => 3333,
 }])->first_as_row;
 warn $text;
-warn $row_orig->get ('text');
+#warn $row_orig->get ('text');
 my $row = $row_orig->reload;
 
 my $created = $row->get ('created_on');
@@ -140,7 +140,7 @@ $db->delete ('hoge', {
 warn Dumper $db->select ('hoge', {
   value => 'a  eg aa aeee',
 }, limit => 2, source_name => 'heavy')->all_as_rows->each (sub {
-  $_[0]->set ({value => 'xyz'});
+  $_[0]->update ({value => 'xyz'});
 });
 
 warn Dumper $db->execute ('select * from hoge')->all;

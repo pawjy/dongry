@@ -133,11 +133,12 @@ actual data from the database.  If the table row object is retrieved
 from the result object of the C<select> method with the C<fields>
 option specified, the set of columns included in the table row object
 could be slightly different from those of the table.  Once the table
-row is updated by a call to the C<set> method with a bare SQL fragment
-object, the table row object would contain a bare SQL fragment object
-as the value, rather than the result of the modification happened at
-the database.  Ignoring these inconsistency would cause your data
-broken, or at least it would cause your application acting wrongly.
+row is updated by a call to the C<update> method with a bare SQL
+fragment object, the table row object would contain a bare SQL
+fragment object as the value, rather than the result of the
+modification happened at the database.  Ignoring these inconsistency
+would cause your data broken, or at least it would cause your
+application acting wrongly.
 
 You can retrieve table row objects from various methods of the result
 object.  Methods providing access to the row object is suffixed by
@@ -236,7 +237,7 @@ apply to this method: C<source_name>, C<fields>, and C<lock>.
 
 =over 4
 
-=item $row->set ($values, %args)
+=item $row->update ($values, %args)
 
 Set the values of columns specified to the first argument as a hash
 reference of column name/value pairs.  The values are serialized
@@ -253,7 +254,7 @@ table row object are updated to the new value.  If the bare SQL
 fragment object is specified as the column value, later calls of
 C<get> and C<get_bare> methods for the column would raise an error.
 Likewise, once a primary key column is tainted by a bare SQL fragment
-object, the C<set> method would no longer be able to update the row
+object, the C<update> method would no longer be able to update the row
 and the C<reload> method would become useless as well.
 
 Example:
@@ -263,7 +264,7 @@ Example:
     type => {date => 'timestamp_as_DateTime'},
   }});
   ...
-  $row->set ({date => DateTime->now, value => 120});
+  $row->update ({date => DateTime->now, value => 120});
   # UPDATE `table1` SET `value` = 120, `date` = '2011-12-12 00:12:34'
   #     WHERE `id` = 12345
 

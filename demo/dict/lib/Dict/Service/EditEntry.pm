@@ -101,7 +101,7 @@ sub update_text {
   my $meta = $desc_row->get ('metadata');
   $meta->{keywords} = $args{keywords} || [];
   $meta->{updated}->{+time} = 1;
-  $desc_row->set
+  $desc_row->update
       ({text => $args{entry_body_as_ref}, metadata => $meta});
   $transaction->commit;
 

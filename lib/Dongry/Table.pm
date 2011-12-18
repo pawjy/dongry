@@ -246,7 +246,7 @@ sub reload ($;%) {
 
 # ------ Modifications ------
 
-sub set ($$;%) {
+sub update ($$;%) {
   my ($self, $values, %args) = @_;
   croak "No value to set" unless keys %$values;
 
@@ -285,7 +285,7 @@ sub set ($$;%) {
     $self->{data}->{$_} = $s_values->{$_};
     $self->{parsed_data}->{$_} = $values->{$_};
   }
-} # set
+} # update
 
 1;
 
