@@ -253,11 +253,11 @@ sub where ($;$) {
 } # where
 
 push @EXPORT, qw(order);
-sub order ($$) {
-  if (defined $_[1]) {
+sub order ($) {
+  if (defined $_[0]) {
     my @s;
-    for (0..(int (($#{$_[1]} + 2) / 2) - 1)) {
-      push @s, (quote $_[1]->[$_ * 2]) . ' ' . (
+    for (0..(int (($#{$_[0]} + 2) / 2) - 1)) {
+      push @s, (quote $_[0]->[$_ * 2]) . ' ' . (
         {
           'ASC' => 'ASC',
           'asc' => 'ASC',
@@ -266,11 +266,11 @@ sub order ($$) {
           'DESC' => 'DESC',
           'desc' => 'DESC',
           '-1' => 'DESC',
-        }->{$_[1]->[$_ * 2 + 1] || 'ASC'} or
-        (croak sprintf 'Unknown order: %s', $_[1]->[$_ * 2 + 1])
+        }->{$_[0]->[$_ * 2 + 1] || 'ASC'} or
+        (croak sprintf 'Unknown order: %s', $_[0]->[$_ * 2 + 1])
       );
     }
-    return ' ORDER BY ' . join ', ', @s;
+    return join ', ', @s;
   } else {
     return '';
   }

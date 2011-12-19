@@ -185,6 +185,7 @@ use Dongry::SQL ();
 BEGIN {
   *_quote = \&Dongry::SQL::quote;
   *_fields = \&Dongry::SQL::fields;
+  *_where = \&Dongry::SQL::where;
   *_order = \&Dongry::SQL::order;
 }
 
@@ -257,28 +258,10 @@ sub last_insert_id ($) {
   return $dbh->last_insert_id (undef, undef, undef, undef);
 } # last_insert_id
 
-sub _where ($$) {
-  my $self = shift;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-  if (ref $_[0] eq 'HASH') {
-    require SQL::Abstract;
-    $self->{sqla} ||= SQL::Abstract->new (quote_char => q{`});
-    my ($sql, @bind) = $self->{sqla}->where ($_[0]);
-    return ($sql, \@bind);
-  } elsif (ref $_[0] eq 'ARRAY') {
-    require SQL::NamedPlaceholder;
-    my $where = $_[0];
-    return SQL::NamedPlaceholder::bind_named
-        (' WHERE ' . $where->[0], {@{$where}[1..$#$where]});
-  } else {
-    croak 'Where parameter is broken';
-  }
-} # _where
-
 sub select ($$$;%) {
   my ($self, $table_name, $where, %args) = @_;
 
-  my ($where_sql, $where_bind) = $self->_where ($where);
+  my ($where_sql, $where_bind) = _where ($where);
   croak 'No where' unless $where_sql;
   
   my $sql = 'SELECT';
@@ -289,11 +272,11 @@ sub select ($$$;%) {
     $sql .= ' *';
   }
   $sql .= ' FROM ' . (_quote $table_name)
-       . $where_sql;
+       . ' WHERE ' . $where_sql;
   if ($args{group}) {
     $sql .= ' GROUP BY ' . join ', ', map { _quote $_ } @{$args{group}};
   }
-  $sql .= $self->_order ($args{order}) if $args{order};
+  $sql .= ' ORDER BY ' . _order ($args{order}) if $args{order};
   $sql .= sprintf ' LIMIT %d,%d', ($args{offset} || 0), ($args{limit} || 1)
       if defined $args{limit} or defined $args{offset};
   if ($args{lock}) {
@@ -318,7 +301,7 @@ sub update ($$$$;%) {
   my @col = keys %$value;
   croak 'No value to update' unless @col;
 
-  my ($where_sql, $where_bind) = $self->_where ($where);
+  my ($where_sql, $where_bind) = _where ($where);
   croak 'No where' unless $where_sql;
 
   my $sql .= 'UPDATE';
@@ -339,8 +322,8 @@ sub update ($$$$;%) {
   $sql .= sprintf ' SET ' . (join ', ', ('%s = %s') x (@sql_value / 2)),
       @sql_value;
 
-  $sql .= $where_sql;
-  $sql .= $self->_order ($args{order}) if $args{order};
+  $sql .= ' WHERE ' . $where_sql;
+  $sql .= ' ORDER BY ' . _order ($args{order}) if $args{order};
   croak 'Offset is not supported' if defined $args{offset};
   $sql .= sprintf ' LIMIT %d', $args{limit} || 1 if defined $args{limit};
   my $return = $self->execute
@@ -355,11 +338,11 @@ sub update ($$$$;%) {
 sub delete ($$$;%) {
   my ($self, $table_name, $where, %args) = @_;
 
-  my ($where_sql, $where_bind) = $self->_where ($where);
+  my ($where_sql, $where_bind) = _where ($where);
   croak 'No where' unless $where_sql;
   
-  my $sql = 'DELETE FROM ' . (_quote $table_name) . $where_sql;
-  $sql .= $self->_order ($args{order}) if $args{order};
+  my $sql = 'DELETE FROM ' . (_quote $table_name) . ' WHERE ' . $where_sql;
+  $sql .= ' ORDER BY ' . _order ($args{order}) if $args{order};
   croak 'Offset is not supported' if defined $args{offset};
   $sql .= sprintf ' LIMIT %d', $args{limit} || 1 if defined $args{limit};
   my $return = $self->execute

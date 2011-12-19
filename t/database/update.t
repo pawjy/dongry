@@ -240,7 +240,7 @@ sub _update_a_row_updated_utf8_unflagged_column : Test(72) {
   }
 } # _update_a_row_updated_utf8_unflagged_column
 
-sub _update_a_row_updated_stupid_column : Test(12) {
+sub _update_a_row_updated_stupid_column : Test(72) {
   for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
     reset_db_set;
     my $dsn = test_dsn 'test1';
@@ -248,18 +248,6 @@ sub _update_a_row_updated_stupid_column : Test(12) {
         (sources => {master => {dsn => $dsn, writable => 1}});
     $db->execute ("create table foo (```ab(;` blob)");
     $db->execute ("insert into foo (```ab(;`) values (12)");
-    
-    dies_here_ok {
-      my $result = $db->update
-          ('foo', {(encode 'utf-8', "`ab(;") => 23},
-           {(encode 'utf-8', "`ab(;") => 12});
-    };
-
-    eq_or_diff $db->execute
-        ('select * from foo', undef, source_name => 'master')->all->to_a,
-        [{(encode 'utf-8', "`ab(;") => 12}];
-
-    next;
 
     my $result = $db->update
         ('foo', {(encode 'utf-8', "`ab(;") => 23},

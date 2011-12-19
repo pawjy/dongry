@@ -1003,8 +1003,9 @@ sub _select_where_sqla_value_object : Test(1) {
   $db->execute ('insert into foo (id, v1) values (23, "2011-05-01 12:31:12")');
 
   my $date = DateTime->new (year => 2011, month => 6, day => 3);
-  my $result = $db->select ('foo', {v1 => {'>' => $date}});
-  eq_or_diff $result->all->to_a, [{id => 12, v1 => '2012-01-01 11:12:01'}];
+  dies_here_ok {
+    my $result = $db->select ('foo', {v1 => {'>' => $date}});
+  };
 } # _select_where_sqla_value_object
 
 sub _select_where_sqla_value_utf8_flagged : Test(1) {
@@ -1144,8 +1145,9 @@ sub _select_where_sqla_in_empty : Test(1) {
   $db->execute ('insert into foo (id, v1) values (12, "abc")');
   $db->execute ('insert into foo (id, v1) values (23, "de f")');
 
-  my $result = $db->select ('foo', {v1 => {-in => []}});
-  eq_or_diff $result->all->to_a, [];
+  dies_here_ok {
+    my $result = $db->select ('foo', {v1 => {-in => []}});
+  };
 } # _select_where_sqla_in_empty
 
 sub _select_where_sqla_in_utf8_flagged : Test(1) {
@@ -1199,15 +1201,12 @@ sub _select_where_sqla_stupid_column : Test(1) {
   $db->execute (qq{insert into foo (id, `v1 ``2`) values (12, "xyz")});
   $db->execute (qq{insert into foo (id, `v1 ``2`) values (23, "abc")});
 
-  ## SQL::Abstract does not support "``".
-  dies_here_ok {
-    my $result = $db->select
-        ('foo', {'v1 `2' => {-not => undef}},
-         order => [id => 'ASC']);
-  };
-  #eq_or_diff $result->all->to_a,
-  #    [{id => 12, 'v1 `2' => "xyz"},
-  #     {id => 23, 'v1 `2' => "abc"}];
+  my $result = $db->select
+      ('foo', {'v1 `2' => {-not => undef}},
+       order => [id => 'ASC']);
+  eq_or_diff $result->all->to_a,
+      [{id => 12, 'v1 `2' => "xyz"},
+       {id => 23, 'v1 `2' => "abc"}];
 } # _select_where_sqla_stupid_column
 
 sub _select_where_sqla_bad : Test(1) {
