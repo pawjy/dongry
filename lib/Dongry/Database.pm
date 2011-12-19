@@ -12,7 +12,6 @@ push our @CARP_NOT, qw(
   Dongry::Database::Transaction 
   Dongry::Table Dongry::Table::Row Dongry::Query
   Dongry::SQL
-  SQL::Abstract SQL::NamedPlaceholder
 );
 
 if ($ENV{DONGRY_DEBUG}) {
