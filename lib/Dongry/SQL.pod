@@ -1,0 +1,91 @@
+=head1 NAME
+
+Dongry::SQL - SQL construction functions for Dongry
+
+=head1 SYNOPSIS
+
+  use Dongry::SQL;
+  $quoted_identifier = quote $string;
+  $like = '%' . (like $string) . '%';
+  $fields = fields ['column1', 'column2'];
+  $where = where {column1 => $value1, column2 => {-lt => $value2}};
+  $order = order [column1 => 1, column2 => -1];
+
+=head1 DESCRIPTION
+
+The C<Dongry::SQL> module defines functions to construct components of
+SQL statements.  They are called by various methods of Dongry modules.
+
+=head1 FUNCTIONS
+
+The following functions are exported by default when the module is
+C<use>d:
+
+=over 4
+
+=item $quoted_identifier = quote $string
+
+Quote the string by C<`> characters and escape any C<`> character in
+the given string such that the given string can be interpreted as an
+SQL identifier.
+
+=item $like = like $string
+
+Escape metacharacters in C<LIKE> comparison (i.e. C<%>, C<_>, and
+C<\>) in the given string.
+
+=item $fields = fields $field_specification
+
+XXX
+
+=item $where = where $where_specification [, $schema]
+
+XXX
+
+=item $order = order $order_specification
+
+XXX
+
+=back
+
+As a general rule, these methods accept both utf8-flagged and
+utf8-unflagged strings.  However, they must not be appear in the same
+function call.  If the input is utf8-flagged, the output will also be
+utf8-flagged.  If the input is unflagged, the output will be
+unflagged, either.
+
+These methods try to construct a valid SQL fragment as far as
+possible, but they does not output a valid fragment for every input.
+For example, if the input contains a U+0000 NULL character, the output
+will also contain it.  If the input contains an unflagged broken UTF-8
+sequence, functions preserve them as is.  This limitation would not be
+problem in most situations as serving an untrusted value as (say) a
+column name is uncommon and even when it happens it will simply cause
+an SQL parse error and is not believed to make any vulnerablility by
+itself.
+
+=head1 SUPPORTED SYNTAX
+
+The module only supports SQL syntax for MySQL5.
+
+=head1 SEE ALSO
+
+L<Dongry::Database>.
+
+=head1 ACKNOWLEDGEMENTS
+
+Some of features are inspired by L<SQL::Abstract>,
+L<SQL::NamedPlaceholder>, and L<DBIx::MoCo>.
+
+=head1 AUTHOR
+
+Wakaba <w@suika.fam.cx>.
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
