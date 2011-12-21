@@ -100,21 +100,35 @@ sub create ($$;%) {
 
 # ------ Retrieval ------
 
-# XXX tests
-
 sub find ($$;%) {
   my ($self, $values, %args) = @_;
-  #local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-  my $s_values = $self->_serialize_values ($values);
   return $self->{db}
-      ->select ($self->{name}, $s_values,
+      ->select ($self->{name}, $values,
+                fields => $args{fields},
+                group => $args{group},
+                order => $args{order},
+                offset => $args{offset},
                 limit => 1,
+                lock => $args{lock},
                 source_name => $args{source_name},
-                lock => $args{lock})
+                _table_schema => $self->schema)
       ->first_as_row;
 } # find
 
-# XXX search
+sub find_all ($$;%) {
+  my ($self, $values, %args) = @_;
+  return $self->{db}
+      ->select ($self->{name}, $values,
+                fields => $args{fields},
+                group => $args{group},
+                order => $args{order},
+                offset => $args{offset},
+                limit => $args{limit},
+                lock => $args{lock},
+                source_name => $args{source_name},
+                _table_schema => $self->schema)
+      ->all_as_rows;
+} # find_all
 
 sub search_and_fill_as_row ($$$$$$;%) {
   my ($self,

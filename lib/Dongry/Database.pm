@@ -260,7 +260,7 @@ sub last_insert_id ($) {
 sub select ($$$;%) {
   my ($self, $table_name, $where, %args) = @_;
 
-  my ($where_sql, $where_bind) = _where ($where);
+  my ($where_sql, $where_bind) = _where ($where, $args{_table_schema});
   croak 'No where' unless $where_sql;
   
   my $sql = 'SELECT';
