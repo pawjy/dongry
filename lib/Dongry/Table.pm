@@ -130,12 +130,28 @@ sub find_all ($$;%) {
       ->all_as_rows;
 } # find_all
 
+our $MaxFillItems ||= 100;
+
 sub fill_related_rows ($$$$;%) {
   my ($self, $list, $method_column_map => $object_method_name, %args) = @_;
 
   croak "Methods are not specified" unless keys %$method_column_map;
   return unless @$list;
 
+  if (@$list > $MaxFillItems) {
+    for my $i (0..int($#$list / $MaxFillItems)) {
+      my $from = ($i * $MaxFillItems);
+      my $to = $from + $MaxFillItems - 1;
+      $to = $#$list if $to > $#$list;
+      if ($from <= $to) {
+        $self->fill_related_rows
+            ([@$list[$from..$to]],
+             $method_column_map => $object_method_name, %args);
+      }
+    }
+    return;
+  }
+  
   my @methods = keys %$method_column_map;
   my @cols = map { $method_column_map->{$_} } @methods;
   my $method_name = shift @methods;

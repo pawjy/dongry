@@ -449,6 +449,81 @@ sub _fill_related_rows_zero_methods : Test(2) {
   is $DBIx::ShowSQL::SQLCount, 0;
 } # _fill_related_rows_zero_methods
 
+sub _fill_related_rows_too_many : Test(5) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id int)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  my $table = $db->table ('table1');
+
+  $table->create ({id => 1});
+  $table->create ({id => 2});
+  $table->create ({id => 3});
+  $table->create ({id => 4});
+
+  my $mock1 = Test::MoreMore::Mock->new (related_id => 1);
+  my $mock2 = Test::MoreMore::Mock->new (related_id => 2);
+  my $mock3 = Test::MoreMore::Mock->new (related_id => 3);
+  my $mock4 = Test::MoreMore::Mock->new (related_id => 4);
+
+  local $Dongry::Table::MaxFillItems = 3;
+
+  local $DBIx::ShowSQL::SQLCount = 0;
+  $table->fill_related_rows
+      ([$mock1, $mock2, $mock3, $mock4]
+       => {related_id => 'id'} => 'related_row');
+  is $DBIx::ShowSQL::SQLCount, 2;
+
+  is $mock1->related_row->get ('id'), 1;
+  is $mock2->related_row->get ('id'), 2;
+  is $mock3->related_row->get ('id'), 3;
+  is $mock4->related_row->get ('id'), 4;
+} # _fill_related_rows_too_many
+
+sub _fill_related_rows_too_many_2 : Test(8) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id int)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  my $table = $db->table ('table1');
+
+  $table->create ({id => 1});
+  $table->create ({id => 2});
+  $table->create ({id => 3});
+  $table->create ({id => 4});
+  $table->create ({id => 5});
+  $table->create ({id => 6});
+  $table->create ({id => 7});
+
+  my $mock1 = Test::MoreMore::Mock->new (related_id => 1);
+  my $mock2 = Test::MoreMore::Mock->new (related_id => 2);
+  my $mock3 = Test::MoreMore::Mock->new (related_id => 3);
+  my $mock4 = Test::MoreMore::Mock->new (related_id => 4);
+  my $mock5 = Test::MoreMore::Mock->new (related_id => 5);
+  my $mock6 = Test::MoreMore::Mock->new (related_id => 6);
+  my $mock7 = Test::MoreMore::Mock->new (related_id => 7);
+
+  local $Dongry::Table::MaxFillItems = 3;
+
+  local $DBIx::ShowSQL::SQLCount = 0;
+  $table->fill_related_rows
+      ([$mock1, $mock2, $mock3, $mock4, $mock5, $mock6, $mock7]
+       => {related_id => 'id'} => 'related_row');
+  is $DBIx::ShowSQL::SQLCount, 3;
+
+  is $mock1->related_row->get ('id'), 1;
+  is $mock2->related_row->get ('id'), 2;
+  is $mock3->related_row->get ('id'), 3;
+  is $mock4->related_row->get ('id'), 4;
+  is $mock5->related_row->get ('id'), 5;
+  is $mock6->related_row->get ('id'), 6;
+  is $mock7->related_row->get ('id'), 7;
+} # _fill_related_rows_too_many_2
+
 __PACKAGE__->runtests;
 
 1;
