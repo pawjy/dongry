@@ -178,7 +178,6 @@ sub search_and_fill_pair_as_row ($$$$$$$$;%) {
 
 sub fill_related_rows ($$$$;%) {
   my ($self, $list, $method_column_map => $object_method_name, %args) = @_;
-  my $schema = $self->schema or croak "No schema for table |$self->{name}|";
 
   croak "Methods are not specified" unless keys %$method_column_map;
   return unless @$list;
@@ -198,9 +197,9 @@ sub fill_related_rows ($$$$;%) {
   $self->{db}->select
       ($self->{name},
        $where,
+       fields => $args{fields},
        source_name => $args{source_name},
-       lock => $args{lock},
-       _table_schema => $schema)
+       lock => $args{lock})
       ->each_as_row ($args{multiple} ? sub {
     my $hash = $map;
     for my $col (@cols) {

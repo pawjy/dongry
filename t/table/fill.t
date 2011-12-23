@@ -290,6 +290,165 @@ sub _fill_related_rows_multiple_found_multiples : Test(7) {
   isa_list_n_ok $mock3->related_rows, 0;
 } # _fill_related_rows_multiple_found_multiples
 
+sub _fill_related_rows_multiple_keys_1 : Test(4) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id1 int, id2 int)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  my $table = $db->table ('table1');
+
+  $table->create ({id1 => 124, id2 => 12345});
+  $table->create ({id1 => 12345, id2 => 124});
+
+  my $mock1 = Test::MoreMore::Mock->new
+      (related_id1 => 12345, related_id2 => 124);
+
+  local $DBIx::ShowSQL::SQLCount = 0;
+  $table->fill_related_rows
+      ([$mock1] => {related_id1 => 'id1', related_id2 => 'id2'}
+       => 'related_row');
+  is $DBIx::ShowSQL::SQLCount, 1;
+
+  isa_ok $mock1->related_row, 'Dongry::Table::Row';
+  is $mock1->related_row->get ('id1'), 12345;
+  is $mock1->related_row->get ('id2'), 124;
+} # _fill_related_rows_multiple_keys_1
+
+sub _fill_related_rows_multiple_keys_3 : Test(11) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id1 int, id2 int)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  my $table = $db->table ('table1');
+
+  $table->create ({id1 => 124, id2 => 12345});
+  $table->create ({id1 => 12345, id2 => 124});
+  $table->create ({id1 => 12345, id2 => 124});
+  $table->create ({id1 => 12345, id2 => 124});
+
+  my $mock1 = Test::MoreMore::Mock->new
+      (related_id1 => 12345, related_id2 => 124);
+
+  local $DBIx::ShowSQL::SQLCount = 0;
+  $table->fill_related_rows
+      ([$mock1] => {related_id1 => 'id1', related_id2 => 'id2'}
+       => 'related_rows', multiple => 1);
+  is $DBIx::ShowSQL::SQLCount, 1;
+
+  isa_list_n_ok $mock1->related_rows, 3;
+  for (@{$mock1->related_rows}) {
+    isa_ok $_, 'Dongry::Table::Row';
+    is $_->get ('id1'), 12345;
+    is $_->get ('id2'), 124;
+  }
+} # _fill_related_rows_multiple_keys_3
+
+sub _fill_related_rows_multiple_keys_combinations : Test(19) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id1 int, id2 int)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  my $table = $db->table ('table1');
+
+  $table->create ({id1 => 124, id2 => 12345});
+  $table->create ({id1 => 12345, id2 => 124});
+  $table->create ({id1 => 12345, id2 => 124});
+  $table->create ({id1 => 12345, id2 => 124});
+  $table->create ({id1 => 12345, id2 => 126});
+  $table->create ({id1 => 12345, id2 => 126});
+  $table->create ({id1 => 12343, id2 => 126});
+
+  my $mock1 = Test::MoreMore::Mock->new
+      (related_id1 => 12345, related_id2 => 124);
+  my $mock2 = Test::MoreMore::Mock->new
+      (related_id1 => 12345, related_id2 => 126);
+  my $mock3 = Test::MoreMore::Mock->new
+      (related_id1 => 12343, related_id2 => 128);
+
+  local $DBIx::ShowSQL::SQLCount = 0;
+  $table->fill_related_rows
+      ([$mock1, $mock2, $mock3] => {related_id1 => 'id1', related_id2 => 'id2'}
+       => 'related_rows', multiple => 1);
+  is $DBIx::ShowSQL::SQLCount, 1;
+
+  isa_list_n_ok $mock1->related_rows, 3;
+  for (@{$mock1->related_rows}) {
+    isa_ok $_, 'Dongry::Table::Row';
+    is $_->get ('id1'), 12345;
+    is $_->get ('id2'), 124;
+  }
+
+  isa_list_n_ok $mock2->related_rows, 2;
+  for (@{$mock2->related_rows}) {
+    isa_ok $_, 'Dongry::Table::Row';
+    is $_->get ('id1'), 12345;
+    is $_->get ('id2'), 126;
+  }
+
+  isa_list_n_ok $mock3->related_rows, 0;
+} # _fill_related_rows_multiple_keys_combinations
+
+sub _fill_related_rows_multiple_keys_4 : Test(9) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id1 int, id2 int, id3 int, id4 int)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  my $table = $db->table ('table1');
+
+  $table->create ({id1 => 1, id2 => 2, id3 => 3, id4 => 4});
+  $table->create ({id1 => 1, id2 => 2, id3 => 4, id4 => 3});
+  $table->create ({id1 => 2, id2 => 1, id3 => 4, id4 => 3});
+  $table->create ({id1 => 2, id2 => 1, id3 => 3, id4 => 4});
+
+  my $mock1 = Test::MoreMore::Mock->new
+      (related_id1 => 1, related_id2 => 2, related_id3 => 3, related_id4 => 4);
+  my $mock2 = Test::MoreMore::Mock->new
+      (related_id1 => 2, related_id2 => 1, related_id3 => 4, related_id4 => 3);
+
+  local $DBIx::ShowSQL::SQLCount = 0;
+  $table->fill_related_rows
+      ([$mock1, $mock2] => {related_id1 => 'id1', related_id2 => 'id2',
+                            related_id3 => 'id3', related_id4 => 'id4'}
+       => 'related_row');
+  is $DBIx::ShowSQL::SQLCount, 1;
+
+  is $mock1->related_row->get ('id1'), 1;
+  is $mock1->related_row->get ('id2'), 2;
+  is $mock1->related_row->get ('id3'), 3;
+  is $mock1->related_row->get ('id4'), 4;
+
+  is $mock2->related_row->get ('id1'), 2;
+  is $mock2->related_row->get ('id2'), 1;
+  is $mock2->related_row->get ('id3'), 4;
+  is $mock2->related_row->get ('id4'), 3;
+} # _fill_related_rows_multiple_keys_4
+
+sub _fill_related_rows_zero_methods : Test(2) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id int)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  my $table = $db->table ('table1');
+
+  my $mock1 = Test::MoreMore::Mock->new (related_id => 12345);
+
+  local $DBIx::ShowSQL::SQLCount = 0;
+  dies_here_ok {
+    $table->fill_related_rows ([$mock1] => {} => 'related_row');
+  };
+  is $DBIx::ShowSQL::SQLCount, 0;
+} # _fill_related_rows_zero_methods
+
 __PACKAGE__->runtests;
 
 1;
