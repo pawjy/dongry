@@ -2,6 +2,10 @@
 
 Dongry::Table - Database tables and rows
 
+=head1 SYNOPSIS
+
+XXX
+
 =head1 DESCRIPTION
 
 XXX
@@ -116,7 +120,123 @@ Example:
 
 =back
 
-XXX
+=head2 Retrieval
+
+There are two methods to retrieve table rows.  They are not just
+shorthand notation for the C<select> methods of the database object,
+but they are schema-aware in that values specified in the "where"
+structure are interpreted per the data type definition in the table
+schema.  For example, if you define the C<type> of the C<date> column
+as C<timestamp_as_DateTime> (defined in L<Dongry::Type::DateTime>),
+you can use a L<DateTime> object to specify the value for the C<date>
+column in the "where" argument of those methods.
+
+=over 4
+
+=item $row = $table->find ($where, %args)
+
+Retrieve a row from the table and return it as a table row object.
+
+The conditions to select the row must be specified as the first
+argument.  It must be a schema-aware C<where> structure as described
+in L<Dongry::SQL>.
+
+If there is a row, a table row object representing the row is
+returned.  Otherwise, the C<undef> value is returned.
+
+Following options for the C<select> method of the database object also
+apply to this method: C<fields>, C<group>, C<order>, C<offset>,
+C<source_name>, and C<lock>.
+
+Example:
+
+  $date = DateTime->now->subtract (days => 2);
+  my $row = $db->table ('entry')->find ({date => {-lt => $date}});
+
+=item $list = $table->find_all ($where, %args)
+
+Retrieve the rows from the table and return it as a list of table row
+objects.
+
+The conditions to select the row must be specified as the first
+argument.  It must be a schema-aware C<where> structure as described
+in L<Dongry::SQL>.
+
+The method returns a (possibly empty) L<List::Rubyish> object
+containing table row objects representing the selected rows.
+
+Following options for the C<select> method of the database object also
+apply to this method: C<fields>, C<group>, C<order>, C<offset>,
+C<limit>, C<source_name>, and C<lock>.
+
+Example:
+
+  $date = DateTime->now->subtract (days => 2);
+  my $list = $db->table ('entry')->find_all
+      ({date => {-lt => $date}}, limit => 10);
+
+=back
+
+In addition, there is a shorthand method to assist optimized
+resolution of so-called "has-a" or "has-many" relationships:
+
+=over 4
+
+=item $table->fill_related_rows ($list, {$get_method => $column, ...} => $set_method, %args)
+
+Retrieve a set of rows related to each object in the specified list,
+associated by a set of (foreign) keys.  This method could be useful
+when there are primary and supplemental tables and rows in the primary
+table contains keys of rows in supplemental tables, and you have a
+list of objects representing the primary table rows.  Using this
+method, you can retrieve supplemental table rows for them by executing
+only one (or a few) SQL statement.
+
+The first argument must be an array reference containing the objects.
+
+The second argument must be a hash reference containing one or more
+pairs of method names and column names.  Methods with the names
+specified as the keys are invoked for the objects in the first
+argument.  Then, the C<WHERE> clause of the SQL statement is
+constructed by the column names specified as the values of the second
+argument and the values obtained by the method invocations.
+
+Table row objects representing the rows returned by the SQL execution
+is passed to the objects in the first argument by invoking their
+methods whose name is specified by the third argument.  When the
+C<multiple> option is specified, a L<List::Rubyish> object containing
+the table row objects is specified as the first argument to the
+method.  Otherwise, a table row object, if any, or C<undef> otherwise,
+is specified as the argument to the method.
+
+Following options for the C<select> method of the database object also
+apply to this method: C<fields>, C<source_name>, and C<lock>.
+
+Example:
+
+  CREATE TABLE `main` (
+    `id` INT PRIMARY KEY,
+    `sub_id` INT -- sub.id
+  );
+  CREATE TABLE `sub` (
+    `id` INT PRIMARY KEY
+  );
+
+  # Class for $obj1, $obj2
+  sub main_row { $_[0]->{main_row} }
+  sub sub_id { $_[0]->main_row->get ('id') }
+  sub sub_row { $_[0]->{sub_row} }
+  sub set_sub_row { $_[0]->{sub_row} = $_[1] }
+
+  $db->table ('sub')->fill_related_rows
+    ([$obj1, $obj2], {'sub_id' => 'id'} => 'set_sub_row');
+  # SELECT * FROM `sub` WHERE `id` IN (?, ?)
+  #   ($obj1->sub_id, $obj2->sub_id)
+  
+  is $obj1->sub_row->get ('id'), $obj1->sub_id;
+  is $obj2->sub_row->get ('id'), $obj2->sub_id;
+
+=back
 
 =head1 METHODS OF TABLE ROW OBJECT
 
