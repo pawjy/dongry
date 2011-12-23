@@ -123,6 +123,31 @@ sub _fill_related_rows_multiple : Test(3) {
   is $mock2->related_row->get ('id'), 512;
 } # _fill_related_rows_multiple
 
+sub _fill_related_rows_multiple_blessed : Test(3) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id int)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  my $table = $db->table ('table1');
+
+  $table->create ({id => 124});
+  $table->create ({id => 512});
+
+  my $mock1 = Test::MoreMore::Mock->new (related_id => 124);
+  my $mock2 = Test::MoreMore::Mock->new (related_id => 512);
+
+  local $DBIx::ShowSQL::SQLCount = 0;
+  $table->fill_related_rows
+      ((bless [$mock1, $mock2], 'List::Rubyish')
+       => {related_id => 'id'} => 'related_row');
+  is $DBIx::ShowSQL::SQLCount, 1;
+
+  is $mock1->related_row->get ('id'), 124;
+  is $mock2->related_row->get ('id'), 512;
+} # _fill_related_rows_multiple_blessed
+
 sub _fill_related_rows_zero_list : Test(1) {
   my $schema = {
     table1 => {
