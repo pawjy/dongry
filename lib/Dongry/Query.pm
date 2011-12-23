@@ -1,6 +1,7 @@
 package Dongry::Query;
 use strict;
 use warnings;
+our $VERSION = '1.0';
 
 push our @CARP_NOT, qw(Dongry::Database);
 
@@ -58,12 +59,13 @@ sub group {
 sub item_list_filter {
   my $self = $_[0];
   if ($self->{item_list_filter}) {
-    return $self->{item_list_filter}->(@_);
+    return scalar $self->{item_list_filter}->(@_);
   } else {
-    return $_[1]->map (sub { $self->item_filter ($_) });
+    return $_[1];
   }
 } # item_list_filter
 
+# XXX
 sub item_filter {
   if ($_[0]->{item_filter}) {
     return $_[0]->{item_filter}->(@_);
@@ -103,3 +105,12 @@ sub count {
 } # count
 
 1;
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
