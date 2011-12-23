@@ -16,7 +16,7 @@ sub _update_nop : Test(66) {
   $db->execute ('create table foo (id int)');
   
   for my $method (qw(all all_as_rows each each_as_row first first_as_row)) {
-    my $result = $db->update ('foo', {id => 23}, {id => 12});
+    my $result = $db->update ('foo', {id => 23}, where => {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 0;
     is $result->table_name, 'foo';
@@ -41,7 +41,7 @@ sub _update_a_row_updated : Test(72) {
     $db->execute ('create table foo (id int)');
     $db->execute ('insert into foo (id) values (12)');
     
-    my $result = $db->update ('foo', {id => 23}, {id => 12});
+    my $result = $db->update ('foo', {id => 23}, where => {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
     is $result->table_name, 'foo';
@@ -70,7 +70,7 @@ sub _update_two_row_updated : Test(72) {
     $db->execute ('create table foo (id int)');
     $db->execute ('insert into foo (id) values (12), (12), (13)');
     
-    my $result = $db->update ('foo', {id => 23}, {id => 12});
+    my $result = $db->update ('foo', {id => 23}, where => {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 2;
     is $result->table_name, 'foo';
@@ -101,7 +101,7 @@ sub _update_a_row_updated_utf8_flagged_value : Test(72) {
     $db->execute ('create table foo (id blob)');
     $db->execute ('insert into foo (id) values (12)');
     
-    my $result = $db->update ('foo', {id => "\x{5000}"}, {id => 12});
+    my $result = $db->update ('foo', {id => "\x{5000}"}, where => {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
     is $result->table_name, 'foo';
@@ -131,7 +131,7 @@ sub _update_a_row_updated_utf8_unflagged_value : Test(72) {
     $db->execute ('insert into foo (id) values (12)');
     
     my $result = $db->update
-        ('foo', {id => encode 'utf-8', "\x{5000}"}, {id => 12});
+        ('foo', {id => encode 'utf-8', "\x{5000}"}, where => {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
     is $result->table_name, 'foo';
@@ -160,7 +160,7 @@ sub _update_a_row_updated_stupid_value : Test(72) {
     $db->execute ('create table foo (id blob)');
     $db->execute ('insert into foo (id) values (12)');
     
-    my $result = $db->update ('foo', {id => "a ` b);"}, {id => 12});
+    my $result = $db->update ('foo', {id => "a ` b);"}, where => {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
     is $result->table_name, 'foo';
@@ -189,7 +189,8 @@ sub _update_a_row_updated_utf8_flagged_column : Test(72) {
     $db->execute ("create table foo (`\x{5000}` blob)");
     $db->execute ("insert into foo (`\x{5000}`) values (12)");
     
-    my $result = $db->update ('foo', {"\x{5000}" => 23}, {"\x{5000}" => 12});
+    my $result = $db->update ('foo', {"\x{5000}" => 23},
+                              where => {"\x{5000}" => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
     is $result->table_name, 'foo';
@@ -220,7 +221,7 @@ sub _update_a_row_updated_utf8_unflagged_column : Test(72) {
     
     my $result = $db->update
         ('foo', {(encode 'utf-8', "\x{5000}") => 23},
-         {(encode 'utf-8', "\x{5000}") => 12});
+         where => {(encode 'utf-8', "\x{5000}") => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
     is $result->table_name, 'foo';
@@ -251,7 +252,7 @@ sub _update_a_row_updated_stupid_column : Test(72) {
 
     my $result = $db->update
         ('foo', {(encode 'utf-8', "`ab(;") => 23},
-         {(encode 'utf-8', "`ab(;") => 12});
+         where => {(encode 'utf-8', "`ab(;") => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
     is $result->table_name, 'foo';
@@ -281,7 +282,7 @@ sub _update_table_stupid : Test(2) {
   $db->execute ("insert into `2f``b` (id, v1) values (25, 'xycde')");
   
   my $result = $db->update
-      ('2f`b', {id => 100}, ['id = 25']);
+      ('2f`b', {id => 100}, where => ['id = 25']);
 
   eq_or_diff $db->execute
       ('select * from `2f``b`', undef,
@@ -300,7 +301,7 @@ sub _update_table_utf8_flagged : Test(2) {
   $db->execute ("insert into `\x{1000}` (id, v1) values (25, 'xycde')");
   
   my $result = $db->update
-      ("\x{1000}", {id => 100}, ['id = 25']);
+      ("\x{1000}", {id => 100}, where => ['id = 25']);
 
   eq_or_diff $db->execute
       ("select * from `\x{1000}`", undef,
@@ -319,7 +320,7 @@ sub _update_table_utf8_unflagged : Test(2) {
   $db->execute ("insert into `\x{1000}` (id, v1) values (25, 'xycde')");
   
   my $result = $db->update
-      ((encode 'utf-8', "\x{1000}"), {id => 100}, ['id = 25']);
+      ((encode 'utf-8', "\x{1000}"), {id => 100}, where => ['id = 25']);
 
   eq_or_diff $db->execute
       ("select * from `\x{1000}`", undef,
@@ -339,7 +340,7 @@ sub _update_values_bad_column : Test(2) {
   
   dies_here_ok {
     my $result = $db->update
-        ('foo', {mid => 100}, ['id = 25']);
+        ('foo', {mid => 100}, where => ['id = 25']);
   };
 
   eq_or_diff $db->execute
@@ -358,7 +359,7 @@ sub _update_values_latin1_value : Test(1) {
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
   my $result = $db->update
-      ('foo', {v1 => "\x{c0}\x{91}\x{fe}"}, ['id = 25']);
+      ('foo', {v1 => "\x{c0}\x{91}\x{fe}"}, where => ['id = 25']);
 
   eq_or_diff $db->execute
       ("select * from `foo`", undef,
@@ -378,7 +379,7 @@ sub _update_values_multiple : Test(1) {
   
   my $result = $db->update
       ('foo', {v1 => "\x{c0}\x{91}\x{fe}",
-               v2 => "\x{6001}\x{1201}\x{FF}"}, ['id = 25']);
+               v2 => "\x{6001}\x{1201}\x{FF}"}, where => ['id = 25']);
 
   eq_or_diff $db->execute
       ("select * from `foo`", undef,
@@ -401,7 +402,7 @@ sub _update_values_empty : Test(2) {
 
   dies_here_ok {
     my $result = $db->update
-        ('foo', {}, {id => 12}, duplicate => 'ignore');
+        ('foo', {}, where => {id => 12}, duplicate => 'ignore');
   };
 
   eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
@@ -423,7 +424,7 @@ sub _update_values_by_not_sql : Test(2) {
 
   my $result = $db->update
       ('foo', {id => my $id = \'id + 2', v1 => my $v1 = \'id * 2'},
-       {id => 12});
+       where => {id => 12});
 
   eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
                            source_name => 'master')->all->to_a,
@@ -444,7 +445,7 @@ sub _update_values_by_sql : Test(2) {
 
   my $result = $db->update
       ('foo', {id => $db->bare_sql_fragment ('id + 2'), 
-               v1 => $db->bare_sql_fragment ('id * 2')}, {id => 12});
+               v1 => $db->bare_sql_fragment ('id * 2')}, where => {id => 12});
 
   eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
                            source_name => 'master')->all->to_a,
@@ -463,7 +464,7 @@ sub _update_where_sqla : Test(2) {
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
   my $result = $db->update
-      ('foo', {id => 100}, {id => {'>', 20}});
+      ('foo', {id => 100}, where => {id => {'>', 20}});
   is $result->row_count, 1;
 
   eq_or_diff $db->execute
@@ -482,7 +483,7 @@ sub _update_where_sqlp : Test(2) {
   $db->execute ("insert into foo (id, v1) values (25, 'xycde')");
   
   my $result = $db->update
-      ('foo', {id => 100}, ['id > ?', id => 23]);
+      ('foo', {id => 100}, where => ['id > ?', id => 23]);
   is $result->row_count, 1;
 
   eq_or_diff $db->execute
@@ -502,7 +503,7 @@ sub _update_where_bad_column : Test(2) {
   
   dies_here_ok {
     my $result = $db->update
-        ('foo', {id => 100}, ['mid > 23']);
+        ('foo', {id => 100}, where => ['mid > 23']);
   };
 
   eq_or_diff $db->execute
@@ -522,7 +523,7 @@ sub _update_where_bad_sql : Test(2) {
   
   dies_here_ok {
     my $result = $db->update
-        ('foo', {id => 100}, ['id id id ']);
+        ('foo', {id => 100}, where => ['id id id ']);
   };
 
   eq_or_diff $db->execute
@@ -542,7 +543,7 @@ sub _update_where_bad_arg : Test(2) {
   
   dies_here_ok {
     my $result = $db->update
-        ('foo', {id => 100}, 'id > 23');
+        ('foo', {id => 100}, where => 'id > 23');
   };
 
   eq_or_diff $db->execute
@@ -562,7 +563,7 @@ sub _update_where_empty_arg : Test(2) {
   
   dies_here_ok {
     my $result = $db->update
-        ('foo', {id => 100}, {});
+        ('foo', {id => 100}, where => {});
   };
 
   eq_or_diff $db->execute
@@ -617,7 +618,7 @@ sub _update_source_name_implicit : Test(4) {
       (sources => {master => {dsn => $dsn1, writable => 1},
                    default => {dsn => $dsn2, writable => 1},
                    heavy => {dsn => $dsn3, writable => 1}});
-  my $result = $db->update ('foo', {id => 100}, {v1 => 'ab cde'});
+  my $result = $db->update ('foo', {id => 100}, where => {v1 => 'ab cde'});
   is $result->row_count, 1;
 
   eq_or_diff $db1->execute
@@ -659,7 +660,7 @@ sub _update_source_name_implicit_not_writable : Test(4) {
                    heavy => {dsn => $dsn3, writable => 1}});
 
   dies_here_ok {
-    my $result = $db->update ('foo', {id => 100}, {v1 => 'ab cde'});
+    my $result = $db->update ('foo', {id => 100}, where => {v1 => 'ab cde'});
   };
 
   eq_or_diff $db1->execute
@@ -699,7 +700,7 @@ sub _update_source_name_default : Test(4) {
       (sources => {master => {dsn => $dsn1, writable => 1},
                    default => {dsn => $dsn2, writable => 1},
                    heavy => {dsn => $dsn3, writable => 1}});
-  my $result = $db->update ('foo', {id => 100}, {v1 => 'ab cde'},
+  my $result = $db->update ('foo', {id => 100}, where => {v1 => 'ab cde'},
                             source_name => 'default');
   is $result->row_count, 1;
 
@@ -741,7 +742,7 @@ sub _update_source_name_default_not_writable : Test(4) {
                    default => {dsn => $dsn2, writable => 0},
                    heavy => {dsn => $dsn3, writable => 1}});
   dies_here_ok {
-    my $result = $db->update ('foo', {id => 100}, {v1 => 'ab cde'},
+    my $result = $db->update ('foo', {id => 100}, where => {v1 => 'ab cde'},
                               source_name => 'default');
   };
 
@@ -767,7 +768,7 @@ sub _update_offset_none : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 3)");
 
   my $result = $db->update
-      ('foo', {v2 => 'changed'}, {id => 12}, offset => undef);
+      ('foo', {v2 => 'changed'}, where => {id => 12}, offset => undef);
   is $result->row_count, 3;
 
   eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
@@ -789,7 +790,7 @@ sub _update_offset_0 : Test(2) {
 
   dies_here_ok {
     my $result = $db->update
-        ('foo', {v2 => 'changed'}, {id => 12},
+        ('foo', {v2 => 'changed'}, where => {id => 12},
          order => [v1 => 1], offset => 0);
   };
 
@@ -812,7 +813,7 @@ sub _update_offset_1 : Test(2) {
 
   dies_here_ok {
     my $result = $db->update
-        ('foo', {v2 => 'changed'}, {id => 12},
+        ('foo', {v2 => 'changed'}, where => {id => 12},
          order => [v1 => 1], offset => 1);
   };
 
@@ -834,7 +835,7 @@ sub _update_limit_none : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 3)");
 
   my $result = $db->update
-      ('foo', {v2 => 'changed'}, {id => 12},
+      ('foo', {v2 => 'changed'}, where => {id => 12},
        order => [v1 => 1], limit => undef);
   is $result->row_count, 3;
 
@@ -856,7 +857,7 @@ sub _update_limit_0 : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 3)");
 
   my $result = $db->update
-      ('foo', {v2 => 'changed'}, {id => 12},
+      ('foo', {v2 => 'changed'}, where => {id => 12},
        order => [v1 => 1], limit => 0);
   is $result->row_count, 1;
 
@@ -878,7 +879,7 @@ sub _update_limit_1 : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 3)");
 
   my $result = $db->update
-      ('foo', {v2 => 'changed'}, {id => 12},
+      ('foo', {v2 => 'changed'}, where => {id => 12},
        order => [v1 => 1], limit => 1);
   is $result->row_count, 1;
 
@@ -900,7 +901,7 @@ sub _update_limit_2 : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 3)");
 
   my $result = $db->update
-      ('foo', {v2 => 'changed'}, {id => 12},
+      ('foo', {v2 => 'changed'}, where => {id => 12},
        order => [v1 => 1], limit => 2);
   is $result->row_count, 2;
 
@@ -922,7 +923,7 @@ sub _update_limit_large : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 3)");
 
   my $result = $db->update
-      ('foo', {v2 => 'changed'}, {id => 12},
+      ('foo', {v2 => 'changed'}, where => {id => 12},
        order => [v1 => 1], limit => 200000);
   is $result->row_count, 3;
 
@@ -945,7 +946,7 @@ sub _update_offset_limit : Test(2) {
 
   dies_here_ok {
     my $result = $db->update
-        ('foo', {v2 => 'changed'}, {id => 12},
+        ('foo', {v2 => 'changed'}, where => {id => 12},
          order => [v1 => 1], offset => 1, limit => 2);
   };
 
@@ -967,7 +968,7 @@ sub _update_order_desc_limit : Test(2) {
   $db->execute ("insert into foo (id, v1) values (12, 3)");
 
   my $result = $db->update
-      ('foo', {v2 => 'changed'}, {id => 12},
+      ('foo', {v2 => 'changed'}, where => {id => 12},
        order => [v1 => -1], limit => 2);
   is $result->row_count, 2;
 
@@ -990,7 +991,7 @@ sub _update_duplicate_error : Test(2) {
 
   dies_here_ok {
     my $result = $db->update
-        ('foo', {id => 22}, {id => 12});
+        ('foo', {id => 22}, where => {id => 12});
   };
 
   eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
@@ -1011,7 +1012,7 @@ sub _update_duplicate_ignore : Test(2) {
   $db->execute ("insert into foo (id, v1) values (32, 3)");
 
   my $result = $db->update
-      ('foo', {id => 22}, {id => 12}, duplicate => 'ignore');
+      ('foo', {id => 22}, where => {id => 12}, duplicate => 'ignore');
   is $result->row_count, 1; # !
 
   eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,

@@ -294,13 +294,13 @@ sub select ($$$;%) {
   return $return;
 } # select
 
-sub update ($$$$;%) {
-  my ($self, $table_name, $value, $where, %args) = @_;
+sub update ($$$%) {
+  my ($self, $table_name, $value, %args) = @_;
   
   my @col = keys %$value;
   croak 'No value to update' unless @col;
 
-  my ($where_sql, $where_bind) = _where ($where);
+  my ($where_sql, $where_bind) = _where ($args{where});
   croak 'No where' unless $where_sql;
 
   my $sql .= 'UPDATE';

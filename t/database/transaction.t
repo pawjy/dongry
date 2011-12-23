@@ -244,10 +244,10 @@ sub _transaction_select_lock_for_update_no_key : Test(5) {
   my $db3 = Dongry::Database->new
       (sources => {master => {dsn => $dsn, writable => 1}});
   dies_here_ok {
-    $db3->update ('foo', {id => 1245}, {id => 1243});
+    $db3->update ('foo', {id => 1245}, where => {id => 1243});
   };
 
-  $db->update ('foo', {id => 1244}, {id => 1243});
+  $db->update ('foo', {id => 1244}, where => {id => 1243});
 
   is $db2->select ('foo', {id => 1243})->first->{v1}, 'hoge';
   
@@ -281,10 +281,10 @@ sub _transaction_select_lock_for_update_with_pkey : Test(6) {
   my $db3 = Dongry::Database->new
       (sources => {master => {dsn => $dsn, writable => 1}});
   dies_here_ok {
-    $db3->update ('foo', {id => 1245}, {id => 1243});
+    $db3->update ('foo', {id => 1245}, where => {id => 1243});
   };
 
-  $db->update ('foo', {id => 1244}, {id => 1243});
+  $db->update ('foo', {id => 1244}, where => {id => 1243});
   
   is $db2->select ('foo', {id => 1243})->first->{v1}, 'hoge';
 
@@ -323,7 +323,7 @@ sub _transaction_select_lock_count_1 : Test(5) {
 
   is $db2->select ('foo', {id => 1})->first->{v1}, $count;
 
-  $db->update ('foo', {v1 => $count + 1}, {id => 1});
+  $db->update ('foo', {v1 => $count + 1}, where => {id => 1});
   $transaction->commit;
 
   my $count2 = $db2->select ('foo', {id => 1}, lock => 'update')->first->{v1};
@@ -358,14 +358,14 @@ sub _transaction_select_lock_count_2 : Test(5) {
 
   my $count3 = $db3->select ('foo', {id => 1})->first->{v1};
 
-  $db->update ('foo', {v1 => $count + 1}, {id => 1});
+  $db->update ('foo', {v1 => $count + 1}, where => {id => 1});
 
   dies_here_ok {
-    $db2->update ('foo', {v1 => $count2 + 10}, {id => 1});
+    $db2->update ('foo', {v1 => $count2 + 10}, where => {id => 1});
   };
 
   dies_here_ok {
-    $db3->update ('foo', {v1 => $count3 + 100}, {id => 1});
+    $db3->update ('foo', {v1 => $count3 + 100}, where => {id => 1});
   };
 
   $transaction->commit;
@@ -401,7 +401,7 @@ sub _transaction_select_lock_count_3 : Test(5) {
   my $transaction = $db->transaction;
   my $count = $db->select ('foo', {id => 1}, lock => 'share')->first->{v1};
 
-  $db->update ('foo', {v1 => $count + 1}, {id => 1});
+  $db->update ('foo', {v1 => $count + 1}, where => {id => 1});
 
   my $transaction2 = $db2->transaction;
   dies_here_ok {
@@ -532,7 +532,7 @@ sub _transaction_select_lock_insert_4 : Test(2) {
   $db->select ('foo', {id => 10}, lock => 'share');
 
   dies_here_ok {
-    $db2->update ('foo', {id => 10, v1 => 4}, {id => 10});
+    $db2->update ('foo', {id => 10, v1 => 4}, where => {id => 10});
   };
   
   $db2->insert ('foo', [{id => 16, v1 => 2}]);

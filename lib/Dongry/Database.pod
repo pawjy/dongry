@@ -15,7 +15,8 @@ Dongry::Database - Dongry database object
   
   my $transaction = $db->transaction;
   $db->insert ('table1', [{col1 => 12, date => '2012-01-02'}]);
-  $db->update ('table1', {date => '2001-10-02'}, {col1 => {'<', 5}});
+  $db->update ('table1', {date => '2001-10-02'},
+               where => {col1 => {'<', 5}});
   $transaction->commit;
   
   $db->select ('table1', {col1 => $value})->each_as_row (sub {
@@ -586,7 +587,7 @@ Examples:
     warn $row->get ('count');
   });
 
-=item $result = $db->update ($table_name, $values, $where, %opts)
+=item $result = $db->update ($table_name, $values, where => $where, %opts)
 
 Update rows in the specified table using the SQL C<UPDATE> statement.
 The new values must be specified by the second argument, as hash
@@ -648,7 +649,7 @@ Example:
   $db->update
       ('table1',
        {col1 => 12, col2 => $db->bare_sql_fragment ('col2 + 2')},
-       {created => {'<=', '2012-01-01 00:00:00'}});
+       where => {created => {'<=', '2012-01-01 00:00:00'}});
   # UPDATE `table1` SET `col1` = 12, `col2` = col2 + 2
   #    WHERE `created` <= '2012-01-01 00:00:00'
 
