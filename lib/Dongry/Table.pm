@@ -25,7 +25,7 @@ sub schema ($) {
   return $schema->{$_[0]->{name}}; # or undef
 } # schema
 
-# ------ Serialization ------
+# ------ Insertion ------
 
 sub _serialize_values ($$) {
   my ($self, $values) = @_;
@@ -54,8 +54,6 @@ sub _serialize_values ($$) {
   }
   return $s_values;
 } # _serialize_values
-
-# ------ Insertion ------
 
 sub insert ($$;%) {
   my ($self, $data, %args) = @_;
@@ -102,6 +100,7 @@ sub create ($$;%) {
 
 sub find ($$;%) {
   my ($self, $values, %args) = @_;
+  my $schema = $self->schema or croak "No schema for table |$self->{name}|";
   return $self->{db}
       ->select ($self->{name}, $values,
                 fields => $args{fields},
@@ -111,12 +110,13 @@ sub find ($$;%) {
                 limit => 1,
                 lock => $args{lock},
                 source_name => $args{source_name},
-                _table_schema => $self->schema)
+                _table_schema => $schema)
       ->first_as_row;
 } # find
 
 sub find_all ($$;%) {
   my ($self, $values, %args) = @_;
+  my $schema = $self->schema or croak "No schema for table |$self->{name}|";
   return $self->{db}
       ->select ($self->{name}, $values,
                 fields => $args{fields},
@@ -126,7 +126,7 @@ sub find_all ($$;%) {
                 limit => $args{limit},
                 lock => $args{lock},
                 source_name => $args{source_name},
-                _table_schema => $self->schema)
+                _table_schema => $schema)
       ->all_as_rows;
 } # find_all
 
