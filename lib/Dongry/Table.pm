@@ -16,20 +16,20 @@ sub new ($;%) {
 
 # ------ Property accessors ------
 
-sub name ($) {
-  return $_[0]->{name};
-} # name
+sub table_name ($) {
+  return $_[0]->{table_name};
+} # table_name
 
-sub schema ($) {
+sub table_schema ($) {
   my $schema = $_[0]->{db}->schema or return undef;
-  return $schema->{$_[0]->{name}}; # or undef
-} # schema
+  return $schema->{$_[0]->{table_name}}; # or undef
+} # table_schema
 
 # ------ Insertion ------
 
 sub _serialize_values ($$) {
   my ($self, $values) = @_;
-  my $schema = $self->schema;
+  my $schema = $self->table_schema;
   my $s_values = {};
   for my $name (keys %$values) {
     if (defined $values->{$name} and
@@ -58,10 +58,9 @@ sub _serialize_values ($$) {
 sub insert ($$;%) {
   my ($self, $data, %args) = @_;
 
+  my $schema = $self->table_schema || {};
   my $s_data = [];
   for my $values (@$data) {
-    my $schema = $self->schema || {};
-
     for (keys %{$schema->{default} or {}}) {
       next if defined $values->{$_};
       my $default = $schema->{default}->{$_};
@@ -81,11 +80,11 @@ sub insert ($$;%) {
   }
 
   if (defined wantarray) {
-    my $return = $self->{db}->insert ($self->name, $s_data, %args);
+    my $return = $self->{db}->insert ($self->table_name, $s_data, %args);
     $return->{parsed_data} = $data;
     return $return;
   } else {
-    $self->{db}->insert ($self->name, $s_data, %args);
+    $self->{db}->insert ($self->table_name, $s_data, %args);
   }
 } # insert
 
@@ -100,9 +99,10 @@ sub create ($$;%) {
 
 sub find ($$;%) {
   my ($self, $values, %args) = @_;
-  my $schema = $self->schema or croak "No schema for table |$self->{name}|";
+  my $schema = $self->table_schema
+      or croak sprintf "No schema for table |%s|", $self->table_name;
   return $self->{db}
-      ->select ($self->{name}, $values,
+      ->select ($self->table_name, $values,
                 fields => $args{fields},
                 group => $args{group},
                 order => $args{order},
@@ -116,9 +116,10 @@ sub find ($$;%) {
 
 sub find_all ($$;%) {
   my ($self, $values, %args) = @_;
-  my $schema = $self->schema or croak "No schema for table |$self->{name}|";
+  my $schema = $self->table_schema or
+      croak sprintf "No schema for table |%s|", $self->table_name;
   return $self->{db}
-      ->select ($self->{name}, $values,
+      ->select ($self->table_name, $values,
                 fields => $args{fields},
                 group => $args{group},
                 order => $args{order},
@@ -165,7 +166,7 @@ sub fill_related_rows ($$$$;%) {
 
   my $map = {};
   $self->{db}->select
-      ($self->{name},
+      ($self->table_name,
        $where,
        fields => $args{fields},
        source_name => $args{source_name},

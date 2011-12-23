@@ -36,7 +36,7 @@ sub _table_with_name : Test(3) {
   my $db = Dongry::Database->new;
   my $table = $db->table ("hoge`&a\x{1001}");
   isa_ok $table, 'Dongry::Table';
-  is $table->name, "hoge`&a\x{1001}";
+  is $table->table_name, "hoge`&a\x{1001}";
   is $table->{db}, $db;
 } # _table_with_name
 

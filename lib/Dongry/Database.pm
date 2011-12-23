@@ -381,7 +381,7 @@ sub table ($$) {
   croak 'No table name' unless defined $_[1];
   require Dongry::Table;
   return Dongry::Table->new
-      (db => $_[0], name => $_[1]);
+      (db => $_[0], table_name => $_[1]);
 } # table
 
 sub query ($%) {

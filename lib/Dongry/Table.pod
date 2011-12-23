@@ -22,11 +22,11 @@ There are following accessors for the table object:
 
 =over 4
 
-=item $name = $table->name
+=item $name = $table->table_name
 
 Return the I<table name> for the table object.
 
-=item $table_schema = $table->schema
+=item $table_schema = $table->table_schema
 
 Return the definition applied for the table in the schema specified
 for the database object associated with the table object.  If no such

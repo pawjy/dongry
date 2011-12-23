@@ -16,30 +16,30 @@ sub _version : Test(1) {
 sub _new : Test(3) {
   my $db = Dongry::Database->new;
   my $table = Dongry::Table->new
-      (db => $db, name => 'hoge');
+      (db => $db, table_name => 'hoge');
   isa_ok $table, 'Dongry::Table';
   is $table->{db}, $db;
-  is $table->name, 'hoge';
+  is $table->table_name, 'hoge';
 } # _new
 
 sub _schema_none : Test(1) {
   my $db = Dongry::Database->new;
-  my $table = Dongry::Table->new (db => $db, name => 'foo');
-  eq_or_diff $table->schema, undef;
+  my $table = Dongry::Table->new (db => $db, table_name => 'foo');
+  eq_or_diff $table->table_schema, undef;
 } # _schema_none
 
 sub _schema_none_for_table : Test(1) {
   my $db = Dongry::Database->new
       (schema => {bar => {a => 2}});
-  my $table = Dongry::Table->new (db => $db, name => 'foo');
-  eq_or_diff $table->schema, undef;
+  my $table = Dongry::Table->new (db => $db, table_name => 'foo');
+  eq_or_diff $table->table_schema, undef;
 } # _schema_none_for_table
 
 sub _schema_found : Test(1) {
   my $db = Dongry::Database->new
       (schema => {bar => {a => 2}});
-  my $table = Dongry::Table->new (db => $db, name => 'bar');
-  eq_or_diff $table->schema, {a => 2};
+  my $table = Dongry::Table->new (db => $db, table_name => 'bar');
+  eq_or_diff $table->table_schema, {a => 2};
 } # _schema_found
 
 __PACKAGE__->runtests;
