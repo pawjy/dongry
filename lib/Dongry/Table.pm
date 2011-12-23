@@ -130,7 +130,7 @@ sub find_all ($$;%) {
       ->all_as_rows;
 } # find_all
 
-sub search_and_fill_as_row ($$$$$$;%) {
+sub search_and_fill ($$$$$$;%) {
   my ($self,
       $list, $value_method_name => $column_name => $object_method_name,
       %args) = @_;
@@ -146,7 +146,7 @@ sub search_and_fill_as_row ($$$$$$;%) {
     $map->{$_[0]->get ($column_name)} = $_[0];
   });
   $_->$object_method_name ($map->{$_->$value_method_name}) for @$list;
-} # search_and_fill_as_row
+} # search_and_fill
 
 sub search_and_fill_pair_as_row ($$$$$$$$;%) {
   my ($self,
@@ -175,6 +175,78 @@ sub search_and_fill_pair_as_row ($$$$$$$$;%) {
       ($map->{$_->$value_method_name1}->{$_->$value_method_name2} || $default)
       for @$list;
 } # search_and_fill_pair_as_row
+
+sub fill_related_rows ($$$$;%) {
+  my ($self, $list, $method_column_map => $object_method_name, %args) = @_;
+  my $schema = $self->schema or croak "No schema for table |$self->{name}|";
+
+  croak "Methods are not specified" unless keys %$method_column_map;
+  return unless @$list;
+
+  my @methods = keys %$method_column_map;
+  my @cols = map { $method_column_map->{$_} } @methods;
+  my $handlers = {map {
+    my $type = $schema->{type}->{$_};
+    if ($type) {
+      my $handler = $Dongry::Types->{$type}
+          or croak "Type handler for |$type| is not defined";
+      ($_ => $handler);
+    } else {
+      ($_ => {as_key => sub { $_[0] }});
+    }
+  } @cols};
+  my $method_name = shift @methods;
+  my $col = shift @cols;
+  
+  my $where = {};
+  for my $method_name (keys %$method_column_map) {
+    my $vals = {map {
+      my $val = $_->$method_name;
+      my $handler = $handlers->{$method_column_map->{$method_name}};
+      my $as_key = $handler->{as_key} || $handler->{serialize};
+      ($as_key->($val) => $val);
+    } @$list};
+    $where->{$method_column_map->{$method_name}} = {-in => [values %$vals]};
+  }
+
+  my $map = {};
+  $self->{db}->select
+      ($self->{name},
+       $where,
+       source_name => $args{source_name},
+       lock => $args{lock},
+       _table_schema => $schema)
+      ->each_as_row ($args{multiple} ? sub {
+    my $hash = $map;
+    for my $col (@cols) {
+      $hash = $hash->{$_->get_bare ($col)} ||= {};
+    }
+    ($hash->{$_->get_bare ($col)} ||= List::Rubyish->new)->push ($_);
+  } : sub {
+    my $hash = $map;
+    for my $col (@cols) {
+      $hash = $hash->{$_->get_bare ($col)} ||= {};
+    }
+    if ($hash->{$_->get_bare ($col)}) {
+      carp "More than one rows found for an object";
+    } else {
+      $hash->{$_->get_bare ($col)} = $_;
+    }
+  });
+  my $default = $args{multiple} ? List::Rubyish->new : undef;
+  for my $obj (@$list) {
+    my $hash = $map;
+    for my $method_name (@methods) {
+      my $handler = $handlers->{$method_column_map->{$method_name}};
+      my $as_key = $handler->{as_key} || $handler->{serialize};
+      $hash = $hash->{$as_key->($obj->$method_name)} ||= {};
+    }
+    my $handler = $handlers->{$method_column_map->{$method_name}};
+    my $as_key = $handler->{as_key} || $handler->{serialize};
+    $obj->$object_method_name
+        ($hash->{$as_key->($obj->$method_name)} || $default);
+  }
+} # fill_related_rows
 
 # ------------ Table rows ------------
 
