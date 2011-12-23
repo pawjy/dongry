@@ -185,28 +185,13 @@ sub fill_related_rows ($$$$;%) {
 
   my @methods = keys %$method_column_map;
   my @cols = map { $method_column_map->{$_} } @methods;
-  my $handlers = {map {
-    my $type = $schema->{type}->{$_};
-    if ($type) {
-      my $handler = $Dongry::Types->{$type}
-          or croak "Type handler for |$type| is not defined";
-      ($_ => $handler);
-    } else {
-      ($_ => {as_key => sub { $_[0] }});
-    }
-  } @cols};
   my $method_name = shift @methods;
   my $col = shift @cols;
   
   my $where = {};
   for my $method_name (keys %$method_column_map) {
-    my $vals = {map {
-      my $val = $_->$method_name;
-      my $handler = $handlers->{$method_column_map->{$method_name}};
-      my $as_key = $handler->{as_key} || $handler->{serialize};
-      ($as_key->($val) => $val);
-    } @$list};
-    $where->{$method_column_map->{$method_name}} = {-in => [values %$vals]};
+    $where->{$method_column_map->{$method_name}}
+        = {-in => [keys %{{map { ($_->$method_name => 1) } @$list}}]};
   }
 
   my $map = {};
@@ -237,14 +222,9 @@ sub fill_related_rows ($$$$;%) {
   for my $obj (@$list) {
     my $hash = $map;
     for my $method_name (@methods) {
-      my $handler = $handlers->{$method_column_map->{$method_name}};
-      my $as_key = $handler->{as_key} || $handler->{serialize};
-      $hash = $hash->{$as_key->($obj->$method_name)} ||= {};
+      $hash = $hash->{$obj->$method_name} ||= {};
     }
-    my $handler = $handlers->{$method_column_map->{$method_name}};
-    my $as_key = $handler->{as_key} || $handler->{serialize};
-    $obj->$object_method_name
-        ($hash->{$as_key->($obj->$method_name)} || $default);
+    $obj->$object_method_name ($hash->{$obj->$method_name} || $default);
   }
 } # fill_related_rows
 

@@ -290,40 +290,6 @@ sub _fill_related_rows_multiple_found_multiples : Test(7) {
   isa_list_n_ok $mock3->related_rows, 0;
 } # _fill_related_rows_multiple_found_multiples
 
-sub _fill_related_rows_ref : Test(7) {
-  my $schema = {
-    table1 => {
-      type => {id => 'as_ref'},
-      _create => 'create table table1 (id int)',
-    },
-  };
-  my $db = new_db schema => $schema;
-  my $table = $db->table ('table1');
-
-  $table->create ({id => \12345});
-  $table->create ({id => \12345});
-  $table->create ({id => \12341});
-
-  my $mock1 = Test::MoreMore::Mock->new (related_id => \12345);
-  my $mock2 = Test::MoreMore::Mock->new (related_id => \12341);
-  my $mock3 = Test::MoreMore::Mock->new (related_id => \12347);
-
-  local $DBIx::ShowSQL::SQLCount = 0;
-  $table->fill_related_rows
-      ([$mock1, $mock2, $mock3] => {related_id => 'id'} => 'related_rows',
-       multiple => 1);
-  is $DBIx::ShowSQL::SQLCount, 1;
-
-  isa_list_n_ok $mock1->related_rows, 2;
-  is ${$mock1->related_rows->[0]->get ('id')}, 12345;
-  is ${$mock1->related_rows->[1]->get ('id')}, 12345;
-
-  isa_list_n_ok $mock2->related_rows, 1;
-  is ${$mock2->related_rows->[0]->get ('id')}, 12341;
-
-  isa_list_n_ok $mock3->related_rows, 0;
-} # _fill_related_rows_ref
-
 __PACKAGE__->runtests;
 
 1;
