@@ -23,8 +23,8 @@ sub item_list_filter {
     return $self->item_filter ($_);
   });
 
-  Dongry::Database->load ('user')->table ('user')->search_and_fill
-          ($list, 'author_id' => 'id' => 'set_author_as_row');
+  Dongry::Database->load ('user')->table ('user')->fill_related_rows
+      ($list, {'author_id' => 'id'} => 'set_author_as_row');
 
   return $list;
 } # item_list_filter

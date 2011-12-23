@@ -130,52 +130,6 @@ sub find_all ($$;%) {
       ->all_as_rows;
 } # find_all
 
-sub search_and_fill ($$$$$$;%) {
-  my ($self,
-      $list, $value_method_name => $column_name => $object_method_name,
-      %args) = @_;
-  
-  my $ids = {map { $_->$value_method_name => 1 } @$list};
-  my $map = {};
-  $self->{db}->select
-      ($self->{name},
-       {$column_name => {in => [keys %$ids]}},
-       source_name => $args{source_name},
-       lock => $args{lock})
-      ->for_each_as_row (sub {
-    $map->{$_[0]->get ($column_name)} = $_[0];
-  });
-  $_->$object_method_name ($map->{$_->$value_method_name}) for @$list;
-} # search_and_fill
-
-sub search_and_fill_pair_as_row ($$$$$$$$;%) {
-  my ($self,
-      $list, $value_method_name1, $value_method_name2
-      => $column_name1, $column_name2,
-      => $object_method_name,
-      %args) = @_;
-  
-  my $ids1 = {map { $_->$value_method_name1 => 1 } @$list};
-  my $ids2 = {map { $_->$value_method_name2 => 1 } @$list};
-  my $map = {};
-  $self->{db}->select
-      ($self->{name},
-       {$column_name1 => {in => [keys %$ids1]},
-        $column_name2 => {in => [keys %$ids2]}},
-       source_name => $args{source_name},
-       lock => $args{lock})
-      ->for_each_as_row ($args{multiple} ? sub {
-    ($map->{$_[0]->get ($column_name1)}
-         ->{$_[0]->get ($column_name2)} ||= List::Rubyish->new)->push ($_[0]);
-  } : sub {
-    $map->{$_[0]->get ($column_name1)}->{$_[0]->get ($column_name2)} = $_[0];
-  });
-  my $default = $args{multiple} ? List::Rubyish->new : undef;
-  $_->$object_method_name
-      ($map->{$_->$value_method_name1}->{$_->$value_method_name2} || $default)
-      for @$list;
-} # search_and_fill_pair_as_row
-
 sub fill_related_rows ($$$$;%) {
   my ($self, $list, $method_column_map => $object_method_name, %args) = @_;
 

@@ -51,8 +51,8 @@ sub query {
        item_list_filter => sub {
          my $list = $_[1]->map(sub { Dict::Entry->new_from_entry_row ($_) });
          
-         $desc->search_and_fill_pair_as_row
-             ($list, 'category_id', 'entry_id' => 'category_id', 'entry_id'
+         $desc->fill_related_rows
+             ($list, {'category_id' => 'category_id', 'entry_id' => 'entry_id'}
               => 'set_description_rows',
               multiple => 1);
          
