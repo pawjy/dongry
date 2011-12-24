@@ -9,22 +9,6 @@ use Dongry::Database;
 use Dongry::Type::DateTime;
 use Encode;
 
-sub new_db (%) {
-  my %args = @_;
-  reset_db_set;
-  my $dsn = test_dsn 'test1';
-  my $db = Dongry::Database->new
-      (sources => {master => {dsn => $dsn, writable => 1},
-                   default => {dsn => $dsn}},
-       schema => $args{schema});
-  for my $name (keys %{$args{schema} || {}}) {
-    if ($args{schema}->{$name}->{_create}) {
-      $db->execute ($args{schema}->{$name}->{_create});
-    }
-  }
-  return $db;
-} # new_db
-
 # ------ |update| ------
 
 sub _update_parsable : Test(1) {

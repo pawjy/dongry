@@ -7,22 +7,6 @@ use Test::Dongry;
 use base qw(Test::Class);
 use Dongry::Database;
 
-sub new_db (%) {
-  my %args = @_;
-  reset_db_set;
-  my $dsn = test_dsn 'test1';
-  my $db = Dongry::Database->new
-      (sources => {master => {dsn => $dsn, writable => 1},
-                   default => {dsn => $dsn}},
-       schema => $args{schema});
-  for my $name (keys %{$args{schema} || {}}) {
-    if ($args{schema}->{$name}->{_create}) {
-      $db->execute ($args{schema}->{$name}->{_create});
-    }
-  }
-  return $db;
-} # new_db
-
 sub _find_null_query : Test(4) {
   my $db = Dongry::Database->new;
   my $q = $db->query;

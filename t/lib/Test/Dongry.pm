@@ -17,4 +17,22 @@ push @EXPORT, @Test::MySQL::CreateDatabase::EXPORT_OK;
 
 require DBIx::ShowSQL;
 
+push @EXPORT, qw(new_db);
+sub new_db (%) {
+  my %args = @_;
+  reset_db_set ();
+  my $dsn = test_dsn ('test1');
+  require Dongry::Database;
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1},
+                   default => {dsn => $dsn}},
+       schema => $args{schema});
+  for my $name (keys %{$args{schema} || {}}) {
+    if ($args{schema}->{$name}->{_create}) {
+      $db->execute ($args{schema}->{$name}->{_create});
+    }
+  }
+  return $db;
+} # new_db
+
 1;
