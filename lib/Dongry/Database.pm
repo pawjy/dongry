@@ -423,7 +423,8 @@ sub each ($$) {
 
 sub each_as_row ($$) {
   my ($self, $code) = @_;
-  my $tn = $self->{table_name} or croak 'Table name is not known';
+  my $tn = $self->{table_name};
+  croak 'Table name is not known' if not defined $tn;
   my $db = $self->{db};
   require Dongry::Table;
   $self->each (sub {
@@ -441,7 +442,8 @@ sub all ($) {
 } # all
 
 sub all_as_rows ($) {
-  my $tn = $_[0]->{table_name} or croak 'Table name is not known';
+  my $tn = $_[0]->{table_name};
+  croak 'Table name is not known' if not defined $tn;
   my $db = $_[0]->{db};
   require Dongry::Table;
   return scalar $_[0]->all->map(sub {
@@ -459,7 +461,7 @@ sub first ($) {
 
 sub first_as_row ($) {
   my $self = shift;
-  croak 'Table name is not known' unless $self->{table_name};
+  croak 'Table name is not known' if not defined $self->{table_name};
   my $data = $self->first or return undef;
   require Dongry::Table;
   return bless {db => $self->{db},
@@ -486,7 +488,8 @@ sub each ($$) {
 
 sub each_as_row ($$) {
   my ($self, $code) = @_;
-  my $tn = $self->{table_name} or croak 'Table name is not known';
+  my $tn = $self->{table_name};
+  croak 'Table name is not known' if not defined $tn;
   my $data = delete $self->{data}
       or croak 'This method is no longer available';
   my $db = $self->{db};
@@ -509,7 +512,8 @@ sub all ($) {
 
 sub all_as_rows ($) {
   my $self = shift;
-  my $tn = $self->{table_name} or croak 'Table name is not known';
+  my $tn = $self->{table_name};
+  croak 'Table name is not known' if not defined $tn;
   my $data = delete $self->{data}
       or croak 'This method is no longer available';
   delete $self->{data};
@@ -532,7 +536,7 @@ sub first ($) {
 
 sub first_as_row ($) {
   my $self = shift;
-  croak 'Table name is not known' unless $self->{table_name};
+  croak 'Table name is not known' if not defined $self->{table_name};
   my $data = delete $self->{data}
       or croak 'This method is no longer available';
   delete $self->{data};

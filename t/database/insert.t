@@ -450,6 +450,167 @@ sub _insert_a_row_result_first_as_row : Test(16) {
   eq_or_diff \@value, [];
 } # _insert_a_row_result_first_as_row
 
+sub _insert_a_row_result_each_zero : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1},
+                   default => {dsn => $dsn}});
+  $db->execute ('create table `0` (id int, v1 text, v2 text)');
+  
+  my $result = $db->insert ('0', [{id => 32}]);
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, '0';
+  my @value;
+  $result->each (sub { push @value, $_ });
+  eq_or_diff \@value, [{id => 32}];
+  @value = ();
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
+  eq_or_diff \@value, [];
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+} # _insert_a_row_result_each_zero
+
+sub _insert_a_row_result_each_as_row_zero : Test(16) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1},
+                   default => {dsn => $dsn}});
+  $db->execute ('create table `0` (id int, v1 text, v2 text)');
+  
+  my $result = $db->insert ('0', [{id => 32}]);
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, '0';
+  my @value;
+  $result->each_as_row (sub { push @value, $_ });
+  is 0+@value, 1;
+  isa_ok $value[0], 'Dongry::Table::Row';
+  is $value[0]->{db}, $db;
+  is $value[0]->{table_name}, '0';
+  eq_or_diff $value[0]->{data}, {id => 32};
+  is $value[0]->{parsed_data}, undef;
+  @value = ();
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
+  eq_or_diff \@value, [];
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+} # _insert_a_row_result_each_as_row_zero
+
+sub _insert_a_row_result_all_zero : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1},
+                   default => {dsn => $dsn}});
+  $db->execute ('create table `0` (id int, v1 text, v2 text)');
+  
+  my $result = $db->insert ('0', [{id => 32}]);
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, '0';
+  my $values = $result->all;
+  isa_list_n_ok $values, 1;
+  eq_or_diff $values->to_a, [{id => 32}];
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  my @value;
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
+  eq_or_diff \@value, [];
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+} # _insert_a_row_result_all_zero
+
+sub _insert_a_row_result_all_as_rows_zero : Test(16) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1},
+                   default => {dsn => $dsn}});
+  $db->execute ('create table `0` (id int, v1 text, v2 text)');
+  
+  my $result = $db->insert ('0', [{id => 32}]);
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, '0';
+  my $values = $result->all_as_rows;
+  isa_list_n_ok $values, 1;
+  isa_ok $values->[0], 'Dongry::Table::Row';
+  is $values->[0]->{db}, $db;
+  is $values->[0]->{table_name}, '0';
+  eq_or_diff $values->[0]->{data}, {id => 32};
+  is $values->[0]->{parsed_data}, undef;
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  my @value;
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
+  eq_or_diff \@value, [];
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+} # _insert_a_row_result_all_as_rows_zero
+
+sub _insert_a_row_result_first_zero : Test(12) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1},
+                   default => {dsn => $dsn}});
+  $db->execute ('create table `0` (id int, v1 text, v2 text)');
+  
+  my $result = $db->insert ('0', [{id => 32}]);
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, '0';
+  my $value = $result->first;
+  eq_or_diff $value, {id => 32};
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->all_as_rows };
+  my @value;
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
+  eq_or_diff \@value, [];
+} # _insert_a_row_result_first_zero
+
+sub _insert_a_row_result_first_as_row_zero : Test(16) {
+  reset_db_set;
+  my $dsn = test_dsn 'test1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1},
+                   default => {dsn => $dsn}});
+  $db->execute ('create table `0` (id int, v1 text, v2 text)');
+  
+  my $result = $db->insert ('0', [{id => 32}]);
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 1;
+  is $result->table_name, '0';
+  my $value = $result->first_as_row;
+  isa_ok $value, 'Dongry::Table::Row';
+  is $value->{db}, $db;
+  is $value->{table_name}, '0';
+  eq_or_diff $value->{data}, {id => 32};
+  is $value->{parsed_data}, undef;
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->all };
+  my @value;
+  dies_here_ok { $result->each_as_row (sub { push @value, $_ }) };
+  dies_here_ok { $result->each (sub { push @value, $_ }) };
+  eq_or_diff \@value, [];
+} # _insert_a_row_result_first_as_row_zero
+
 sub _insert_two_rows_result_each : Test(12) {
   reset_db_set;
   my $dsn = test_dsn 'test1';

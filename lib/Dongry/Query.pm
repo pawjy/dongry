@@ -5,10 +5,14 @@ our $VERSION = '1.0';
 
 push our @CARP_NOT, qw(Dongry::Database);
 
-sub new {
+sub new ($%) {
   my $class = shift;
   return bless {@_}, $class;
 } # new
+
+sub is_null ($) {
+  return not defined $_[0]->{table_name};
+} # is_null
 
 sub db { if (@_ > 1) { $_[0]->{db} = $_[1] } return $_[0]->{db} }
 
@@ -55,7 +59,7 @@ sub item_list_filter {
 
 sub find_all {
   my ($self, %args) = @_;
-  return List::Rubyish->new unless $self->table_name;
+  return List::Rubyish->new if $self->is_null;
   return $self->item_list_filter
       ($self->table->find_all
            ($self->where,
@@ -70,7 +74,7 @@ sub find_all {
 
 sub find {
   my ($self, %args) = @_;
-  return undef unless $self->table_name;
+  return undef if $self->is_null;
   return $self->item_list_filter
       ($self->table->find_all
            ($self->where,
@@ -85,7 +89,7 @@ sub find {
 
 sub count {
   my ($self, %args) = @_;
-  return 0 unless $self->table_name;
+  return 0 if $self->is_null;
 
   my %param;
   my $group = $self->group;

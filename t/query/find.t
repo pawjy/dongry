@@ -23,9 +23,10 @@ sub new_db (%) {
   return $db;
 } # new_db
 
-sub _find_null_query : Test(3) {
+sub _find_null_query : Test(4) {
   my $db = Dongry::Database->new;
   my $q = $db->query;
+  ok $q->is_null;
   is $q->find, undef;
   isa_list_n_ok $q->find_all, 0;
   is $q->count, 0;
@@ -47,7 +48,7 @@ sub _find_no_where : Test(3) {
   dies_here_ok { $q->count };
 } # _find_no_where
 
-sub _find_not_found : Test(3) {
+sub _find_not_found : Test(4) {
   my $db = new_db schema => {
     table1 => {
       _create => 'CREATE TABLE table1 (id INT)',
@@ -56,6 +57,7 @@ sub _find_not_found : Test(3) {
   $db->table ('table1')->create ({id => 10});
 
   my $q = $db->query (table_name => 'table1', where => {id => 1});
+  ng $q->is_null;
   is $q->find, undef;
   isa_list_n_ok $q->find_all, 0;
   is $q->count, 0;
@@ -79,6 +81,25 @@ sub _find_1_found : Test(6) {
   is $list->[0]->get ('id'), 1;
   is $q->count, 1;
 } # _find_1_found
+
+sub _find_1_found_zero : Test(6) {
+  my $db = new_db schema => {
+    0 => {
+      _create => 'CREATE TABLE `0` (id INT)',
+    },
+  };
+  $db->table ('0')->create ({id => 1});
+
+  my $q = $db->query (table_name => '0', where => {id => 1});
+  my $row = $q->find;
+  isa_ok $row, 'Dongry::Table::Row';
+  is $row->get ('id'), 1;
+  my $list = $q->find_all;
+  isa_list_n_ok $list, 1;
+  isa_ok $list->[0], 'Dongry::Table::Row';
+  is $list->[0]->get ('id'), 1;
+  is $q->count, 1;
+} # _find_1_found_zero
 
 sub _find_3_found : Test(7) {
   my $db = new_db schema => {
