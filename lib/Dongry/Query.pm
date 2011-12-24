@@ -65,15 +65,6 @@ sub item_list_filter {
   }
 } # item_list_filter
 
-# XXX
-sub item_filter {
-  if ($_[0]->{item_filter}) {
-    return $_[0]->{item_filter}->(@_);
-  } else {
-    return $_[1];
-  }
-} # item_filter
-
 sub search {
   my ($self, %args) = @_;
   return List::Rubyish->new unless $self->table_name;

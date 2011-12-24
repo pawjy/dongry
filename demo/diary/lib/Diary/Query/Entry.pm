@@ -12,15 +12,11 @@ sub table_name {
   return 'entry';
 } # table_name
 
-sub item_filter {
-  require Diary::Entry;
-  return Diary::Entry->new_from_row ($_[1]);
-} # item_filter
-
 sub item_list_filter {
   my ($self, $list) = @_;
+  require Diary::Entry;
   $list = scalar $list->map (sub {
-    return $self->item_filter ($_);
+    return Diary::Entry->new_from_row ($_);
   });
 
   Dongry::Database->load ('user')->table ('user')->fill_related_rows

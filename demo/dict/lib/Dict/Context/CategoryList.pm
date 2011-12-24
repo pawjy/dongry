@@ -15,8 +15,8 @@ sub query {
       (table_name => 'category',
        where => {1 => 1},
        order => [qw(updated_on DESC)],
-       item_filter => sub {
-         return Dict::Category->new_from_row ($_[1]);
+       item_list_filter => sub {
+         return $_[1]->map (sub { Dict::Category->new_from_row ($_) });
        });
 } # query
 

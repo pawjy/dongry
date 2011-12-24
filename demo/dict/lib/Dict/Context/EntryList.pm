@@ -45,9 +45,6 @@ sub query {
            category_id => $cat->category_id,
        },
        order => [qw(updated_on DESC)],
-       item_filter => sub {
-         return Dict::Entry->new_from_entry_row ($_[1]);
-       },
        item_list_filter => sub {
          my $list = $_[1]->map(sub { Dict::Entry->new_from_entry_row ($_) });
          
