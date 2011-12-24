@@ -1,35 +1,38 @@
 package Dongry::Type::DateTime;
 use strict;
 use warnings;
-use DateTime::Format::MySQL;
+our $VERSION = '1.0';
+use Dongry::Type -Base;
+use DateTime;
 use Carp;
-
-# XXX
-push @Dongry::Table::CARP_NOT, __PACKAGE__;
-push @Dongry::Table::Row::CARP_NOT, __PACKAGE__;
 
 $Dongry::Types->{timestamp_as_DateTime} = {
   parse => sub {
     if (not defined $_[0] or $_[0] eq '0000-00-00 00:00:00') {
       return undef;
-    } else {
-      my $dt = eval { DateTime::Format::MySQL->parse_datetime ($_[0]) } or do {
-        croak $@; # XXX
+    } elsif ($_[0] =~ /^([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})$/) {
+      my $dt = eval {
+        DateTime->new (year => $1, month => $2, day => $3,
+                       hour => $4, minute => $5, second => $6,
+                       time_zone => 'UTC');
+      } or do {
+        carp sprintf "TIMESTAMP |%s| is invalid", $_[0];
       };
-      $dt->set_time_zone ('UTC');
-      return $dt;
+      return $dt || undef;
+    } else {
+      return undef;
     }
   }, # parse
   serialize => sub {
-    if ($_[0]) {
-      if ($_[0]->time_zone->name ne 'UTC' and
-          $_[0]->time_zone->name ne 'floating') {
-        my $dt = $_[0]->clone;
+    if (my $dt = $_[0]) {
+      if ($dt->time_zone->name ne 'UTC' and
+          $dt->time_zone->name ne 'floating') {
+        $dt = $dt->clone;
         $dt->set_time_zone ('UTC');
-        return DateTime::Format::MySQL->format_datetime ($dt);
-      } else {
-        return DateTime::Format::MySQL->format_datetime ($_[0]);
       }
+      return sprintf '%04d-%02d-%02d %02d:%02d:%02d',
+          $dt->year, $dt->month, $dt->day,
+          $dt->hour, $dt->minute, $dt->second;
     } else {
       return '0000-00-00 00:00:00';
     }
@@ -37,3 +40,12 @@ $Dongry::Types->{timestamp_as_DateTime} = {
 }; # timestamp_as_DateTime
 
 1;
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

@@ -4,6 +4,15 @@ use warnings;
 our $VERSION = '1.0';
 use Encode;
 
+sub import {
+  my $opt = $_[1] || '';
+  if ($opt eq -Base) {
+    my $caller = caller;
+    push @Dongry::Table::CARP_NOT, $caller;
+    push @Dongry::Table::Row::CARP_NOT, $caller;
+  }
+} # import
+
 $Dongry::Types ||= {};
 
 $Dongry::Types->{as_ref} = {
