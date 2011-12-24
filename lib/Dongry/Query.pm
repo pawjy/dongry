@@ -10,6 +10,10 @@ sub new ($%) {
   return bless {@_}, $class;
 } # new
 
+sub new_null_query ($) {
+  return bless {}, $_[0];
+} # new_null_query
+
 sub clone ($) {
   my $class = ref $_[0];
   return bless {%{$_[0]}}, $class;

@@ -19,6 +19,12 @@ sub _new : Test(3) {
   eq_or_diff $q->order, [foo => -1];
 } # _new
 
+sub new_null_query : Test(2) {
+  my $q = Dongry::Query->new_null_query;
+  isa_ok $q, 'Dongry::Query';
+  ok $q->is_null;
+} # new_null_query
+
 sub _clone : Test(7) {
   my $q = Dongry::Query->new (table_name => 'hoge', order => [foo => 1]);
   my $q2 = $q->clone;
