@@ -10,18 +10,10 @@ sub new {
   return bless {@_}, $class;
 } # new
 
-sub db {
-  if (@_ > 1) {
-    $_[0]->{db} = $_[1];
-  }
-  return $_[0]->{db};
-} # db
+sub db { if (@_ > 1) { $_[0]->{db} = $_[1] } return $_[0]->{db} }
 
 sub table_name {
-  if (@_ > 1) {
-    $_[0]->{table_name} = $_[1];
-  }
-  return $_[0]->{table_name};
+  if (@_ > 1) { $_[0]->{table_name} = $_[1] } return $_[0]->{table_name};
 } # table_name
 
 sub table {
@@ -29,32 +21,28 @@ sub table {
 } # table
 
 sub fields {
-  if (@_ > 1) {
-    $_[0]->{fields} = $_[1];
-  }
-  return $_[0]->{fields};
+  if (@_ > 1) { $_[0]->{fields} = $_[1] } return $_[0]->{fields};
 } # fields
 
 sub where {
-  if (@_ > 1) {
-    $_[0]->{where} = $_[1];
-  }
-  return $_[0]->{where};
+  if (@_ > 1) { $_[0]->{where} = $_[1] } return $_[0]->{where};
 } # where
 
 sub order {
-  if (@_ > 1) {
-    $_[0]->{order} = $_[1];
-  }
-  return $_[0]->{order};
+  if (@_ > 1) { $_[0]->{order} = $_[1] } return $_[0]->{order};
 } # order
 
 sub group {
-  if (@_ > 1) {
-    $_[0]->{group} = $_[1];
-  }
-  return $_[0]->{group};
+  if (@_ > 1) { $_[0]->{group} = $_[1] } return $_[0]->{group};
 } # group
+
+sub source_name {
+  if (@_ > 1) { $_[0]->{source_name} = $_[1] } return $_[0]->{source_name};
+} # source_name
+
+sub lock {
+  if (@_ > 1) { $_[0]->{lock} = $_[1] } return $_[0]->{lock};
+} # lock
 
 sub item_list_filter {
   my $self = $_[0];
@@ -77,7 +65,8 @@ sub search {
             group => $self->group,
             offset => $args{offset},
             limit => $args{limit},
-            source_name => $args{source_name})->all_as_rows);
+            source_name => $args{source_name} || $self->source_name,
+            lock => $args{lock} || $self->lock)->all_as_rows);
 } # search
 
 sub find {

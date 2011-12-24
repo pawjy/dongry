@@ -75,6 +75,30 @@ sub _order : Test(4) {
   is $q->order, undef;
 } # _order
 
+sub _source_name : Test(4) {
+  my $q = Dongry::Query->new;
+  is $q->source_name, undef;
+
+  $q->source_name ({hoge => {foo => 1}});
+  eq_or_diff $q->source_name, {hoge => {foo => 1}};
+  eq_or_diff $q->source_name, {hoge => {foo => 1}};
+  
+  $q->source_name (undef);
+  is $q->source_name, undef;
+} # _source_name
+
+sub _lock : Test(4) {
+  my $q = Dongry::Query->new;
+  is $q->lock, undef;
+
+  $q->lock ({hoge => {foo => 1}});
+  eq_or_diff $q->lock, {hoge => {foo => 1}};
+  eq_or_diff $q->lock, {hoge => {foo => 1}};
+  
+  $q->lock (undef);
+  is $q->lock, undef;
+} # _lock
+
 sub _group : Test(4) {
   my $q = Dongry::Query->new;
   is $q->group, undef;
@@ -94,7 +118,12 @@ sub _item_list_filter : Test(3) {
       (List::Rubyish->new ([{foo => 1243, bar => 12}, {foo => 12}]))->to_a,
       [{foo => 1243, bar => 12}, {foo => 12}];
 
-  $q->{item_list_filter} = sub { is $_[0], $q; $_[1]->map (sub { $_ + 12 }) };
+  $q->{item_list_filter} = sub {
+    is $_[0], $q;
+
+    ## Context sensitive, but the caller gives scalar context.
+    return $_[1]->map (sub { $_ + 12 });
+  };
   eq_or_diff $q->item_list_filter (List::Rubyish->new ([124, 66]))->to_a,
        [124 + 12, 66 + 12];
 } # _fields

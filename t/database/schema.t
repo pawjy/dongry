@@ -60,6 +60,22 @@ sub _query_class : Test(3) {
   eq_or_diff $q->where, {1 => 2};
 } # _query_class
 
+sub _query_null : Test(2) {
+  my $db = Dongry::Database->new;
+  my $q = $db->query;
+  isa_ok $q, 'Dongry::Query';
+  ng $q->table_name;
+} # _query_null
+
 __PACKAGE__->runtests;
 
 1;
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
