@@ -359,16 +359,7 @@ sub bare_sql_fragment ($$) {
 
 # ------ Schema-aware operations ------
 
-$Dongry::Types ||= {};
-
-$Dongry::Types->{as_ref} = {
-  parse => sub {
-    return defined $_[0] ? \($_[0]) : undef;
-  },
-  serialize => sub {
-    return defined $_[0] ? ${$_[0]} : undef;
-  },
-}; # as_ref
+use Dongry::Type;
 
 sub schema ($) {
   if (@_ > 1) {
