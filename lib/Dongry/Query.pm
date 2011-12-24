@@ -53,35 +53,54 @@ sub item_list_filter {
   }
 } # item_list_filter
 
-sub search {
+sub find_all {
   my ($self, %args) = @_;
   return List::Rubyish->new unless $self->table_name;
   return $self->item_list_filter
-      ($self->db->select
-           ($self->table_name,
-            $self->where,
+      ($self->table->find_all
+           ($self->where,
             fields => $self->fields,
-            order => $self->order,
             group => $self->group,
+            order => $self->order,
             offset => $args{offset},
             limit => $args{limit},
             source_name => $args{source_name} || $self->source_name,
-            lock => $args{lock} || $self->lock)->all_as_rows);
-} # search
+            lock => $args{lock} || $self->lock));
+} # find_all
 
 sub find {
   my ($self, %args) = @_;
-  return $self->search (%args, offset => 0, limit => 1)->[0]; # or undef
+  return undef unless $self->table_name;
+  return $self->item_list_filter
+      ($self->table->find_all
+           ($self->where,
+            fields => $self->fields,
+            group => $self->group,
+            order => $self->order,
+            offset => 0,
+            limit => 1,
+            source_name => $args{source_name} || $self->source_name,
+            lock => $args{lock} || $self->lock))->[0]; # or undef
 } # find
 
 sub count {
   my ($self, %args) = @_;
   return 0 unless $self->table_name;
-  return $self->db->select
-      ($self->table_name,
-       $self->where,
-       field => 'COUNT(*) AS count',
-       source_name => $args{source_name})->first->{count} || 0;
+
+  my %param;
+  my $group = $self->group;
+  if ($group) {
+    $param{fields} = {-count => $group, distinct => 1, as => 'count'};
+  } else {
+    $param{fields} = {-count => undef, as => 'count'};
+  }
+
+  my $row = $self->table->find
+      ($self->where,
+       %param,
+       source_name => $args{source_name} || $self->source_name,
+       lock => $args{lock} || $self->lock);
+  return $row ? $row->get ('count') : 0;
 } # count
 
 1;
