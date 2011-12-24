@@ -407,6 +407,33 @@ sub _find_source_name : Test(22) {
   }
 } # _find_source_name
 
+sub _find_filtered : Test(8) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 1}, {id => 1}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => 1},
+       item_list_filter => sub {
+         return $_[1]->map (sub { $_->{data}->{id}++; [$_] });
+       });
+
+  my $row = $q->find;
+  is scalar @$row, 1;
+  isa_ok $row->[0], 'Dongry::Table::Row';
+  is $row->[0]->get ('id'), 2;
+  my $list = $q->find_all;
+  isa_list_n_ok $list, 3;
+  is $list->[0]->[0]->get ('id'), 2;
+  is $list->[1]->[0]->get ('id'), 2;
+  is $list->[2]->[0]->get ('id'), 2;
+  is $q->count, 3;
+} # _find_filtered
+
 __PACKAGE__->runtests;
 
 1;

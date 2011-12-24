@@ -1,0 +1,247 @@
+=head1 NAME
+
+Dongry::Query - Database query
+
+=head1 SYNOPSIS
+
+  my $q = $db->query
+      (table_name => 'entry',
+       where => {user_id => $user_id},
+       order => {date => -1});
+  $rows = $q->find_all (offset => $page * $per_page, $per_page);
+  $count = $q->count;
+
+=head1 DESCRIPTION
+
+The C<Dongry::Query> object represents a query for a database table.
+It contains query arguments such as C<where> and C<order>.  The query
+can actually be executed on the database by invoking methods of the
+object with additional options such as C<offset> and C<limit>.  It
+would be particularly useful to implement so-called "pager" object in
+a table- and context- independent way.
+
+=head1 METHODS
+
+=head2 Instantiation
+
+To create a new instance of query object, you can use the C<query>
+method of the database object, as mentioned in the L</"SYNOPSIS">.
+
+In addition, there is a specific method to create a "null" query
+object:
+
+=over 4
+
+=item $q = Dongry::Query->new_null_query
+
+Return a new "null" query object.  A null query does nothing; C<find>
+always returns C<undef>, C<find_all> always returns an empty list, and
+C<count> always return zero.
+
+=item $bool = $q->is_null
+
+Return whether the query object is "null" or not.
+
+=back
+
+There is a method to clone the query object:
+
+=over 4
+
+=item $q2 = $q->clone
+
+Return a newly-created clone of the query object.  Please note that
+the method does only clone the query object itself.  Arguments of the
+query, such as C<where> and C<order>, are not deeply cloned.
+
+=back
+
+The data copied by the c<clone> method are those accessible from the
+accessor methods described in the next subsection.
+
+=head2 Accessors
+
+There are following "accessor" methods, used to construct actual SQL
+queries.  Instead of setting values using these methods, they can be
+specified as options to the C<query> method of the database object.
+Moreover, you can give these value by creating a subclass of the
+L<Dongry::Query> class and overriding these methods, if desired.
+
+=over 4
+
+=item $db = $q->db
+
+=item $q->db ($db)
+
+The database.
+
+=item $table_name = $q->table_name
+
+=item $q->table_name ($table_name)
+
+The table name.
+
+=item $fields = $q->fields
+
+=item $q->fields ($fields)
+
+The "fields" struct.
+
+=item $where = $q->where
+
+=item $q->where ($where)
+
+The "where" struct.  Note that the "where" struct for the query object
+is I<schema-aware>.
+
+=item $order = $q->order
+
+=item $q->order ($order)
+
+The "order" struct.
+
+=item $group = $q->group
+
+=item $q->group ($group)
+
+The "group" struct.
+
+=item $source_name = $q->source_name
+
+=item $q->source_name ($source_name)
+
+The C<source_name> option.
+
+=item $lock = $q->lock
+
+=item $q->lock ($lock)
+
+The C<lock> option.
+
+=back
+
+They are optional except for C<where>.  For more information on
+semantics and allowed values for these options, see C<find> and
+C<find_all> method of the database table object
+(i.e. L<Dongry::Table>.
+
+=over 4
+
+=item $table = $q->table
+
+The table object for the query.  This is determinted by C<< $q->db >>
+and C<< $q->table_name >>.
+
+=back
+
+There is a special data for the query object: C<item_list_filter>.  A
+code reference can be specified for the filter as an option to the
+C<query> method of the database object.  The C<item_list_filter>
+method of the query object is not the accessor, but the filter itself.
+You are not expected to set the filter after the instantiation of the
+query object.  Instead of setting a code reference, you can subclass
+the query object and define your own C<item_list_filter> method, if
+desired.
+
+=over 4
+
+=item $filtered_list = $q->item_list_filter ($list)
+
+Apply an application-specific filter to the result of the retrieval.
+This method is invoked by C<find> and C<find_all> method just before
+results are returned.  You can modify, replace, or preprocess the
+table row objects retrieved from the database.  Although not
+recommended, you can filter out or grep some of items in the method,
+as the name suggets.
+
+The argument to the method is a L<List::Rubyish> object containing the
+table row objects obtained by the query execution.  The list can be
+empty.
+
+The method (is expected to) return(s) a L<List::Rubyish> object
+containing the object to be returned to the application.  For the
+C<find> method, the first item in the list, if any, is returned.  For
+the C<find_all> method, the list itself is returned.  Note that the
+C<count> method is not affected by the filter.  This is the reason you
+should not change the number of items in the filter in general.
+
+The default behavior of the method is to return the argument without
+any modification.  It can be customized by specifying the
+C<item_list_filter> option or subclassing, as mentioned above.
+
+Use cases of this method include: Instantiating application-specific
+objects corresponding to the retrieved table rows and returning them
+instead of returning the row objects themselves; Retrieving rows from
+another tables corresponding the retrieved rows at a time, using the
+C<fill_related_rows> method of the table object; Removing unused rows
+from the result using application-specific (non-SQL) rules.
+
+=back
+
+=head2 Retrieval
+
+There are three methods to actually execute SQL queries and retrieve
+the results:
+
+=over 4
+
+=item $object = $q->find (%args)
+
+Execute the query represented by the object and return the first row,
+if any, or C<undef> otherwise.  By default the table row object is
+returned, but this could be modified by C<item_list_filter>.
+
+Following options is available: C<source_name>, and C<lock>.  If they
+are specified, methods with same names are ignored.
+
+=item $list = $q->find_all (%args)
+
+Execute the query represented by the object and return a
+L<List::Rubyish> object containing the rows.  The list could be empty.
+By default the table row objects are contained in the list, but this
+could be modified by C<item_list_filter>.
+
+Following options is available: C<offset>, C<limit>, C<source_name>,
+and C<lock>.  If they are specified, methods with same names are
+ignored.
+
+Options C<offset> and C<limit> are useful to implement pagers.
+
+=item $count = $q->count
+
+Execute the query represeted by the the object and return the number
+of rows matched.
+
+This method is not affected by C<item_list_filter>.
+
+Following options is available: C<source_name>, and C<lock>.  If they
+are specified, methods with same names are ignored.
+
+=back
+
+=head1 SEE ALSO
+
+L<Dongry::Database>.  The C<query> method is described in this
+document.
+
+L<Dongry::Table>.
+
+L<Dongry::SQL>.
+
+=head1 ACKNOWLEDGEMENTS
+
+This module is inspired by query object implementations for
+L<DBIx::MoCo>, originally developed by id:motemen.
+
+=head1 AUTHOR
+
+Wakaba <w@suika.fam.cx>.
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
