@@ -281,6 +281,111 @@ sub _find_order_2 : Test(7) {
   is $q->count, 3;
 } # _find_order
 
+sub _find_3_offset : Test(5) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1', where => {id => {-not => undef}},
+       order => [id => 1]);
+  my $row = $q->find (offset => 1);
+  isa_ok $row, 'Dongry::Table::Row';
+  is $row->get ('id'), 1;
+  my $list = $q->find_all (offset => 1);
+  isa_list_n_ok $list, 1;
+  is $list->[0]->get ('id'), 2;
+  is $q->count (offset => 1), 3;
+} # _find_3_offset
+
+sub _find_3_limit : Test(6) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1', where => {id => {-not => undef}},
+       order => [id => 1]);
+  my $row = $q->find (limit => 2);
+  isa_ok $row, 'Dongry::Table::Row';
+  is $row->get ('id'), 1;
+  my $list = $q->find_all (limit => 2);
+  isa_list_n_ok $list, 2;
+  is $list->[0]->get ('id'), 1;
+  is $list->[1]->get ('id'), 2;
+  is $q->count (limit => 2), 3;
+} # _find_3_limit
+
+sub _find_source_name : Test(22) {
+  my $db1 = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  my $db2 = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db1->table ('table1')->insert ([{id => 1}]);
+  $db2->table ('table1')->insert ([{id => 2}, {id => 2}]);
+
+  my $db = Dongry::Database->new
+      (sources => {master => $db1->source ('default'),
+                   default => $db2->source ('default')},
+       schema => {table1 => {}});
+
+  my $q = $db->query
+      (table_name => 'table1', where => {id => {-not => undef}});
+
+  {
+    my $row = $q->find (source_name => 'master');
+    isa_ok $row, 'Dongry::Table::Row';
+    is $row->get ('id'), 1;
+    my $list = $q->find_all (source_name => 'master');
+    isa_list_n_ok $list, 1;
+    is $list->[0]->get ('id'), 1;
+    is $q->count (source_name => 'master'), 1;
+  }
+  {
+    my $row = $q->find (source_name => 'default');
+    isa_ok $row, 'Dongry::Table::Row';
+    is $row->get ('id'), 2;
+    my $list = $q->find_all (source_name => 'default');
+    isa_list_n_ok $list, 2;
+    is $list->[0]->get ('id'), 2;
+    is $list->[1]->get ('id'), 2;
+    is $q->count (source_name => 'default'), 2;
+  }
+  {
+    my $row = $q->find;
+    isa_ok $row, 'Dongry::Table::Row';
+    is $row->get ('id'), 2;
+    my $list = $q->find_all;
+    isa_list_n_ok $list, 2;
+    is $list->[0]->get ('id'), 2;
+    is $list->[1]->get ('id'), 2;
+    is $q->count, 2;
+  }
+
+  {
+    $q->source_name ('master');
+    my $row = $q->find;
+    isa_ok $row, 'Dongry::Table::Row';
+    is $row->get ('id'), 1;
+    my $list = $q->find_all;
+    isa_list_n_ok $list, 1;
+    is $list->[0]->get ('id'), 1;
+    is $q->count, 1;
+  }
+} # _find_source_name
+
 __PACKAGE__->runtests;
 
 1;
