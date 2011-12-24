@@ -10,6 +10,11 @@ sub new ($%) {
   return bless {@_}, $class;
 } # new
 
+sub clone ($) {
+  my $class = ref $_[0];
+  return bless {%{$_[0]}}, $class;
+} # clone
+
 sub is_null ($) {
   return not defined $_[0]->{table_name};
 } # is_null

@@ -19,6 +19,30 @@ sub _new : Test(3) {
   eq_or_diff $q->order, [foo => -1];
 } # _new
 
+sub _clone : Test(7) {
+  my $q = Dongry::Query->new (table_name => 'hoge', order => [foo => 1]);
+  my $q2 = $q->clone;
+  isa_ok $q2, 'Dongry::Query';
+  is $q2->table_name, 'hoge';
+  eq_or_diff $q2->order, [foo => 1];
+  is $q2->order, $q->order;
+  ng $q2->where;
+
+  $q2->where ({foo => 2});
+  ok $q2->where;
+  ng $q->where;
+} # _clone
+
+sub _clone_subclass : Test(1) {
+  {
+    package test::query::clone;
+    push our @ISA, 'Dongry::Query';
+  }
+  my $q = test::query::clone->new;
+  my $q2 = $q->clone;
+  isa_ok $q2, 'test::query::clone';
+} # _clone_subclass
+
 sub _db : Test(2) {
   my $db = Dongry::Database->new;
   my $q = Dongry::Query->new (db => $db);
