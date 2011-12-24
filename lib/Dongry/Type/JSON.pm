@@ -1,6 +1,8 @@
-package Dongry::Type::DateTime;
+package Dongry::Type::JSON;
 use strict;
 use warnings;
+our $VERSION = '1.0';
+use Dongry::Type -Base;
 use JSON::Functions::XS qw(json_bytes2perl perl2json_bytes);
 
 $Dongry::Types->{json} = {
@@ -21,3 +23,12 @@ $Dongry::Types->{json} = {
 }; # json
 
 1;
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
