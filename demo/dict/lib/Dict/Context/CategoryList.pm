@@ -32,7 +32,7 @@ sub page {
 
 sub items {
   my $self = shift;
-  return $self->{items} ||= $self->query->search
+  return $self->{items} ||= $self->query->find_all
       (offset => ($self->page - 1) * $self->per_page,
        limit => $self->per_page);
 } # items
