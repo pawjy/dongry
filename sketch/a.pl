@@ -8,7 +8,6 @@ use DBIx::ShowSQL;
 use Test::MySQL::CreateDatabase qw(test_dsn);
 use Dongry::Database;
 use Data::Dumper;
-use Dongry::Type::Text;
 use Dongry::Type::DateTime;
 
 my $dsn = test_dsn 'hoge';

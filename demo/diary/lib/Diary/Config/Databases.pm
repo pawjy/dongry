@@ -1,7 +1,6 @@
 package Diary::Config::Databases;
 use strict;
 use warnings;
-use Dongry::Type::Text;
 use Dongry::Type::DateTime;
 
 my $onconnect = sub {

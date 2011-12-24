@@ -300,10 +300,9 @@ between these values are assigned to columns by the C<type> hash
 reference in the table schema.  If no rule is assinged for the column,
 the serialized value is equal to the parsed value for its values.
 
-Example: If a column is typed as C<text> (as defined in
-L<Dongry::Type::Text>), the serialized value is a string of bytes,
-while the parsed value is a string of characters.  If a column is
-typed as C<timestamp_as_DateTime> (as defined in
+Example: If a column is typed as C<text>, the serialized value is a
+string of bytes, while the parsed value is a string of characters.  If
+a column is typed as C<timestamp_as_DateTime> (as defined in
 L<Dongry::Type::DateTime>), the serialized value is a date-time
 specification in C<YYYY-MM-DD HH:MM:SS> format while the parsed value
 is a Perl L<DateTime> object.

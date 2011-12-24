@@ -1,7 +1,6 @@
 package Dict::Databases;
 use strict;
 use warnings;
-use Dongry::Type::Text;
 use Dongry::Type::JSON;
 use Dongry::Type::DateTime;
 
