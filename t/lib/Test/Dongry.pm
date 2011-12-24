@@ -15,4 +15,6 @@ use Test::MySQL::CreateDatabase;
 Test::MySQL::CreateDatabase->import (@Test::MySQL::CreateDatabase::EXPORT_OK);
 push @EXPORT, @Test::MySQL::CreateDatabase::EXPORT_OK;
 
+require DBIx::ShowSQL;
+
 1;
