@@ -28,29 +28,35 @@ Dongry::Database - Dongry database object
 
 =head1 DESCRIPTION
 
-XXX
+B<Dongry> is a lightweight Perl interface to MySQL databases.  It
+provides different levels of abstractions for applications to handle
+database operations in easy, memorable, and safe ways without losing
+full control of how and when SQL queries are executed.
 
 =head1 METHODS OF DATABASE OBJECT
 
-The database object is an instance of the C<Dongry::Database> class
-and provides several levels of APIs for accessing a database.  It has
-the following methods:
+The most important object in Dongry is the database object.  The
+database object is an instance of the C<Dongry::Database> class and
+provides several levels of APIs for accessing a specific database.  It
+has following methods:
 
 =head2 Instantiation
 
 There are two ways to instantiate database objects.  One is the C<new>
-constructor, which you can always obtain a new instance.  The other is
-a database object registry where you can lookup the (possibly
-existing) database object by its name.
+constructor method, by which you can always obtain a new instance of
+the database object.  The other is the C<load> method to lookup the
+database object from the registry by the short name for the object.
 
 =over 4
 
-=item $db = Dongry::Database->new
+=item $db = Dongry::Database->new (%opts)
 
-Create and return a new instance of L<Dongry::Database> database
-object.  As arguments, key-value pairs C<sources>, C<onconnect>,
-C<onerror>, and C<schema> can be specified.  For their usage, see
-following sections.
+Create and return a new instance of the L<Dongry::Database> database
+object.
+
+Options C<sources>, C<onconnect>, C<onerror>, and C<schema> can be
+specified as key-value pairs.  See following subsections for their
+semantics and acceptable values.
 
 Example:
 
@@ -66,28 +72,33 @@ Example:
 
 =item $db = Dongry::Database->load ($db_name)
 
-Instead of creating a new instance each time by the C<new> method,
-named database object instances can be retrieved using the C<load>
-method.
+Instead of creating a new instance each time, a named database object
+instance can be retrieved by this method.
 
-Before invocation, register a short database name to the
-C<%$Dongry::Database::Registry> hash.  The hash key is the database
-name and the hash value is the hash reference containing arguments
-used to instantiate the database object for the first time.  The same
-set of arguments as the C<new> method is available: C<sources>,
-C<onconnect>, C<onerror>, and C<schema>.  In addition, these values
-can be specified as code reference which is invoked to extract the
-actual value by prefixing C<get_> to the hash key (e.g. C<get_schema>
-for C<schema>).  The code reference will be invoked without any
-argument.  The code reference must return the argument value (e.g. an
-C<onconnect> handler code reference for C<get_onconnect>).
+Before the first invocation with the name the application has to
+register a short name for the database object instance with its
+initializing options as a key-value pair of
+C<%$Dongry::Database::Registry> hash.
 
-Then you can use the short database name to get the instance created
-with the specified arguments.  The instantiation happens only once.
-Invocations of the method with the same database name always return
-the same database object instance.  You can control the lifetime of
-the instances by accessing (e.g. clearing or C<local>izing) the
-C<$Dongry::Database::Instances> hash references.
+The hash key is the short database name and the hash value is the hash
+reference containing options used to instantiate the database object.
+Following options allowed for the C<new> method is also applicable
+here: C<sources>, C<onconnect>, C<onerror>, and C<schema>.
+
+Alteranatively, these values can be specified as code reference which
+is invoked to get the actual value when an object is initialized, by
+prefixing C<get_> to the hash key (i.e. C<get_schema> for C<schema>).
+The code reference will be invoked without any argument.  The code
+reference must return a value that is allowed for the option
+(e.g. C<get_onconnect> code reference must return an C<onconnect>
+handler code reference).
+
+Then, you can use the short database name to get the instance
+initialized with the specified options.  The instantiation happens
+only once.  Invocations of the method with the same database name
+always return the same database object instance.  You can control the
+lifetime of the instances by accessing (e.g. clearing or
+C<local>izing) the C<$Dongry::Database::Instances> hash reference.
 
 Example:
 
@@ -111,7 +122,17 @@ Example:
 A database object can have multiple (physically different) connections
 to a (logically same) database.  Such a connection is identified by
 short identifier known as I<data source name>, such as C<default> and
-C<master>.
+C<master>.  You can any non-false string as a data source name.
+However, names C<default> and C<master> are sometimes handled in a
+special way, as described in this and following subsections.
+
+The C<default> data source is selected for read-only operations by
+default.  The C<master> data source is selected for other operations
+by default.  Operations in a transaction are always executed with the
+C<master> data source.  These two data sources would be useful for
+accessing databases operated in popular master-slave configuration.
+In addition, you can define your custom data sources such as C<heavy>
+or C<batch> to send some of queries to alternative slaves.
 
 =over 4
 
@@ -122,19 +143,7 @@ C<master>.
 =item $db = Dongry::Database->new (sources => {$source_name => $source_info, ...})
 
 Get or set data source information for the specified data source name.
-
-Although any string can be used as data source name, there are two
-special predefined source name: C<default> and C<master>.  The
-C<default> data source is selected for read-only operations by
-default.  The C<master> data source is selected for other operations
-by default.  Operations in a transaction are always executed with the
-C<master> data source.  These two data sources would be useful for
-accessing databases operated in popular master-slave configuration.
-In addition, you can define your custom data sources such as C<heavy>
-or C<batch> to send some of queries to alternative slaves.
-
-A data source information specification is a hash reference containing
-following key-value pairs:
+It is a hash reference containg following key-value pairs:
 
 =over 4
 
@@ -176,7 +185,7 @@ Default is same as C<dsn>.
 Get or set the code reference which is invoked when a new connection
 is established.  The code reference, when invoked, receives the "self"
 argument followed by zero or more key-value pairs.  The "self"
-argument is the database object.  The key-value pairs would include:
+argument is the database object.  The key-value pairs would contain:
 
 =over 4
 
@@ -186,7 +195,28 @@ The name of the data source used to establish the connection.
 
 =back
 
-The default C<onconnect> handler is "do nothing".
+The default C<onconnect> handler does nothing.
+
+Please be aware the C<onconnect> handler is not safe place to execute
+SQL statements in general because it could result in establishing
+another connection within the C<onconnect> handler.  It is, however,
+safe to execute an SQL statement using the same data source name as
+given by the C<source_name> option.  It might be an interesting use
+case of this handler to execute some configuration statements
+(e.g. C<SET time_zone> statement) for the connection in the handler.
+
+Example:
+
+  $Dongry::Database::Registry->{hoge} = {
+    ...
+    onconnect => sub {
+      my ($self, %args) = @_;
+      $self->execute ('set time_zone = "+00:00"', [],
+                      even_if_read_only => 1,
+                      ## This is important!
+                      source_name => $args{source_name});
+    },
+  }:
 
 =item $db->onerror ($code)
 
@@ -198,7 +228,7 @@ Get or set the code reference which is invoked when an error is
 detected during various operations, such as connection to databases or
 execution of queries.  The code reference, when invoked, receives the
 "self" argument followed by zero or more key-value pairs.  The "self"
-argument is the database object.  The key-value pairs would include:
+argument is the database object.  The key-value pairs would contain:
 
 =over 4
 
@@ -214,11 +244,11 @@ driver modules.
 
 =item sql => string
 
-An SQL statement being executed, if any.
+The SQL statement being executed, if any.
 
 =back
 
-The default C<onerror> handler is to show the error message in the
+The default C<onerror> handler prints the error message to the
 standard error output.
 
 Please don't do anything much more complex than just reporting the
@@ -233,24 +263,25 @@ returns.
 
 =item $db->connect ($source_name)
 
-Connect to the data source specified by the argument, if any, or the
-C<default> data source.  If there is already a connection for the data
-source, the method does nothing.  After a connection has been
-established, the C<onconnect> handler is invoked.
+Connect to the data source whose name is specified by the argument, if
+any, or the C<default> data source, otherwise.  If there is already a
+connection established for the specified data source, the method does
+nothing.  After a connection has been established, the C<onconnect>
+handler is invoked.
 
-You don't have to invoke this method explicitly.  If an operation
-requires the connection, this method is automatically invoked from it
-with an appropriate data source name.
+You don't have to invoke this method explicitly in general.  This
+method is automatically invoked at the first time an operation that
+requires the connection is enforced.
 
 =item $db->disconnect ($source_name)
 
 If a data source name is specified, disconnect the connection for the
-data source.  Otherwise, disconnect the connections hold by the
+data source.  Otherwise, disconnect all the connections hold by the
 database object.  If there is no connection for the data source, the
 method does nothing.
 
 Please notice that if there is an uncommitted transaction session, it
-will be rollbacked by this method.
+will be rollbacked by the invocation of this method.
 
 You don't have to invoke this method explicitly in general, as the
 C<DESTROY> method for the database object will invoke this method
@@ -259,25 +290,25 @@ automatically.
 =back
 
 By default SQL executions are automatically committed
-(i.e. C<AutoCommit> is true in L<DBI> layer).  This behavior can be
-modified by transaction object if the database supports transaction.
+(i.e. C<AutoCommit> option of the L<DBI> object is set to true).  Use
+of transaction object can override this behavior:
 
 =over 4
 
 =item $transaction = $db->transaction
 
 Start a transaction and return the transaction object.  The
-transaction object is a "guard" object.  The transaction is effective
+transaction object is a "guard" object; The transaction is effective
 as long as the object is live.
 
 =back
 
 Once you get a transaction object, you can invoke SQL operations as
-usual.  In addition, the C<lock> option of the C<select> method will
-take effect.  After the sequence of SQL statements, you have to commit
-or rollback the transaction to save or discard the modifications.
-
-Methods of the transaction object is as follows:
+usualm through various methods of Dongry.  In addition, the C<lock>
+option for C<select> and other retrieval methods will take effect in
+transaction.  After execution of zero or more SQL statements, you have
+to commit or rollback the transaction to save or discard the
+modifications, using a method of the transaction object:
 
 =over 4
 
@@ -296,57 +327,62 @@ not be useful for debugging.
 
 =back
 
-These methods can be invoked only once.  If one of them are invoked,
-the transaction object lost its effect.  You can start another
-transaction session by calling the C<< $db->transaction >> method
-again.  Note that a new transaction cannot be initiated if there is
+Exactly one of C<commit> and C<rollback> methods must be invoked to
+terminate the transaction.  Once one of them are invoked, the
+transaction object lost its effect, even if it has not been destroyed
+by Perl.  This is different from usual "guard" objects, including the
+"force source" object described below.  After this time you can start
+another transaction session by calling the C<< $db->transaction >>
+method again.  A new transaction cannot be initiated while there is
 another transaction.
 
-If you forgot to commit the changes, it will be discarded when the
-transaction object is destroyed by Perl.  Don't rely on this behavior
-since it is not guaranteed by Perl exactly when an object is
-destroyed.  It means when the transaction ends is not clear unless you
-explicitly call the C<rollback> method.
+If you forgot to commit or rollback the changes, they will be
+discarded when the transaction object is destroyed by Perl.  Don't
+rely on this behavior since it is not guaranteed by Perl exactly when
+an object is destroyed.  It means that exactly when the transaction
+terminates is unclear unless you explicitly call the C<rollback>
+method.
 
-Within the transaction only the C<master> data source is enabled.
+Within a transaction you can only use the C<master> data source.  The
+default data source is C<master>, not C<default>, within a
+transaction.
 
-If you don't want a transaction session but you'd like to force
-subsequent operations done using a specific data source, the "force
-source" feature can be used:
+When you just want to use a particular data source for some
+operations, you can use the "force source" feature:
 
 =over 4
 
 =item $force = $db->force_source_name ($source_name)
 
-Return a "guard" object that forces use of a data source specified as
-the argument.
+Return a "guard" object that forces the use of a data source specified
+as the argument.
 
-While the I<$force> object is in scope (or before the C<end> method is
-invoked), the C<execute> method and the other methods to execute SQL
-statements act as if the C<source_name> option with the specified
-source name is specified, except that if the C<source_name> is
-explicitly specified to use another data source, the execution would
-result in an error.
+While the I<$force> object is in scope (or before the C<end> method of
+the object is invoked), the C<execute> method and the other methods to
+execute SQL statements act as if the C<source_name> option with the
+given source name is specified, except that if the C<source_name> is
+explicitly specified to use another data source for the method, the
+method would report an error instead.
 
 It is an error to call this method while there is an active I<$force>
 object.  In other word, you cannot force a data source while another
 data source is forced.  Likewise, you cannot start a transaction when
-a data source is forced and you cannot force a data source within a
+a data source is forced; and you cannot force a data source within a
 transaction.  The transaction automatically forces the C<master> data
 source.
 
 =back
 
-The "force" object has a method:
+The "force" object has following methods:
 
 =over 4
 
 =item $force->end
 
-End to force the data source.
-
-Note that when the I<$force> object is destroyed this method is
-automatically invoked.
+End to force the data source.  Although this method is automatically
+called when the I<$force> object is destroyed by Perl, it is
+encouraged to call this method explicitly as Perl does not guarantee
+the exact timing for the destruction of an object.
 
 =item $string = $force->debug_info
 
@@ -356,11 +392,13 @@ Return a short string that might or might not be useful for debugging.
 
 =head2 Bare SQL operations
 
-Bare SQL execution API, i.e. the C<execute> method, executes SQL
-statements provided by the application as is.  It would be useful if
-you'd like to issue complex or rarely used SQL statements and if you
-really understand what you are doing.  For common operations, please
-consider using more abstract APIs as described in next sections.
+The bare SQL execution API of Dongry, i.e. the C<execute> method,
+executes SQL statements provided by the application as is, with few
+modifications.  It would be useful if you'd like to issue a complex or
+rarely-used kind of SQL statement and if you really and completely
+understand what you are doing.  For common operations such as
+insertion and selection, please consider using more abstract APIs
+described in following sections.
 
 =over 4
 
@@ -371,9 +409,9 @@ consider using more abstract APIs as described in next sections.
 Execute an SQL statement.
 
 B<SQL with anonymous placeholders>: The first argument is the SQL
-statement to execute, which possibly contains placeholders.  The
-second argument is an array reference, which contains values bound to
-the placeholders.  The second argument can be omitted (i.e. can be
+statement to execute, which possibly contains placeholders (C<?>).
+The second argument is an array reference, which contains values bound
+to the placeholders.  The second argument can be omitted (i.e. can be
 C<undef>) if there are no placeholders.
 
 B<SQL with named placeholders>: The first argument is the SQL
@@ -382,45 +420,46 @@ as C<:params>.  The second argument is a hash reference, which
 contains name-value pairs bound to the placeholders.  For more
 information on the I<named placeholders>, see L<Dongry::SQL>.
 
-In addition, following name-value pairs can be specified:
+In addition, following key-value pairs can be specified as options:
 
 =over 4
 
 =item source_name => string
 
 The name of the data source used to select the database connection.
-If there is no connection has been established for the data source,
-the C<connect> method with the source name is automatically invoked
-and then the SQL statement is executed.
+If there is no connection established for the data source, the
+C<connect> method with the source name is automatically invoked and
+then the SQL statement is executed over that connection.
 
 If this option is not specified, an appropriate data source is
 determined.  In general the C<master> data source is chosen.  However,
-if the SQL is a read-only statement such as C<SELECT>, C<DESC>, or
-C<SHOW>, the C<default> data source is chosen as the default, unless
-it is in the transaction session.
+if the SQL is known to read-only, i.e. it begins by C<SELECT>,
+C<DESC>, or C<SHOW>, the C<default> data source is chosen.  Note that
+transactions and "force source" objects would modify this default.
 
 =item must_be_writable => boolean
 
 If this option is set to true, the method would raise an error without
-executing the SQL statement if the selected data source is marked as
-I<writable>.
+executing the SQL statement when the selected data source is I<not>
+marked as I<writable>.
 
 If this option is set to true and the C<source_name> option is I<not>
 specified, the data source is set to C<master> even if the SQL
-statement is read-only.
+statement is considered as read-only.
 
 =item even_if_read_only => boolean
 
 If this option is set to true, the method would not raise an error
-even when the SQL statement is not considered as read-only by the
-method but the selected data source is I<not> marked as I<writable>.
+even when the SQL statement is not considered as read-only but the
+selected data source is I<not> marked as I<writable>.
 
-This option would be useful to issue an C<SET> statement to specify
-database connection configuration for a non-I<writable> data source,
-as the method does not consider the C<SET> statements as read-only.
+This option would be useful to issue an C<SET> statement to set
+configuration options for the connection, as the method does not
+consider the C<SET> statements as read-only but it should be applied
+even to a read-only data source.
 
 You should not specify both C<must_be_writable> and
-C<even_if_read_only> options.
+C<even_if_read_only> options at the same time.
 
 =back
 
@@ -868,6 +907,8 @@ Return the number of rows affected by the SQL execution (for write
 operations), or the number of rows found by the SQL execution (for
 read operations), as reported by the underlying database driver.
 
+Please note that XXX
+
 =item $name = $result->table_name
 
 Return the name of the table bound to the result object, if any, or
@@ -890,6 +931,18 @@ Return a short string to describe the result object.  It might or
 might not be useful for debugging.
 
 =back
+
+=head1 COMPATIBILITY
+
+Although Dongry is built on the top of the L<DBI>'s standard interface
+to various kinds of database backends, its full functionality can be
+used only when the database to be connected is MySQL version 5.  Some
+of SQL statements generated by Dongry is not supported by other
+database management systems.
+
+Some of features provided by Dongry do not work as intended depending
+on the database engine in use.  Specifically, transaction does not
+work for tables using the MyISAM engine.
 
 =head1 SEE ALSO
 
