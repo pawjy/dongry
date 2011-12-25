@@ -76,6 +76,37 @@ $Dongry::Types->{timestamp_jst_as_DateTime} = {
   }, # serialize
 }; # timestamp_jst_as_DateTime
 
+$Dongry::Types->{date_as_DateTime} = {
+  parse => sub {
+    if (not defined $_[0] or $_[0] eq '0000-00-00') {
+      return undef;
+    } elsif ($_[0] =~ /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/) {
+      my $dt = eval {
+        DateTime->new (year => $1, month => $2, day => $3,
+                       time_zone => 'UTC');
+      } or do {
+        carp sprintf "DATE |%s| is invalid", $_[0];
+      };
+      return $dt || undef;
+    } else {
+      return undef;
+    }
+  }, # parse
+  serialize => sub {
+    if (my $dt = $_[0]) {
+      if ($dt->time_zone->name ne 'UTC' and
+          $dt->time_zone->name ne 'floating') {
+        $dt = $dt->clone;
+        $dt->set_time_zone ('UTC');
+      }
+      return sprintf '%04d-%02d-%02d',
+          $dt->year, $dt->month, $dt->day;
+    } else {
+      return '0000-00-00';
+    }
+  }, # serialize
+}; # date_as_DateTime
+
 1;
 
 =head1 LICENSE
