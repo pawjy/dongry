@@ -6,6 +6,14 @@ use DBI;
 use Carp;
 use Scalar::Util qw(weaken);
 
+use Dongry::SQL ();
+BEGIN {
+  *_quote = \&Dongry::SQL::quote;
+  *_fields = \&Dongry::SQL::fields;
+  *_where = \&Dongry::SQL::where;
+  *_order = \&Dongry::SQL::order;
+}
+
 push our @CARP_NOT, qw(
   DBI DBI::st DBI::db
   Dongry::Database::Executed Dongry::Database::Executed::Inserted
@@ -170,6 +178,10 @@ sub execute ($$;$%) {
     croak "Data source |$name| is read-only";
   }
 
+  if (defined $values and ref $values eq 'HASH') {
+    ($sql, $values) = _where [$sql, %$values];
+  }
+
   my $sth = $self->{dbhs}->{$name}->prepare ($self->{last_sql} = $sql);
   my $rows = $sth->execute (@{$values or []});
   return unless defined wantarray;
@@ -179,14 +191,6 @@ sub execute ($$;$%) {
 } # execute
 
 # ------ Structured SQL executions ------
-
-use Dongry::SQL ();
-BEGIN {
-  *_quote = \&Dongry::SQL::quote;
-  *_fields = \&Dongry::SQL::fields;
-  *_where = \&Dongry::SQL::where;
-  *_order = \&Dongry::SQL::order;
-}
 
 sub set_tz ($;$%) {
   my ($self, $tz, %args) = @_;

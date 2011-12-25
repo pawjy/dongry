@@ -313,11 +313,21 @@ consider using more abstract APIs as described in next sections.
 
 =item $result = $db->execute ($sql, [$value1, $value2, ...], %opts)
 
-Execute an SQL statement.  The first argument is the SQL statement to
-execute, which possibly contains placeholders.  The second argument is
-an array reference, which contains values bound to the placeholders.
-The second argument can be omitted (i.e. can be C<undef>) if there are
-no placeholders.
+=item $result = $db->execute ($sql, {param1 => $value1, ...}, %opts)
+
+Execute an SQL statement.
+
+B<SQL with anonymous placeholders>: The first argument is the SQL
+statement to execute, which possibly contains placeholders.  The
+second argument is an array reference, which contains values bound to
+the placeholders.  The second argument can be omitted (i.e. can be
+C<undef>) if there are no placeholders.
+
+B<SQL with named placeholders>: The first argument is the SQL
+statement to execute, which possibly contains named placeholders such
+as C<:params>.  The second argument is a hash reference, which
+contains name-value pairs bound to the placeholders.  For more
+information on the I<named placeholders>, see L<Dongry::SQL>.
 
 In addition, following name-value pairs can be specified:
 

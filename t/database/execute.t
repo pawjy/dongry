@@ -1687,6 +1687,51 @@ sub _execute_bytes : Test(1) {
       ->first->{id}, 10;
 } # _execute_bytes
 
+sub _execute_named_no_args : Test(2) {
+  my $db = new_db;
+  my $result = $db->execute ('create table foo (id int)', {});
+  is $db->{last_sql}, 'create table foo (id int)';
+  isa_ok $result, 'Dongry::Database::Executed';
+} # _execute_named_no_args
+
+sub _execute_named_with_args : Test(2) {
+  my $db = new_db;
+  my $result = $db->execute ('create table foo (:col:id int)', {col => 'id'});
+  is $db->{last_sql}, 'create table foo (`id` int)';
+  isa_ok $result, 'Dongry::Database::Executed';
+} # _execute_named_with_args
+
+sub _execute_named_with_args_missing : Test(2) {
+  my $db = new_db;
+  local $DBIx::ShowSQL::COUNT = 1;
+  local $DBIx::ShowSQL::SQLCount = 0;
+  dies_here_ok {
+    my $result = $db->execute ('create table foo (:col:id int)', {});
+  };
+  is $DBIx::ShowSQL::SQLCount, 0;
+} # _execute_named_with_args_missing
+
+sub _execute_named_with_args_too_many : Test(2) {
+  my $db = new_db;
+  local $DBIx::ShowSQL::COUNT = 1;
+  local $DBIx::ShowSQL::SQLCount = 0;
+  dies_here_ok {
+    my $result = $db->execute ('create table foo (id int)', {hoge => 1});
+  };
+  is $DBIx::ShowSQL::SQLCount, 0;
+} # _execute_named_with_args_too_many
+
+sub _execute_named_sub : Test(2) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)', {});
+  $db->insert ('foo', [{id => 123}, {id => 123}]);
+
+  my $result = $db->execute
+      ('select * from foo where :sub:sub', {sub => {id => 123}});
+  is $db->{last_sql}, 'select * from foo where (`id` = ?)';
+  is $result->row_count, 2;
+} # _execute_named_sub
+
 __PACKAGE__->runtests;
 
 1;
