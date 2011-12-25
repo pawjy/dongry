@@ -38,6 +38,36 @@ C<\>) in the given string.
 
 XXX
 
+
+If nothing is specified, or an C<undef> value is specified, all
+columns, i.e. C<*>, are selected.
+
+If a string is specified, that is considered as a column name.
+
+If a bare SQL fragment object (returned by the C<bare_sql_fragment>
+method) is specified, the specified string is used as is.
+
+Hash references with name-value pairs are converted to function calls
+whose function name is specified by the key and the argument is
+specified by the value.  Following function names are available:
+C<-count> (in SQL, C<COUNT()>), C<-min> (in SQL, C<MIN()>), C<-max>
+(in SQL, C<MAX()>), and C<-sum> (in SQL, C<SUM()>).  In addition,
+following name-value pairs can be specified in the hash reference: C<<
+as => name >> names an alias for the function value (in SQL,
+C<function() AS name>), and C<< distinct => boolean >> adds the
+C<DISTINCT> keyword (in SQL, C<function(DISTINCT args)>).
+
+These values can be combined as an array reference, for retrieving one
+or more of those values.
+
+Examples:
+
+  [undef, 'c1']                   # *, `c1`
+  [{-count => undef}, 'c1', 'c2'] # COUNT(*), `c1`, `c2`
+  [{-count => 'c1',
+    as => 'c',
+    distinct => 1}]               # COUNT(DISTINCT `c1`) AS `c`
+
 =item $where = where $where_specification [, $schema]
 
 XXX
@@ -47,6 +77,17 @@ XXX I<named placeholder> is ...
 =item $order = order $order_specification
 
 XXX
+
+They must be specified as
+B<array> reference of name/value pairs, where names represent column
+names and values represent their sort order.  The values must be
+either C<ASC>, C<asc>, or C<1> (ascending order) or C<DESC>, C<desc>,
+or C<-1> (descending order).
+
+Examples:
+
+  [col1 => 1, col2 => -1]          # `col1` ASC, `col2` DESC
+  [col1 => 'ASC', col2 => 'DESC']  # `col1` ASC, `col2` DESC
 
 =back
 

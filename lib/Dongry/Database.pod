@@ -55,7 +55,7 @@ Create and return a new instance of the L<Dongry::Database> database
 object.
 
 Options C<sources>, C<onconnect>, C<onerror>, and C<schema> can be
-specified as key-value pairs.  See following subsections for their
+specified as key/value pairs.  See following subsections for their
 semantics and acceptable values.
 
 Example:
@@ -77,7 +77,7 @@ instance can be retrieved by this method.
 
 Before the first invocation with the name the application has to
 register a short name for the database object instance with its
-initializing options as a key-value pair of
+initializing options as a key/value pair of
 C<%$Dongry::Database::Registry> hash.
 
 The hash key is the short database name and the hash value is the hash
@@ -143,7 +143,7 @@ or C<batch> to send some of queries to alternative slaves.
 =item $db = Dongry::Database->new (sources => {$source_name => $source_info, ...})
 
 Get or set data source information for the specified data source name.
-It is a hash reference containg following key-value pairs:
+It is a hash reference containg following key/value pairs:
 
 =over 4
 
@@ -184,8 +184,8 @@ Default is same as C<dsn>.
 
 Get or set the code reference which is invoked when a new connection
 is established.  The code reference, when invoked, receives the "self"
-argument followed by zero or more key-value pairs.  The "self"
-argument is the database object.  The key-value pairs would contain:
+argument followed by zero or more key/value pairs.  The "self"
+argument is the database object.  The key/value pairs would contain:
 
 =over 4
 
@@ -227,8 +227,8 @@ Example:
 Get or set the code reference which is invoked when an error is
 detected during various operations, such as connection to databases or
 execution of queries.  The code reference, when invoked, receives the
-"self" argument followed by zero or more key-value pairs.  The "self"
-argument is the database object.  The key-value pairs would contain:
+"self" argument followed by zero or more key/value pairs.  The "self"
+argument is the database object.  The key/value pairs would contain:
 
 =over 4
 
@@ -420,7 +420,7 @@ as C<:params>.  The second argument is a hash reference, which
 contains name-value pairs bound to the placeholders.  For more
 information on the I<named placeholders>, see L<Dongry::SQL>.
 
-In addition, following key-value pairs can be specified as options:
+In addition, following key/value pairs can be specified as options:
 
 =over 4
 
@@ -473,23 +473,23 @@ accessible from various methods of the result object.
 
 =head2 Structured SQL operations
 
-Methods in this section provides abstraction for common patterns of
-SQL executions, such as C<SELECT> and C<INSERT> statements with plain
-arguments.  These methods construct SQL statements in favor of the
-application from the given arguments, with appropriate quotations and
-placeholders.
+Methods described in this section construct an SQL statement from the
+given arguments and then execute it.  Commonly-used patterns of SQL
+statements such as C<SELECT> and C<INSERT> are supported by these
+methods such that an application does not have to concatenate, quote,
+or otherwise modify bare SQL statements by itself in most cases.
 
 =over 4
 
 =item $result = $db->insert ($table_name, [$values1, $values2, ...], %opts)
 
-Inserts one or more rows.  The first argument must be the table name
-into which the rows are inserted.  The second argument must be an
-array reference which contains one or more hash references, each of
-them is a row to be inserted (represented as column name/value pairs).
-Unspecified columns are set to their default values.
+Insert one or more rows into the table specified by the first
+argument.  The second argument must be an array reference which
+contains one or more hash references, each of them is a row to be
+inserted (represented as column name/value pairs).  Unspecified
+columns will be set to their default values by the database.
 
-In addition, following options can be specified as name-value pairs:
+In addition, following options can be specified as key/value pairs:
 
 =over 4
 
@@ -497,44 +497,44 @@ In addition, following options can be specified as name-value pairs:
 
 The name of the data source used to select the database connection.
 For more information on how data source is selected, see the
-C<execute> method.
+description for the C<execute> method.
 
 =item duplicate => "ignore" / "replace" / hashref
 
-Specifies how "duplicate entry" error is handled by the database.
+How "duplicate entry" error is handled by the database.
 
 If C<ignore> is specified, an C<INSERT IGNORE> statement is issued
-such that any duplicate insertion is ignored without errors.  Please
-note that this statement might ignore other errors as well.
+such that any duplicate insertion will be ignored without errors being
+reported.  Please note that this statement might ignore any other
+possible error as well.
 
 If C<replace> is specified, an C<REPLACE> statement is issued such
-that any existing duplicate row is discarded before the insertion.
+that any duplicate rows will be discarded before the insertion.
 
 If a hash reference is specified, the C<ON DUPLICATE KEY UPDATE>
 clause is appended to the C<INSERT> statement with the values
 specified in the hash.  The format of the hash reference is same as
-the second argument of the C<insert> method.
+the second argument of the C<update> method.
 
 If this option is not specified, then a normal C<INSERT> statement is
 issued such that any duplication would be reported as an SQL execution
-error.
+error through the C<onerror> handler.
 
 =back
 
 This method returns a result object bound to the table specified as
 the first argument.  The number of affected rows can be retrieved from
 the C<row_count> method of the result object.  Althugh inserted rows
-can be accessible from various methods of the result object, please be
-careful that the object only holds the data as received as the
-argument to the C<insert> method.  It might not reflect SQL-level
-default values, auto-increment column values, server-side value
-normalization, handling of C<duplicate> options, use of bare SQL
-fragments, and so on.  If you really like to know what is inserted (or
-not inserted) to the database, you have to select the inserted row(s)
-by yourself.  In the case you explicitly specified the primary key
-values in the values argument, the C<reload> method of the table row
-object accessible from the result object could be useful for this
-purpose.
+can be accessible from various methods of the result object, please
+note that the object only holds the data as received as the argument
+to the C<insert> method.  It might not reflect any SQL-level default
+values, auto-increment values, server-side value normalization,
+handling of C<duplicate> options, use of bare SQL fragments, and so
+on.  If you really like to know what is inserted (or not inserted) to
+the database, you have to select the inserted row(s) by yourself.  In
+the case you have explicitly specified the primary key values in the
+argument, the C<reload> method of table row objects obtained from the
+result object might be useful for this purpose.
 
 Example:
 
@@ -550,21 +550,20 @@ Example:
 
 =item $id = $db->last_insert_id
 
-Returns the "last insert ID" as returned by the database.  It is
-usually the auto-increment primary key value of the last inserted row.
+Returns the I<last insert ID> as returned by the database.  It is
+usually the auto-increment primary key value of the last inserted row,
+but exactly when and what can be retrieved depend on the database
+implementation.  Please consult the reference manual of the database
+for more information.
 
 =item $result = $db->select ($table_name, $where, %opts)
 
-Selects rows from a table in the database.  Conditions to select rows,
-i.e. the C<WHERE> clause of the SQL statement, must be specified as
-the second argument, in L<SQL::Abstract> or L<SQL::NamedPlaceholder>
-format.  Conditions in the L<SQL::Abstract> format must be specified
-as a hash reference for the C<WHERE> clause.  Conditions in the
-L<SQL::NamedPlaceholder> format must be specified as an array
-reference containing the SQL statement template followed by zero or
-more name-value pairs.
+Select rows from the table specified as the first argument.
+Conditions to select rows, i.e. the C<WHERE> clause of the SQL
+statement, must be specified as the second argument, in that format
+described in L<Dongry::SQL>.
 
-In addition, following options can be specified as name-value pairs:
+In addition, following options can be specified as key/value pairs:
 
 =over 4
 
@@ -572,14 +571,14 @@ In addition, following options can be specified as name-value pairs:
 
 The name of the data source used to select the database connection.
 For more information on how data source is selected, see the
-C<execute> method.
+description for the C<execute> method.
 
 =item must_be_writable => boolean
 
 If this option is set to true, the method would raise an error without
 executing the SQL statement if the selected data source is marked as
 I<writable>.  For more information on how this option applies, see the
-C<execute> method.
+description for the C<execute> method.
 
 =item distinct => boolean
 
@@ -587,31 +586,11 @@ If this options is set to true, the C<DISTINCT> keyword is put in the
 statement such that only a row is returned for a duplicate set of
 rows.
 
-=item fields => ...
+=item fields => fields-struct
 
 The columns to retrieve, to be specified just after the C<SELECT>
-keyword of the issued SQL statement.
-
-If nothing is specified, or an C<undef> value is specified, all
-columns, i.e. C<*>, are selected.
-
-If a string is specified, that is considered as a column name.
-
-If a bare SQL fragment object (returned by the C<bare_sql_fragment>
-method) is specified, the specified string is used as is.
-
-Hash references with name-value pairs are converted to function calls
-whose function name is specified by the key and the argument is
-specified by the value.  Following function names are available:
-C<-count> (in SQL, C<COUNT()>), C<-min> (in SQL, C<MIN()>), C<-max>
-(in SQL, C<MAX()>), and C<-sum> (in SQL, C<SUM()>).  In addition,
-following name-value pairs can be specified in the hash reference: C<<
-as => name >> names an alias for the function value (in SQL,
-C<function() AS name>), and C<< distinct => boolean >> adds the
-C<DISTINCT> keyword (in SQL, C<function(DISTINCT args)>).
-
-These values can be combined as an array reference, for retrieving one
-or more of those values.
+keyword of the issued SQL statement.  The value must be a fields
+struct, as described in L<Dongry::SQL>.
 
 Examples:
 
@@ -630,11 +609,13 @@ array reference of strings.
 =item order => [column1 => direction, column2 => direction, ...]
 
 The columns and their orders for the sorting, i.e. values for the
-C<ORDER BY> clause in the SQL statement.  They must be specified as
-B<array> reference of name-value pairs, where names represent column
-names and values represent their sort order.  The values must be
-either C<ASC>, C<asc>, or C<1> (ascending order) or C<DESC>, C<desc>,
-or C<-1> (descending order).
+C<ORDER BY> clause in the SQL statement.  The value must be a order
+struct, as described in L<Dongry::SQL>.
+
+Examples:
+
+  [col1 => 1, col2 => -1]          # `col1` ASC, `col2` DESC
+  [col1 => 'ASC', col2 => 'DESC']  # `col1` ASC, `col2` DESC
 
 =item offset => number, limit => number
 
@@ -693,15 +674,15 @@ Examples:
 
 Update rows in the specified table using the SQL C<UPDATE> statement.
 The new values must be specified by the second argument, as hash
-reference containing name-value pairs representing the column names
-and their new values.  A value can be specified as a scalar value (a
-text, number, or C<undef> value), or a bare SQL fragment object (a
-return value of the C<bare_sql_fragment> method), which would be
-inserted to the value portion of the SQL statement.  The conditions to
-specify the updated rows, i.e. the C<WHERE> clause, must be specified
-as the thrid argument, in the same format as the C<select> method.
+reference containing key/value pairs representing the column names and
+their new values.  A value can be specified as a scalar value (a text,
+number, or C<undef> value), or a bare SQL fragment object (a return
+value of the C<bare_sql_fragment> method), which would be inserted to
+the value portion of the SQL statement.  The conditions to specify the
+updated rows, i.e. the C<WHERE> clause, must be specified as the thrid
+argument, in the same format as the C<select> method.
 
-In addition, following options can be specified as name-value pairs:
+In addition, following options can be specified as key/value pairs:
 
 =over 4
 
@@ -709,23 +690,23 @@ In addition, following options can be specified as name-value pairs:
 
 The name of the data source used to select the database connection.
 For more information on how data source is selected, see the
-C<execute> method.
+description for the C<execute> method.
 
 =item duplicate => "ignore"
 
 Specifies how "duplicate entry" error is handled by the database.  If
 C<ignore> is specified, an C<UPDATE IGNORE> statement is issued such
-that any attempt to generate duplicate rows is ignored without errors.
-Please note that this statement might ignore other errors as well.  If
-this option is not specified, then a normal C<UPDATE> statement is
-issued such that any duplication would be reported as an SQL execution
-error.
+that any attempt to generate duplicate rows is ignored without errors
+being reported.  Please note that this statement might ignore any
+other possible errors as well.  If this option is not specified, then
+a normal C<UPDATE> statement is issued such that any duplication would
+be reported as an SQL execution error through the C<onerror> handler.
 
 =item order => [column1 => direction, column2 => direction, ...]
 
 The columns and their orders for the sorting, i.e. values for the
-C<ORDER BY> clause in the SQL statement.  They must be specified in
-the same format as the C<select> method.
+C<ORDER BY> clause in the SQL statement.  The value must be a order
+struct, as described in L<Dongry::SQL>.
 
 This option would have no effect unless there is also the C<limit>
 option.
@@ -736,7 +717,7 @@ The maximum number of rows to update, i.e. the value for the C<LIMIT>
 clause in the SQL statement.  It must be specified as a non-negative
 integer.  If the option is not specified, all the matching rows will
 be updated.  Unlike the C<select> method, the C<offset> option is not
-supported.
+available for this method.
 
 =back
 
@@ -782,7 +763,7 @@ Delete rows in the specified table.  The second argument must specify
 the conditions to select the rows to delete, in the same format as the
 second argument of the C<select> method.
 
-In addition, following options can be specified as name-value pairs:
+In addition, following options can be specified as key/value pairs:
 
 =over 4
 
@@ -790,13 +771,13 @@ In addition, following options can be specified as name-value pairs:
 
 The name of the data source used to select the database connection.
 For more information on how data source is selected, see the
-C<execute> method.
+description for the C<execute> method.
 
 =item order => [column1 => direction, column2 => direction, ...]
 
 The columns and their orders for the sorting, i.e. values for the
-C<ORDER BY> clause in the SQL statement.  They must be specified in
-the same format as the C<select> method.
+C<ORDER BY> clause in the SQL statement.  The value must be a order
+struct, as described in L<Dongry::SQL>.
 
 This option would have no effect unless there is also the C<limit>
 option.
@@ -807,7 +788,7 @@ The maximum number of rows to delete, i.e. the value for the C<LIMIT>
 clause in the SQL statement.  It must be specified as a non-negative
 integer.  If the option is not specified, all the matching rows will
 be deleted.  Unlike the C<select> method, the C<offset> option is not
-supported.
+available for this method.
 
 =back
 
@@ -831,8 +812,9 @@ must be in the format understood by the database, i.e. C<+01:00>.  The
 C<source_name> option, defaulted to the C<master>, specifies the data
 source for which the time zone is set.
 
-The default time zone used when this statement is not issued depends
-on the configuration of the database.
+The default time zone used by the database when this statement is not
+issued depends on the configuration and the implementation of the
+database in use.
 
 =back
 
@@ -840,15 +822,16 @@ on the configuration of the database.
 
 The following methods provide access to schema-aware APIs.  What is
 schema-aware APIs?  Methods mentioned in the previous sections are not
-schema-aware.  That is, no SQL data type is different from strings for
-the purpose of them.  The schema-aware APIs are built on top of them
-to offer an abstract layer for convertion of database and Perl data
-types.  For example, if you associated the C<created_on> column with
-the C<timestamp_as_DateTime> type handler, where the column is
-declared as SQL C<TIMESTAMP> data type in the database schema, you can
-use a Perl L<DateTime> object to set the value for the column through
-a schema-aware method, and you can retrieve the column value as a
-C<DateTime> object from a schema-aware method.
+schema-aware.  That is, no SQL data is handled differently from
+strings for the purpose of those methods.  The schema-aware APIs are
+built on top of them to offer an abstract layer for convertion of
+database and Perl data types.  For example, if you associated the
+C<created> column (declared as SQL C<TIMESTAMP> data type in the
+database schema) with the C<timestamp_as_DateTime> type handler
+(defined in L<Dongry::Type::DateTime>), you can use a Perl L<DateTime>
+object to set the value for the column through a schema-aware method,
+or you can retrieve the column value as a C<DateTime> object from a
+schema-aware method.
 
 =over 4
 
@@ -856,11 +839,69 @@ C<DateTime> object from a schema-aware method.
 
 =item $schema = $db->schema
 
+=item $db = Dongry::Database->new (schema => $schema)
+
 Get or set the schema definition as used by the database object.  The
 schema definition has to be set before any schema-aware operation is
 actually invoked.
 
-XXX schema definition
+Please note that although the I<schema> concept of Dongry is modelled
+after the schema of SQL and database implementations, they have no
+direct relationship in fact.  You can declare a C<INT> column in SQL
+as C<date> in Dongry, even though such a broken mapping would not be
+useful.  If you changed the schema in the database, you might also
+have to modify the schema definition for Dongry.  Although this could
+be inconvinient for some use cases, it would give an application great
+control over how they handle data.
+
+A I<schema> is just a hash reference, where key/value pairs are table
+names and table schema for them.  A I<table schema> is also a hash
+reference with following key/value pairs:
+
+=over 4
+
+=item type => type-definition
+
+Define the type handler for columns in the table.  The value must be a
+hash reference containing key/value pairs representing column names
+and its types.  A type is a string as described in L<Dongry::Type>.
+
+Types are used to intepret column values in schema-aware operations
+such as C<find> and C<create> methods of the table object.
+
+=item primary_keys => [$column1, $column2, ...]
+
+Define the primary keys for the table.  The value must be an array
+reference containing the column names used as the columns of primary
+keys for the table.
+
+Primary keys are used to identify the row in operations of the table
+row object, such as C<update> and C<delete>.
+
+The specified columns do not have to be defined as primary keys in the
+actual database schema in fact.  However, there should at least unique
+keys for the columns, or the operations over the row object would
+cause unexpected results.
+
+=item default => default-definition
+
+Define the default values for columns in the table.  The value must be
+a hash reference whose key/value pairs representing column names and
+their default values.  A default value can be specified as the code
+reference, in which case the code reference would be invoked each time
+the default value is necessary.  The code reference is invoked without
+any argument.  It is expected to return the default value.  In any
+case, the default value is interpreted as in the data type of the
+column, as defined by the C<type> clause.
+
+Default values are used when rows are inserted through a schema-aware
+method such as the C<create> method of the table object.
+
+=back
+
+Even though all of these keys in the table schema is optional, the
+table schema it self must be specified in the schema to enable
+schema-aware APIs for the table.
 
 =item $table = $db->table ($table_name)
 
@@ -892,12 +933,17 @@ or might not be useful for debugging.
 
 =back
 
+You might want to dump the SQL statements issued by Dongry for the
+purpose of development.  Though Dongry itself does not have such
+debugging feature, Perl modules such as L<DBIx::ShowSQL>,
+L<Devel::KYTProf>, and L<DBIx::QueryLog> would be useful.
+
 =head1 METHODS OF RESULT OBJECT
 
-The result object is an instance of the C<Dongry::Database::Executed>
-class.  SQL execution methods of the database object, such as
-C<execute> or C<select>, returns an result object.  It has the
-following methods:
+SQL execution methods of the database object such as C<execute>,
+C<select>, C<insert>, and so on return the result object.  A result
+object holds the execution result of the SQL statement.  It can be
+accessible from following methods of the result object:
 
 =over 4
 
@@ -905,9 +951,11 @@ following methods:
 
 Return the number of rows affected by the SQL execution (for write
 operations), or the number of rows found by the SQL execution (for
-read operations), as reported by the underlying database driver.
-
-Please note that XXX
+read operations).  Please note the semantics of the reported number
+depends on the exact SQL statement and the implementation of the
+database, and might not be always useful for the application.  For
+example, the row count for the C<INSERT IGNORE> statement might not be
+equal to the number of rows actually inserted into the table.
 
 =item $name = $result->table_name
 
