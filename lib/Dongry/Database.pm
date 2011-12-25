@@ -17,14 +17,10 @@ BEGIN {
 push our @CARP_NOT, qw(
   DBI DBI::st DBI::db
   Dongry::Database::Executed Dongry::Database::Executed::Inserted
-  Dongry::Database::Transaction 
+  Dongry::Database::Transaction Dongry::Database::ForceSource
   Dongry::Table Dongry::Table::Row Dongry::Query
   Dongry::SQL
 );
-
-if ($ENV{DONGRY_DEBUG}) {
-  require DBIx::ShowSQL;
-}
 
 # ------ Construction ------
 
@@ -135,18 +131,31 @@ sub DESTROY {
   $_[0]->disconnect;
 } # DESTROY
 
-# ------ Transaction ------
+# ------ Transaction and source selection ------
 
 sub transaction ($) {
   my $self = shift;
-  croak "$self->{sources}->{master}->{dsn}: Cannot start new transaction before committing the current transaction"
+  croak "Can't start new transaction before committing the current transaction"
       if $self->{in_transaction};
+  croak "Can't start new transaction while a source is forced"
+      if $self->{force_source_name};
 
   $self->connect ('master');
   $self->{in_transaction} = 1;
   $self->{dbhs}->{master}->begin_work;
   return bless {db => $self}, 'Dongry::Database::Transaction';
 } # transaction
+
+sub force_source_name ($$) {
+  my $self = shift;
+  croak "Can't force source in a transaction" if $self->{in_transaction};
+  croak "Can't force source while another source is forced"
+      if $self->{force_source_name};
+
+  $self->{force_source_name} = $_[0];
+  return bless {db => $self, source_name => $_[0]},
+      'Dongry::Database::ForceSource';
+} # force_source_name
 
 # ------ Bare SQL operations ------
 
@@ -161,12 +170,20 @@ sub execute ($$;$%) {
   my ($self, $sql, $values, %args) = @_;
 
   my $name = $args{source_name} ||
-      ((!$self->{in_transaction} &&
-        !$args{must_be_writable} &&
-        $sql =~ /$ReadOnlyQueryPattern/o)
-           ? 'default' : 'master');
+      ($self->{force_source_name}
+         ? $self->{force_source_name}
+         : ((!$self->{in_transaction} &&
+             !$args{must_be_writable} &&
+             $sql =~ /$ReadOnlyQueryPattern/o)
+                ? 'default' : 'master'));
   if ($name ne 'master' and $self->{in_transaction}) {
     croak "Data source |$name| cannot be used in transaction";
+  }
+  if ($self->{force_source_name} and 
+      $self->{force_source_name} ne $name) {
+    croak sprintf
+        "Data source |%s| cannot be used while the source is forced to |%s|",
+        $name, $self->{force_source_name};
   }
 
   $self->connect ($name);
@@ -600,6 +617,26 @@ sub DESTROY {
     die "Transaction is rollbacked since it is not explicitly committed",
         Carp::shortmess;
   }
+} # DESTROY
+
+# ------ Source selection ------
+
+package Dongry::Database::ForceSource;
+our $VERSION = '1.0';
+
+sub end {
+  if ($_[0]->{db}->{force_source_name} and
+      $_[0]->{db}->{force_source_name} eq $_[0]->{source_name}) {
+    delete $_[0]->{db}->{force_source_name};
+  }
+} # end
+
+sub debug_info ($) {
+  return sprintf '{DBForceSource: %s}', $_[0]->{source_name};
+} # debug_info
+
+sub DESTROY {
+  $_[0]->end;
 } # DESTROY
 
 1;
