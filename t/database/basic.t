@@ -95,6 +95,58 @@ sub _load_dynamic_def : Test(4) {
   eq_or_diff $db->{schema}, {hoge => {foo => 5}};
 } # _load_dynamic_def
 
+sub _debug_info : Test(1) {
+  my $db = Dongry::Database->new;
+  is $db->debug_info, '{DB: }';
+} # _debug_info
+
+sub _debug_info_2 : Test(1) {
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => 'fuga'}});
+  is $db->debug_info, '{DB: default = fuga}';
+} # _debug_info_2
+
+sub _debug_info_3 : Test(1) {
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => 'fuga', label => 'f'}});
+  is $db->debug_info, '{DB: default = f}';
+} # _debug_info_3
+
+sub _debug_info_4 : Test(1) {
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => 'hoge'},
+                   default => {dsn => 'fuga', label => 'f'}});
+  #warn $db->debug_info;
+  ok $db->debug_info;
+} # _debug_info_4
+
+sub _executed_debug_info : Test(1) {
+  my $db = new_db;
+  my $result = $db->execute ('show tables');
+  is $result->debug_info, '{DBExecuted: (no table)}';
+} # _executed_debug_info
+
+sub _executed_debug_info_2 : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  my $result = $db->select ('foo', {id => 0});
+  is $result->debug_info, '{DBExecuted: foo}';
+} # _executed_debug_info_2
+
+sub _executed_debug_info_3 : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  my $result = $db->insert ('foo', [{id => 0}]);
+  is $result->debug_info, '{DBExecuted: foo}';
+} # _executed_debug_info_3
+
+sub _transaction_debug_info : Test(1) {
+  my $db = new_db;
+  my $transaction = $db->transaction;
+  is $transaction->debug_info, '{DBTransaction}';
+  $transaction->commit;
+} # _transaction_debug_info
+
 __PACKAGE__->runtests;
 
 1;

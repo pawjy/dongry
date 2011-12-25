@@ -158,6 +158,16 @@ sub _item_list_filter : Test(3) {
        [124 + 12, 66 + 12];
 } # _fields
 
+sub _debug_info_null : Test(1) {
+  my $q = Dongry::Query->new;
+  is $q->debug_info, '{Query: (null)}';
+} # _debug_info_null
+
+sub _debug_info_non_null : Test(1) {
+  my $q = Dongry::Query->new (table_name => 'hoge');
+  is $q->debug_info, '{Query: hoge}';
+} # _debug_info_non_null
+
 __PACKAGE__->runtests;
 
 1;

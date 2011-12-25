@@ -198,6 +198,13 @@ sub fill_related_rows ($$$$;%) {
   }
 } # fill_related_rows
 
+# ------ Development -------
+
+sub debug_info ($) {
+  my $self = shift;
+  return sprintf '{Table: %s}', $self->table_name;
+} # debug_info
+
 # ------------ Table rows ------------
 
 package Dongry::Table::Row;
@@ -323,6 +330,19 @@ sub update ($$;%) {
     $self->{parsed_data}->{$_} = $values->{$_};
   }
 } # update
+
+sub debug_info ($) {
+  my $self = shift;
+  local $@;
+  my $pk = eval { $self->primary_key_bare_values };
+  if ($pk) {
+    return sprintf '{Row: %s: %s}',
+        $self->table_name,
+        join '; ', map { $_ . ' = ' . $pk->{$_} } keys %$pk;
+  } else {
+    return sprintf '{Row: %s}', $self->table_name;
+  }
+} # debug_info
 
 1;
 

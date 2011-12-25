@@ -238,6 +238,18 @@ Example:
 
 =back
 
+=head2 Development
+
+There is a method for development:
+
+=over 4
+
+=item $string = $table->debug_info
+
+Return a short string that might or might not be useful for debugging.
+
+=back
+
 =head1 METHODS OF TABLE ROW OBJECT
 
 The table row object represents a row in the table, i.e. pairs of
@@ -386,6 +398,19 @@ Example:
   $row->update ({date => DateTime->now, value => 120});
   # UPDATE `table1` SET `value` = 120, `date` = '2011-12-12 00:12:34'
   #     WHERE `id` = 12345
+
+=back
+
+=head2 Development
+
+There is a method for development:
+
+=over 4
+
+=item $string = $row->debug_info
+
+Return a hopefully short string that might or might not be useful for
+debugging.
 
 =back
 

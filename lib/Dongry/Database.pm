@@ -386,6 +386,17 @@ sub query ($%) {
   return $query_class->new (db => $self, %args);
 } # query
 
+# ------ Debug information ------
+
+sub debug_info ($) {
+  my $self = shift;
+  return sprintf '{DB: %s}',
+      join '; ',
+          map { $_ . ' = ' . ($self->{sources}->{$_}->{label} ||
+                              $self->{sources}->{$_}->{dsn}) }
+          keys %{$self->{sources} or {}};
+} # debug_info
+
 # ------ Operation results ------
 
 package Dongry::Database::Executed;
@@ -463,6 +474,12 @@ sub first_as_row ($) {
                 table_name => $self->{table_name},
                 data => $data}, 'Dongry::Table::Row';
 } # first_as_row
+
+sub debug_info ($) {
+  my $self = shift;
+  return sprintf '{DBExecuted: %s}',
+      defined $self->{table_name} ? $self->{table_name} : '(no table)';
+} # debug_info
 
 sub DESTROY {
   $_[0]->{sth}->finish if $_[0]->{sth};
@@ -572,6 +589,10 @@ sub rollback ($) {
     croak "This transaction can no longer be rollbacked";
   }
 } # rollback
+
+sub debug_info ($) {
+  return '{DBTransaction}';
+} # debug_info
 
 sub DESTROY {
   if ($_[0]->{db}->{in_transaction}) {

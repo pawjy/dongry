@@ -219,6 +219,16 @@ are specified, methods with same names are ignored.
 
 =back
 
+There is a method for development:
+
+=over 4
+
+=item $string = $q->debug_info
+
+Return a string that might or might not be useful for debugging.
+
+=back
+
 =head1 SEE ALSO
 
 L<Dongry::Database>.  The C<query> method is described in this

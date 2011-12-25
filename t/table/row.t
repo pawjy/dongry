@@ -62,6 +62,38 @@ sub _flags_specified : Test(2) {
   is $row->flags->{foo}, 1253;
 } # _flags_specified
 
+sub _debug_info : Test(1) {
+  my $db = new_db schema => {foo => {}};
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (2)');
+  my $row = $db->table ('foo')->find ({id => 2});
+  is $row->debug_info, '{Row: foo}';
+} # _debug_info
+
+sub _debug_info_pk : Test(1) {
+  my $db = new_db schema => {foo => {primary_keys => ['id']}};
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (2)');
+  my $row = $db->table ('foo')->find ({id => 2});
+  is $row->debug_info, '{Row: foo: id = 2}';
+} # _debug_info_pk
+
+sub _debug_info_pks : Test(1) {
+  my $db = new_db schema => {foo => {primary_keys => ['id', 'id2']}};
+  $db->execute ('create table foo (id int, id2 int)');
+  $db->execute ('insert into foo (id, id2) values (2, 3)');
+  my $row = $db->table ('foo')->find ({id => 2, id2 => 3});
+  ok $row->debug_info;
+} # _debug_info_pks
+
+sub _debug_info_pk_none : Test(1) {
+  my $db = new_db schema => {foo => {primary_keys => ['id']}};
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (2)');
+  my $row = $db->table ('foo')->find ({id => 2}, fields => {-count => undef});
+  is $row->debug_info, '{Row: foo}';
+} # _debug_info_pk_none
+
 __PACKAGE__->runtests;
 
 1;

@@ -116,6 +116,12 @@ sub count {
   return $row ? $row->get ('count') : 0;
 } # count
 
+sub debug_info ($) {
+  my $self = shift;
+  return sprintf '{Query: %s}',
+      $self->is_null ? '(null)' : $self->table_name;
+} # debug_info
+
 1;
 
 =head1 LICENSE

@@ -42,6 +42,8 @@ XXX
 
 XXX
 
+XXX I<named placeholder> is ...
+
 =item $order = order $order_specification
 
 XXX

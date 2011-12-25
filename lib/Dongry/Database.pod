@@ -159,6 +159,12 @@ Whether the database is writable or not.  If not writable, the
 database module refuse to issue write operations as far as possible.
 Default is false (i.e. not writable).
 
+=item label => string
+
+Informative name of the data source.  It is not used to connect to the
+data source.  This value might or might not be useful for debugging.
+Default is same as C<dsn>.
+
 =back
 
 =item $db->onconnect ($code)
@@ -284,6 +290,11 @@ Commit the transaction.  Changes will be persisted by the database.
 =item $transaction->rollback
 
 Rollback the transaction.  Changes will be discarded by the database.
+
+=item $string = $transaction->debug_info
+
+Return a string that shortly describes the object.  It might or might
+not be useful for debugging.
 
 =back
 
@@ -787,6 +798,19 @@ available options, see documentation for the L<Dongry::Query> module.
 
 =back
 
+=head2 Development
+
+There is a method to help development:
+
+=over 4
+
+=item $string = $db->debug_info
+
+Return a not-so-long string to describe the database object.  It might
+or might not be useful for debugging.
+
+=back
+
 =head1 METHODS OF RESULT OBJECT
 
 The result object is an instance of the C<Dongry::Database::Executed>
@@ -817,6 +841,11 @@ methods cannot be used.
 =item $result->each ($code)
 
 XXX
+
+=item $string = $result->debug_info
+
+Return a short string to describe the result object.  It might or
+might not be useful for debugging.
 
 =back
 

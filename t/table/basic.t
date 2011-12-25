@@ -42,6 +42,12 @@ sub _schema_found : Test(1) {
   eq_or_diff $table->table_schema, {a => 2};
 } # _schema_found
 
+sub _debug_info : Test(1) {
+  my $db = Dongry::Database->new;
+  my $table = $db->table ('hoge');
+  is $table->debug_info, '{Table: hoge}';
+} # _debug_info
+
 __PACKAGE__->runtests;
 
 1;
