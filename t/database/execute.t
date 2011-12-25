@@ -1,6 +1,7 @@
 package test::Dongry::Database::execute;
 use strict;
 use warnings;
+no warnings 'utf8';
 use Path::Class;
 use lib file (__FILE__)->dir->parent->subdir ('lib')->stringify;
 use Test::Dongry;
@@ -1731,6 +1732,70 @@ sub _execute_named_sub : Test(2) {
   is $db->{last_sql}, 'select * from foo where (`id` = ?)';
   is $result->row_count, 2;
 } # _execute_named_sub
+
+sub _execute_utf8_flagged : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (value BLOB)');
+
+  $db->execute (qq{insert into foo (value) VALUE ("\x{4500}")});
+  is $db->execute ('select * from foo')
+      ->first->{value}, encode 'utf-8', "\x{4500}";
+} # _execute_utf8_flagged
+
+sub _execute_utf8_unflagged : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (value BLOB)');
+
+  $db->execute (encode 'utf-8', qq{insert into foo (value) VALUE ("\x{450}")});
+  is $db->execute ('select * from foo')
+      ->first->{value}, encode 'utf-8', "\x{450}";
+} # _execute_utf8_unflagged
+
+sub _execute_non_utf8_unflagged : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (value BLOB)');
+
+  $db->execute (qq{insert into foo (value) VALUE ("\x81\xD2\x94a")});
+  is $db->execute ('select * from foo')
+      ->first->{value}, "\x81\xD2\x94a";
+} # _execute_non_utf8_unflagged
+
+sub _execute_utf8_flagged_value : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (value BLOB)');
+
+  $db->execute (qq{insert into foo (value) VALUE (?)}, ["\x{4500}"]);
+  is $db->execute ('select * from foo')
+      ->first->{value}, encode 'utf-8', "\x{4500}";
+} # _execute_utf8_flagged_value
+
+sub _execute_utf8_flagged_value_2 : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (value BLOB)');
+
+  $db->execute (qq{insert into foo (value) VALUE (?)}, ["\x{D800}"]);
+  is $db->execute ('select * from foo')
+      ->first->{value}, encode 'utf8', "\x{D800}";
+} # _execute_utf8_flagged_value_2
+
+sub _execute_utf8_unflagged_value : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (value BLOB)');
+
+  $db->execute (qq{insert into foo (value) VALUE (?)},
+                [encode 'utf-8', "\x{4500}"]);
+  is $db->execute ('select * from foo')
+      ->first->{value}, encode 'utf-8', "\x{4500}";
+} # _execute_utf8_unflagged_value
+
+sub _execute_non_utf8_value : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (value BLOB)');
+
+  $db->execute (qq{insert into foo (value) VALUE (?)}, ["\x98\xDCz"]);
+  is $db->execute ('select * from foo')
+      ->first->{value}, "\x98\xDCz";
+} # _execute_non_utf8_value
 
 __PACKAGE__->runtests;
 
