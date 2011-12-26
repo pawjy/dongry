@@ -940,10 +940,10 @@ L<Devel::KYTProf>, and L<DBIx::QueryLog> would be useful.
 
 =head1 METHODS OF RESULT OBJECT
 
-SQL execution methods of the database object such as C<execute>,
-C<select>, C<insert>, and so on return the result object.  A result
-object holds the execution result of the SQL statement.  It can be
-accessible from following methods of the result object:
+SQL execution methods of the database object, such as C<execute>,
+C<select>, C<insert>, and so on, return the result object.  A result
+object holds the execution result of the SQL statement, which can be
+accessible from following methods:
 
 =over 4
 
@@ -951,25 +951,21 @@ accessible from following methods of the result object:
 
 Return the number of rows affected by the SQL execution (for write
 operations), or the number of rows found by the SQL execution (for
-read operations).  Please note the semantics of the reported number
-depends on the exact SQL statement and the implementation of the
-database, and might not be always useful for the application.  For
-example, the row count for the C<INSERT IGNORE> statement might not be
-equal to the number of rows actually inserted into the table.
-
-=item $name = $result->table_name
-
-Return the name of the table bound to the result object, if any, or
-C<undef>.
-
-The result object returned by a table-aware method, such as C<select>
-or C<insert>, is bound to a table.  However, a table-unaware method,
-such as C<execute>, does not bind any table into the result object.
-
-If the result object is I<not> bound to a table, following C<_as_row>
-methods cannot be used.
+read operations).  Please note that the semantics of the number
+depends on the kind of the executed SQL statement and the database
+implementation and might not be always useful for the application.
+For example, the row count for the C<INSERT IGNORE> statement might
+not be equal to the number of rows actually inserted into the table.
 
 =item $result->each ($code)
+
+XXX
+
+=item $result->all
+
+XXX
+
+=item $result->first
 
 XXX
 
@@ -979,6 +975,47 @@ Return a short string to describe the result object.  It might or
 might not be useful for debugging.
 
 =back
+
+The result object is either bound to a table or not bound to any
+table.  If a method receives the table name explicitly as an argument
+(e.g. the C<select> method of the database object), the result object
+of the method is bound to that table.  Otherwise (e.g. the C<execute>
+method of the database object) the result object is not bound to any
+table.
+
+When the result object is bound to a table, following schema-aware
+methods can be used:
+
+=over 4
+
+=item $name = $result->table_name
+
+Return the name of the table bound to the result object, if any, or
+C<undef>, otherwise.
+
+=item $result->each_as_row ($code)
+
+XXX
+
+=item $result->all_as_rows
+
+XXX
+
+=item $result->first_as_row
+
+XXX
+
+=back
+
+Methods returning table row objects can be called only once for a
+result object.  For example, if the C<each> method is once called, the
+other methods can no longer be called.  In addition, the C<each>
+method itself become invalid.
+
+As described in the section of the C<insert> method, row data or table
+row objects accessible from the result object returned by the
+C<insert> method is based on the argument to the method and might be
+different from the actual data on the database.
 
 =head1 COMPATIBILITY
 
@@ -991,6 +1028,10 @@ database management systems.
 Some of features provided by Dongry do not work as intended depending
 on the database engine in use.  Specifically, transaction does not
 work for tables using the MyISAM engine.
+
+=head1 INTERPREATTION OF STRINGS
+
+XXX utf8
 
 =head1 SEE ALSO
 
