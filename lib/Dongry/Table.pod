@@ -4,11 +4,21 @@ Dongry::Table - Database tables and rows
 
 =head1 SYNOPSIS
 
-XXX
+  my $table = $db->table ('hoge');
+  $table->create ({foo => 123, bar => 'xyz'});
+  my $row = $table->find ({foo => 567});
+  $row->update ({bar => 'aaa'});
 
 =head1 DESCRIPTION
 
-XXX
+The C<Dongry::Table> module contains classes for database tables and
+rows.  The table object represents a table in the database, bound to a
+table schema definition.  The table row object represents a table row
+in the database, bound to the schema definition for the table.  They
+form the I<schema-aware> API of Dongry - a set of methods which handle
+inputs and outputs in the format specifically assigned for columns in
+the table (sometimes referred to as inflate/deflate feature in ORM
+implementations).
 
 =head1 METHODS OF TABLE OBJECT
 
@@ -22,7 +32,7 @@ C<table> method as follows:
 
 =head2 Properties
 
-There are following accessors for the table object:
+There are following accessor methods for the table object:
 
 =over 4
 
@@ -124,7 +134,7 @@ Example:
 
 There are two methods to retrieve table rows.  They are not just
 shorthand notation for the C<select> methods of the database object,
-but they are schema-aware in that values specified in the "where"
+but they are I<schema-aware> in that values specified in the "where"
 structure are interpreted per the data type definition in the table
 schema.  For example, if you define the C<type> of the C<date> column
 as C<timestamp_as_DateTime> (defined in L<Dongry::Type::DateTime>),
@@ -138,8 +148,8 @@ column in the "where" argument of those methods.
 Retrieve a row from the table and return it as a table row object.
 
 The conditions to select the row must be specified as the first
-argument.  It must be a schema-aware C<where> structure as described
-in L<Dongry::SQL>.
+argument.  It must be a I<schema-aware> C<where> structure as
+described in L<Dongry::SQL>.
 
 If there is a row, a table row object representing the row is
 returned.  Otherwise, the C<undef> value is returned.
@@ -240,7 +250,8 @@ Example:
 
 =head2 Development
 
-There is a method for development:
+There is a method for assiting development of applications using
+Dongry:
 
 =over 4
 
@@ -403,7 +414,8 @@ Example:
 
 =head2 Development
 
-There is a method for development:
+There is a method for assiting development of applications using
+Dongry:
 
 =over 4
 
@@ -416,7 +428,41 @@ debugging.
 
 =head1 SERIALIZATION OF VALUES
 
-XXX
+Methods of table and table row objects receives various arguments with
+column name/value pairs, including the "where" argument of the
+C<find_all> method, the "values" in the list argument to the C<insert>
+method, and the "values" argument to the C<update> method.  Those
+values are interpreted as per the type definition for the table before
+the SQL statement is constructed.
+
+The data type for the column is defined by the table schema for the
+table.  The table schema is accessible from the C<table_schema>
+method.  You cannot set the table schema directly to the table or
+table row objecet, but can set to the database object by the C<schema>
+method.
+
+If the type for the column is explicitly specified, the values given
+for that column is serialized using the type and then included in the
+SQL statement (or used as values bound to placeholders within it).
+You must specify a value that is valid for that type.  For example, if
+the C<created> column is defined as C<timestamp_as_DateTime> type
+(defined in L<Dongry::Type::DateTime>), you always have to set a
+L<DateTime> object or an C<undef> as the value for the C<created>
+column.  If the type for the column is not specified, it is
+interpreted as the "byte string" type, and you have to specify a
+string of bytes (i.e. a string that is not utf8-flagged) or an
+C<undef> value.
+
+For more information on types, see documentation for the
+L<Dongry::Type> module.
+
+=head1 SEE ALSO
+
+L<Dongry::Database>.
+
+L<Dongry::Query>.
+
+L<Dongry::SQL>, L<Dongry::Type>.
 
 =head1 AUTHOR
 

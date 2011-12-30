@@ -30,14 +30,47 @@ Dongry::Database - Dongry database object
 
 B<Dongry> is a lightweight Perl interface to MySQL databases.  It
 provides different levels of abstractions for applications to handle
-database operations in easy, memorable, and safe ways without losing
-full control of how and when SQL queries are executed.
+database operations in easy, memorable, and safe ways without stealing
+full control for how and when SQL queries are executed from them.
+
+The C<Dongry::Database> module contains the implementation of the
+database object, which is the most fundamental and important object in
+Dongry.  All of the features in Dongry can be directly or indirectly
+accessible from the database object, as described in the following
+sections.
+
+ + - - - - - - - - - - - - - - - - - - - - - +
+ :                                           :
+ : Application                               :
+ :                                           :
+ +---+------------+                          :
+ | D | Query obj. |                          :
+ | o +------------+-----------+              :
+ | n | Schema-aware ops.      |              :
+ | g +------------------------+------+       :
+ | r | Structured SQL ops.           |       :
+ | y +-------------------------------+---+   :
+ |   | Bare SQL w/named placeholders     |   :
+ |   +-----------------------------------+---+
+ |   | Bare SQL ops.                         |
+ |   +---------------------------------------+
+ |   | Connection management                 |
+ +---+---------------------------------------+
+ | DBI                                       |
+ | DBD                                       |
+ +-------------------------------------------+
+                    |   ^
+                    |   |
+                    v   |
+ +-------------------------------------------+
+ | Database                                  |
+ +-------------------------------------------+
+   Fig. Various levels of features in Dongry
 
 =head1 METHODS OF DATABASE OBJECT
 
 The most important object in Dongry is the database object.  The
-database object is an instance of the C<Dongry::Database> class and
-provides several levels of APIs for accessing a specific database.  It
+database object is an instance of the C<Dongry::Database> class.  It
 has following methods:
 
 =head2 Instantiation
