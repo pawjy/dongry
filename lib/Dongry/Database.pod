@@ -1115,7 +1115,9 @@ Example:
 
 =head1 AVAILABILITY
 
-XXX TBD
+The latest version of Dongry is available from following Git
+repositories: <https://github.com/wakaba/dongry>,
+<http://suika.fam.cx/gate/git/wi/perl/dongry.git/tree>.
 
 =head1 DEPENDENCY
 
@@ -1123,6 +1125,12 @@ Dongry requires the L<DBI> module as underlying database API and
 L<List::Rubyish> as list object implementation.  Additional modules
 might be used by L<Dongry::Type> modules, but they are not required as
 long as you don't use such modules specificalliy.
+
+The GitHub repository of Dongry contains submodules.  The
+C<modules/perl-json-functions-xs> submodule is required by
+L<Dongry::Type::JSON>.  Submodules C<modules/perl-rdb-utils> and
+C<modules/perl-test-moremore> are added for debugging and testing
+purposes and not essential part of Dongry.
 
 =head1 SEE ALSO
 
