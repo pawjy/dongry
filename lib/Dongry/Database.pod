@@ -1098,6 +1098,9 @@ receive a character (or flagged) string.  If you write a type handler,
 be careful for the parser to interpret byte strings and for the
 serializer to return character strings.
 
+Dongry does intentionally not support non-ASCII table and column
+names.  How they are interpreted if used is unspecified.
+
 Example:
 
   my $result = $db->execute

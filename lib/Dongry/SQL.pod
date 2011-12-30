@@ -36,18 +36,30 @@ C<\>) in the given string.
 
 =item $fields = fields $field_specification
 
-XXX
+Compose the "fields" portion of the C<SELECT> statement.
 
+The argument must be the "fields" struct, i.e. one of the following
+values:
 
-If nothing is specified, or an C<undef> value is specified, all
-columns, i.e. C<*>, are selected.
+=over 4
+
+=item - C<undef>
+
+If the value is not defined, all columns, i.e. C<*>, is assumed.
+
+=item - String
 
 If a string is specified, that is considered as a column name.
 
-If a bare SQL fragment object (returned by the C<bare_sql_fragment>
-method) is specified, the specified string is used as is.
+=item - Bare SQL fragment object
 
-Hash references with name-value pairs are converted to function calls
+If a bare SQL fragment object (returned by the C<bare_sql_fragment>
+method of the database object) is specified, the specified string is
+used as is.
+
+=item - Hash reference
+
+A hash reference with key/value pairs are converted to function calls
 whose function name is specified by the key and the argument is
 specified by the value.  Following function names are available:
 C<-count> (in SQL, C<COUNT()>), C<-min> (in SQL, C<MIN()>), C<-max>
@@ -57,8 +69,12 @@ as => name >> names an alias for the function value (in SQL,
 C<function() AS name>), and C<< distinct => boolean >> adds the
 C<DISTINCT> keyword (in SQL, C<function(DISTINCT args)>).
 
-These values can be combined as an array reference, for retrieving one
-or more of those values.
+=item - Array reference
+
+These values can be combined as an array reference, to combine one or
+more of those values.
+
+=back
 
 Examples:
 
@@ -68,21 +84,214 @@ Examples:
     as => 'c',
     distinct => 1}]               # COUNT(DISTINCT `c1`) AS `c`
 
-=item $where = where $where_specification [, $schema]
+=item $where = where $where_specification [, $table_schema]
 
-XXX
+Compose the C<WHERE> clause of an SQL statement.  It does not include
+the C<WHERE> keyword itself.
 
-XXX I<named placeholder> is ...
+The first argument must be specified.  It represents the generated
+C<WHERE> clause.  The second argument, if specified, must be a table
+schema, as described in the L<Dongry::Database> documentation.  If the
+table schema is specified, the function operates in a I<schema-aware>
+way.  Otherwise, the function operates in a I<schema-unaware> way.  If
+it is schema-aware, the column values are serialized as described in
+the L<Dongry::Table> documentation before being part of an SQL
+statement.
+
+The first argument must be a "where" struct, which must be one of the
+following values:
+
+=over 4
+
+=item - Hash reference
+
+If a hash reference is specified, it must contain a key/value pair.
+
+The key is interpreted as the column name.
+
+If the value is not a hash reference, it is equivalent to specifying a
+hash reference whoes key is C<-eq> and whoes value is the specified
+value.
+
+If the value is a hash reference, it must contain a key/value pair
+whose key is one of the following values:
+
+=over 4
+
+=item C<-eq> or C<==>
+
+If the value is C<undef>, the entire key/value pair represents the SQL
+expression C<column IS NULL> where I<column> is the column name.
+
+Otherwise, the entire key/value pair represents the SQL expression
+C<column = ?> where I<column> is the column name and I<?> is the
+value.
+
+=item C<-ne>, C<-not>, or C<!=>
+
+If the value is C<undef>, the entire key/value pair represents the SQL
+expression C<column IS NOT NULL> where I<column> is the column name.
+
+Otherwise, the entire key/value pair represents the SQL expression
+C<column != ?> where I<column> is the column name and I<?> is the
+value.
+
+=item C<-lt> or C<< < >>
+
+The entire key/value pair represents the SQL expression C<<column <
+?>> where I<column> is the column name and I<?> is the value.
+
+=item C<-le> or C<< <= >>
+
+The entire key/value pair represents the SQL expression C<<column <=
+?>> where I<column> is the column name and I<?> is the value.
+
+=item C<-gt> or C<< > >>
+
+The entire key/value pair represents the SQL expression C<<column >
+?>> where I<column> is the column name and I<?> is the value.
+
+=item C<-ge> or C<< >= >>
+
+The entire key/value pair represents the SQL expression C<<column >=
+?>> where I<column> is the column name and I<?> is the value.
+
+=item C<-like>
+
+The entire key/value pair represents the SQL expression C<column LIKE
+?> where I<column> is the column name and I<?> is the value.
+
+=item C<-prefix>
+
+The entire key/value pair represents the SQL C<LIKE> expression for
+the column where the condition is that it starts by the value.
+
+=item C<-suffix>
+
+The entire key/value pair represents the SQL C<LIKE> expression for
+the column where the condition is that it ends by the value.
+
+=item C<-infix>
+
+The entire key/value pair represents the SQL C<LIKE> expression for
+the column where the condition is that it contains the value.
+
+=item C<-regexp>
+
+The entire key/value pair represents the SQL expression C<column
+REGEXP ?> where I<column> is the column name and I<?> is the value.
+
+=item C<-in>
+
+The entire key/value pair represents the SQL expression C<column IN
+(?, ?, ..., ?)> where I<column> is the column name.  The value must be
+an array reference or a blessed array reference containing the column
+values for the C<(?, ?, ..., ?)> portion.  It must not be empty.
+
+=back
+
+Column values are interpreted in schema-aware ways if a table schema
+is given to the function.
+
+Examples:
+
+  {foo => 'bar'}                   # `foo` = 'bar'
+  {foo => {-ne => undef}}          # `foo` IS NOT NULL
+  {foo => {-prefix => '40%'}}      # `foo` LIKE '40\%%'
+  {foo => {-in => ['abc', 'def']}} # `foo` IN ('abc', 'def')
+
+=item - Array reference
+
+If an array reference is specified, it must be a fragment of the SQL
+statement with named placeholders followed by zero or more key/value
+pairs.  It represents the SQL statement whoes placeholders are
+replaced by the key/value pairs.
+
+The SQL statement with I<named placeholders> is a string that can
+contain the following syntax:
+
+=over 4
+
+=item :I<key>
+
+Replaced by the value of the key/value pair whoes key is equal to
+I<key>.  It is interpreted as an SQL quoted string.
+
+If the table schema is available, the value is interpreted as the
+value for the column whoes name is equal to I<key>.
+
+=item I<column> I<operator> ?
+
+Equivalent to C<< I<column> I<operator> :I<column> >>.
+
+The I<operator> must be one of the following SQL operators: C<=>, C<<
+<= >>, C<< < >>, C<< > >>, C<< >= >>, C<< <> >>, C<!=>, or C<< <=> >>.
+
+=item :I<key>::I<column>
+
+Replaced by the value of the key/value pair whoes key is equal to
+I<key>.  It is interpreted as an SQL quoted string.
+
+If the table schema is available, the value is interpreted as the
+value for the column whoes name is equal to I<column>.
+
+=item :I<key>:id
+
+Replaced by the value of the key/value pair whoes key is equal to
+I<key>.  It is interpreted as an SQL identifier.
+
+Since Dongry does not support non-ASCII identifiers, the value must be
+an unflagged ASCII-only string.
+
+=item :I<key>:sub
+
+Replaced by the value of the key/value pair whoes key is equal to
+I<key>.  It is interpreted as an SQL expression.  The value must be a
+"where" construct.
+
+=back
+
+Please note that Dongry does not assure the output is a (fragment of)
+valid SQL statement.  The application must specify a string with
+key/value pairs that would be result in a valid SQL statement.
+
+Examples:
+
+  ['foo = :foo OR bar = :bar',  # foo = 'abc' OR bar = 'def'
+   foo => 'abc', bar => 'def']
+  ['foo = ?', foo => 'abc']     # foo = 'abc'
+
+  $lang = 'en';
+  [':namecol:id = :name',       # `name_en` = 'abc'
+   namecol => 'name_' . $lang,
+   name => 'abc']
+  
+  # (`created` is of 'timestamp_as_DateTime'
+  #  and $date1 and $date2 are DateTime objects)
+  [':created1::created <= created AND
+   created <= :created2::created',
+   created1 => $date1, created2 => $date2]      
+  # ? <= created AND created <= ?
+  # with serialized $date1, $date2
+  
+  [':cond1:sub OR :cond2:sub',   
+   cond1 => {foo => 1, bar => 2},
+   cond2 => {foo => 2, bar => 1}]
+  # (`foo` = '1' AND `bar` = '2') OR
+  # (`foo` = '2' AND `bar` = '1')
+
+=back
 
 =item $order = order $order_specification
 
-XXX
+Compose the C<ORDER BY> clause of an SQL statement.  It does not
+include the C<ORDER BY> keywords themselves.
 
-They must be specified as
-B<array> reference of name/value pairs, where names represent column
-names and values represent their sort order.  The values must be
-either C<ASC>, C<asc>, or C<1> (ascending order) or C<DESC>, C<desc>,
-or C<-1> (descending order).
+The argument must be an "order" struct.  It must be specified as an
+B<array> reference containing name/value pairs, where names represent
+column names and values represent their sort orders.  The values must
+be either C<ASC>, C<asc>, or C<1> (ascending order) or C<DESC>,
+C<desc>, or C<-1> (descending order).
 
 Examples:
 
@@ -95,7 +304,8 @@ As a general rule, these methods accept both utf8-flagged and
 utf8-unflagged strings.  However, they must not be appear in the same
 function call.  If the input is utf8-flagged, the output will also be
 utf8-flagged.  If the input is unflagged, the output will be
-unflagged, either.
+unflagged, either.  For more information on how Dongry handles the
+utf8 flag, see L<Dongry::Database> documentation.
 
 These methods try to construct a valid SQL fragment as far as
 possible, but they does not output a valid fragment for every input.
@@ -109,7 +319,7 @@ itself.
 
 =head1 SUPPORTED SYNTAX
 
-The module only supports SQL syntax for MySQL5.
+This module only supports SQL dialect for MySQL version 5.
 
 =head1 SEE ALSO
 
