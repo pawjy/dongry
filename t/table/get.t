@@ -102,12 +102,10 @@ sub _get_broken : Test(3) {
 
   my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
 
-  dies_here_ok {
-    my $date1 = $row->get ('col1');
-  };
-  dies_here_ok {
-    my $date2 = $row->get ('col1');
-  };
+  my $date1 = $row->get ('col1');
+  is $date1, undef;
+  my $date2 = $row->get ('col1');
+  is $date2, undef;
 
   my $str1 = $row->get_bare ('col1');
   is $str1, 'xyxz abc ee-11-11';
