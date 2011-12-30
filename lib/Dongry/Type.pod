@@ -1,0 +1,158 @@
+=head1 NAME
+
+Dongry::Type - Data type definitions for Dongry
+
+=head1 SYNOPSIS
+
+  use Dongry::Type -Base;
+  $Dongry::Types->{kiloint} = {
+    parse => sub {
+      return $_[0] * 1000;
+    },
+    serialize => sub {
+      return $_[0] / 1000;
+    },
+  };
+
+=head1 DESCRIPTION
+
+The Dongry "schema" feature associates column names and their data
+types.  Data types in Dongry is defined as rules to convert a string
+into Perl data structure and to convert a Perl data structure into a
+string.
+
+The C<Dongry::Type> module defines basic common data types.
+Additional data types can be defined by inheriting the module.
+
+=head1 DATA TYPE DEFINITIONS
+
+The C<$Dongry::Types> hash reference contains key/value pairs
+representing the association of data type names and their definitions.
+The values must be hash references containing the following key/value
+pairs:
+
+=over 4
+
+=item parse => CODE (Required)
+
+A code reference to parse a string and returns its Perl
+representation.  The code is invoked when a string from the database
+should be converted into a Perlish representation.
+
+The code receives a string as the argument.  If the original data in
+the database is C<NULL>, an C<undef> value is specified instead.
+
+The code reference must return a Perl value.  It may be an C<undef>
+value, a primitive value, a reference, or an object.
+
+The code reference may throw an exception using the C<croak> function
+of the L<Carp> module, if desired.  It may use the C<carp> function of
+the L<Carp> module to warn.
+
+=item serialize => CODE (Required)
+
+A code reference to serialize a Perl value into its stringified
+representation.  The code is invoked when a Perl value should be
+serialized into a string for the use within an SQL statement.
+
+The code receives a value as the argument.  It might be an C<undef>
+value, a primitive value, a reference, or an object.
+
+The code reference must return a byte string or an C<undef> value.  A
+byte string is interpreted as an SQL string value.  An C<undef> value
+is interpreted as the C<NULL> value in SQL.
+
+The code reference may throw an exception using the C<croak> function
+of the L<Carp> module, if desired.  It may use the C<carp> function of
+the L<Carp> module to warn.
+
+=back
+
+Modules defining data types are expected to use the L<Dongry::Type>
+module with the C<-Base> option, as follows:
+
+  use Dongry::Type -Base;
+
+A module can one or more data types.  Though there is no formal naming
+rule for data type names and module names, they should be as
+consistent as possible with existing data type names.
+
+=head1 BUILTIN DATA TYPES
+
+The following data types are defined by the L<Dongry::Type> core
+module and is automatically enabled for the use in Dongry:
+
+=over 4
+
+=item as_ref
+
+Accept a reference to a byte string or an C<undef> value.  The value
+is dereferenced and treated as a byte string when used as part of SQL.
+The C<undef> value represents the C<NULL> value in SQL.
+
+This data type might be useful when the column is known to handle a
+large length of data.
+
+=item text
+
+Accept a character string or an C<undef> value.  The value is encoded
+in the Perl C<utf-8> encoding when used as part of SQL.  The C<undef>
+value represents the C<NULL> value in SQL.
+
+This data type should be used when a UTF-8 encoded textual data is
+stored in the column.
+
+=item text_as_ref
+
+Accept a reference to a character string or an C<undef> value.  The
+value is dereferenced and encoded in the Perl C<utf-8> encoding when
+used as part of SQL.  The C<undef> value represents the C<NULL> value
+in SQL.
+
+This data type might be useful when the column is known to handle a
+large length of UTF-8 encoded textual data.
+
+=back
+
+=head1 ADDITIONAL DATA TYPES
+
+Additional data types can be enabled by loading modules that define
+those data types.  Such data type modules include:
+
+=over 4
+
+=item L<Dongry::Type::Time>
+
+Data types for date-time and date, represented as time_t integer
+(so-called Unix time).
+
+=item L<Dongry::Type::DateTime>
+
+Data types for date-time and date, represented as Perl L<DateTime>
+object.
+
+=item L<Dongry::Type::JSON>
+
+Data types for JSON data.
+
+=back
+
+As described in the previous section, you can define more additional
+data types.
+
+=head1 SEE ALSO
+
+L<Dongry::Database>, L<Dongry::Table>.
+
+=head1 AUTHOR
+
+Wakaba <w@suika.fam.cx>.
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

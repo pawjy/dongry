@@ -1,0 +1,60 @@
+=head1 NAME
+
+Dongry::Type::DateTime - Dongry data types for date and time as DateTime object
+
+=head1 DESCRIPTION
+
+The C<Dongry::Type::DateTime> module defines data types for handing
+date and time in Dongry.  They represents date and time in Perl
+L<DateTime> object.
+
+=head1 DATA TYPES
+
+=over 4
+
+=item timestamp_as_DateTime
+
+SQL format: Canonical representation of L<TIMESTAMP> in MySQL 5, in
+the UTC time zone.
+
+Perl value: Perl L<DateTime> object.
+
+SQL C<0000-00-00 00:00:00> value is mapped to Perl C<undef> value.
+
+=item timestamp_jst_as_DateTime
+
+SQL format: Canonical representation of L<TIMESTAMP> in MySQL 5, in
+the Japanese Central Standard Time (+09:00).
+
+Perl value: Perl L<DateTime> object.
+
+SQL C<0000-00-00 00:00:00> value is mapped to Perl C<undef> value.
+
+=item date_as_DateTime
+
+SQL format: Canonical representation of L<DATE> in MySQL 5.
+
+Perl value: Perl L<DateTime> object of time 00:00:00 in UTC.
+
+SQL C<0000-00-00> value is mapped to Perl C<undef> value.
+
+=back
+
+=head1 SEE ALSO
+
+L<Dongry::Type>.
+
+L<Dongry::Type::Time> - handle date and time as time_t.
+
+=head1 AUTHOR
+
+Wakaba <w@suika.fam.cx>.
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

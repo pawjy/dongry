@@ -1,0 +1,47 @@
+=head1 NAME
+
+Dongry::Type::JSON - Dongry data types for JSON
+
+=head1 DESCRIPTION
+
+The C<Dongry::Type::JSON> module defines data types for handing
+JSON-encoded data structure as column value in Dongry.
+
+=head1 DATA TYPES
+
+=over 4
+
+=item json
+
+SQL format: A byte string in the JSON format.
+
+Perl value: A Perl scalar value.
+
+SQL C<NULL> value is mapped to Perl C<undef> value.
+
+=back
+
+=head1 DEPENDENCY
+
+The module requires L<JSON::Functions::XS>.  The latest version of the
+module is available from
+<https://github.com/wakaba/perl-json-functions-xs>.
+
+=head1 SEE ALSO
+
+L<Dongry::Type>.
+
+L<JSON::Functions::XS>.
+
+=head1 AUTHOR
+
+Wakaba <w@suika.fam.cx>.
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
