@@ -22,6 +22,13 @@ push our @CARP_NOT, qw(
   Dongry::SQL
 );
 
+our $ListClass ||= 'List::Rubyish';
+
+sub _list {
+  eval qq{ require $ListClass } or die $@;
+  return $ListClass->new ($_[1] || []);
+} # _list
+
 # ------ Construction ------
 
 sub new ($;%) {
@@ -419,9 +426,8 @@ sub debug_info ($) {
 package Dongry::Database::Executed;
 our $VERSION = '1.0';
 use Carp;
-use List::Rubyish;
 
-push our @CARP_NOT, qw(Dongry::Database List::Rubyish);
+push our @CARP_NOT, qw(Dongry::Database);
 
 sub row_count ($) {
   return $_[0]->{row_count} + 0;
@@ -459,7 +465,7 @@ sub each_as_row ($$) {
 
 sub all ($) {
   my $sth = delete $_[0]->{sth} or croak 'This method is no longer available';
-  my $list = List::Rubyish->new ($sth->fetchall_arrayref ({}));
+  my $list = $_[0]->{db}->_list ($sth->fetchall_arrayref ({}));
   $sth->finish;
   return $list;
 } # all
@@ -536,7 +542,7 @@ sub all ($) {
   my $data = delete $_[0]->{data}
       or croak 'This method is no longer available';
   delete $_[0]->{data};
-  return ref $data eq 'ARRAY' ? List::Rubyish->new ($data) : $data;
+  return ref $data eq 'ARRAY' ? $_[0]->{db}->_list ($data) : $data;
 } # all
 
 sub all_as_rows ($) {
@@ -548,7 +554,7 @@ sub all_as_rows ($) {
   delete $self->{data};
   my $db = $self->{db};
   require Dongry::Table;
-  return List::Rubyish->new([map {
+  return $db->_list([map {
     bless {db => $db, table_name => $tn, data => $data->[$_],
            $self->{parsed_data}
                ? (parsed_data => $self->{parsed_data}->[$_]) : ()},

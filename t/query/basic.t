@@ -142,6 +142,8 @@ sub _group : Test(4) {
 } # _group
 
 sub _item_list_filter : Test(3) {
+  require List::Rubyish;
+
   my $q = Dongry::Query->new;
 
   eq_or_diff $q->item_list_filter

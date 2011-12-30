@@ -1001,9 +1001,9 @@ code reference will not be invoked at all.
 =item $list = $result->all
 
 Return a list which contains all the rows in the result.  The method
-returns a L<List::Rubyish> object which contains zero or more hash
-references representing the rows.  The hash reference consists of
-key/value pairs representing column names and their values.
+returns a list object which contains zero or more hash references
+representing the rows.  The hash reference consists of key/value pairs
+representing column names and their values.
 
 =item $values = $result->first
 
@@ -1121,10 +1121,12 @@ repositories: <https://github.com/wakaba/dongry>,
 
 =head1 DEPENDENCY
 
-Dongry requires the L<DBI> module as underlying database API and
-L<List::Rubyish> as list object implementation.  Additional modules
-might be used by L<Dongry::Type> modules, but they are not required as
-long as you don't use such modules specificalliy.
+Dongry requires the L<DBI> module as underlying database API.  Dongry
+uses the L<List::Rubyish> module as list object implementation by
+default, but this can be configured by the
+C<$Dongry::Database::ListClass> variable.  Additional modules might be
+used by L<Dongry::Type> modules, but they are not required as long as
+you don't use such modules specificalliy.
 
 The GitHub repository of Dongry contains submodules.  The
 C<modules/perl-json-functions-xs> submodule is required by

@@ -449,7 +449,7 @@ sub _select_a_row_all_zero : Test(12) {
   is $invoked, 0;
 } # _select_a_row_all
 
-sub _select_a_row_all_as_rows : Test(15) {
+sub _select_a_row_all_as_rows_zero : Test(15) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
   my $db = Dongry::Database->new

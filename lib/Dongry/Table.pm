@@ -3,7 +3,6 @@ use strict;
 use warnings;
 our $VERSION = '1.0';
 use Carp;
-use List::Rubyish;
 
 push our @CARP_NOT, qw(Dongry::Database);
 
@@ -176,7 +175,7 @@ sub fill_related_rows ($$$$;%) {
     for my $col (@cols) {
       $hash = $hash->{$_->get_bare ($col)} ||= {};
     }
-    ($hash->{$_->get_bare ($col)} ||= List::Rubyish->new)->push ($_);
+    ($hash->{$_->get_bare ($col)} ||= $self->{db}->_list)->push ($_);
   } : sub {
     my $hash = $map;
     for my $col (@cols) {
@@ -188,7 +187,7 @@ sub fill_related_rows ($$$$;%) {
       $hash->{$_->get_bare ($col)} = $_;
     }
   });
-  my $default = $args{multiple} ? List::Rubyish->new : undef;
+  my $default = $args{multiple} ? $self->{db}->_list : undef;
   for my $obj (@$list) {
     my $hash = $map;
     for my $method_name (@methods) {

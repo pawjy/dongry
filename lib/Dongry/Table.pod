@@ -172,8 +172,8 @@ The conditions to select the row must be specified as the first
 argument.  It must be a schema-aware C<where> structure as described
 in L<Dongry::SQL>.
 
-The method returns a (possibly empty) L<List::Rubyish> object
-containing table row objects representing the selected rows.
+The method returns a (possibly empty) list object containing table row
+objects representing the selected rows.
 
 Following options for the C<select> method of the database object also
 apply to this method: C<fields>, C<group>, C<order>, C<offset>,
@@ -214,10 +214,10 @@ argument and the values obtained by the method invocations.
 Table row objects representing the rows returned by the SQL execution
 is passed to the objects in the first argument by invoking their
 methods whose name is specified by the third argument.  When the
-C<multiple> option is specified, a L<List::Rubyish> object containing
-the table row objects is specified as the first argument to the
-method.  Otherwise, a table row object, if any, or C<undef> otherwise,
-is specified as the argument to the method.
+C<multiple> option is specified, a list object containing the table
+row objects is specified as the first argument to the method.
+Otherwise, a table row object, if any, or C<undef> otherwise, is
+specified as the argument to the method.
 
 Following options for the C<select> method of the database object also
 apply to this method: C<fields>, C<source_name>, and C<lock>.

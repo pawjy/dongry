@@ -1797,6 +1797,37 @@ sub _execute_non_utf8_value : Test(1) {
       ->first->{value}, "\x98\xDCz";
 } # _execute_non_utf8_value
 
+{
+  package MyListClass;
+  $INC{'MyListClass.pm'} = 1;
+  sub new {
+    return bless $_[1] || [], $_[0];
+  } # new
+  sub map {
+    return bless [CORE::map { $_[1]->() } @{$_[0]}], ref $_[0];
+  } # map
+}
+
+sub _result_all_custom_list : Test(2) {
+  local $Dongry::Database::ListClass = 'MyListClass';
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2)');
+  my $list = $db->execute ('select * from foo order by id asc')->all;
+  isa_ok $list, 'MyListClass';
+  eq_or_diff [@$list], [{id => 1}, {id => 2}];
+} # _result_all_custom_list
+
+sub _result_all_as_rows_custom_list : Test(2) {
+  local $Dongry::Database::ListClass = 'MyListClass';
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2)');
+  my $list = $db->select ('foo', ['1 = 1'], order => [id => 1])->all_as_rows;
+  isa_ok $list, 'MyListClass';
+  eq_or_diff [map { $_->{data} } @$list], [{id => 1}, {id => 2}];
+} # _result_all_as_rows_custom_list
+
 __PACKAGE__->runtests;
 
 1;

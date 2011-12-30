@@ -68,7 +68,7 @@ sub item_list_filter {
 
 sub find_all {
   my ($self, %args) = @_;
-  return List::Rubyish->new if $self->is_null;
+  return $self->{db}->_list if $self->is_null;
   return $self->item_list_filter
       ($self->table->find_all
            ($self->where,

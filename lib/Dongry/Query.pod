@@ -154,16 +154,15 @@ table row objects retrieved from the database.  Although not
 recommended, you can filter out or grep some of items in the method,
 as the name suggets.
 
-The argument to the method is a L<List::Rubyish> object containing the
-table row objects obtained by the query execution.  The list can be
-empty.
+The argument to the method is a list object containing the table row
+objects obtained by the query execution.  The list can be empty.
 
-The method (is expected to) return(s) a L<List::Rubyish> object
-containing the object to be returned to the application.  For the
-C<find> method, the first item in the list, if any, is returned.  For
-the C<find_all> method, the list itself is returned.  Note that the
-C<count> method is not affected by the filter.  This is the reason you
-should not change the number of items in the filter in general.
+The method (is expected to) return(s) a list object containing the
+object to be returned to the application.  For the C<find> method, the
+first item in the list, if any, is returned.  For the C<find_all>
+method, the list itself is returned.  Note that the C<count> method is
+not affected by the filter.  This is the reason you should not change
+the number of items in the filter in general.
 
 The default behavior of the method is to return the argument without
 any modification.  It can be customized by specifying the
@@ -196,10 +195,10 @@ are specified, methods with same names are ignored.
 
 =item $list = $q->find_all (%args)
 
-Execute the query represented by the object and return a
-L<List::Rubyish> object containing the rows.  The list could be empty.
-By default the table row objects are contained in the list, but this
-could be modified by C<item_list_filter>.
+Execute the query represented by the object and return a list object
+containing the rows.  The list could be empty.  By default the table
+row objects are contained in the list, but this could be modified by
+C<item_list_filter>.
 
 Following options is available: C<offset>, C<limit>, C<source_name>,
 and C<lock>.  If they are specified, methods with same names are
