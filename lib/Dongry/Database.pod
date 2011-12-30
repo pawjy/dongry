@@ -1140,6 +1140,9 @@ L<DBD::mysql>.
 
 MySQL Reference Manuals <http://dev.mysql.com/doc/index.html>.
 
+L<DBIx::ShowSQL>
+<https://github.com/wakaba/perl-rdb-utils/blob/master/lib/DBIx/ShowSQL.pm>.
+
 =head1 ACKNOWLEDGEMENTS
 
 Design and interfaces of various features in Dongry is largely
