@@ -64,8 +64,8 @@ whose function name is specified by the key and the argument is
 specified by the value.  Following function names are available:
 C<-count> (in SQL, C<COUNT()>), C<-min> (in SQL, C<MIN()>), C<-max>
 (in SQL, C<MAX()>), and C<-sum> (in SQL, C<SUM()>).  In addition,
-following name-value pairs can be specified in the hash reference: C<<
-as => name >> names an alias for the function value (in SQL,
+following name-value pairs can be specified in the hash reference: 
+C<< as => name >> names an alias for the function value (in SQL,
 C<function() AS name>), and C<< distinct => boolean >> adds the
 C<DISTINCT> keyword (in SQL, C<function(DISTINCT args)>).
 
@@ -138,23 +138,23 @@ value.
 
 =item C<-lt> or C<< < >>
 
-The entire key/value pair represents the SQL expression C<<column <
-?>> where I<column> is the column name and I<?> is the value.
+The entire key/value pair represents the SQL expression C<< column < ?
+>> where I<column> is the column name and I<?> is the value.
 
 =item C<-le> or C<< <= >>
 
-The entire key/value pair represents the SQL expression C<<column <=
-?>> where I<column> is the column name and I<?> is the value.
+The entire key/value pair represents the SQL expression C<< column <=
+? >> where I<column> is the column name and I<?> is the value.
 
 =item C<-gt> or C<< > >>
 
-The entire key/value pair represents the SQL expression C<<column >
-?>> where I<column> is the column name and I<?> is the value.
+The entire key/value pair represents the SQL expression C<< column > ?
+>> where I<column> is the column name and I<?> is the value.
 
 =item C<-ge> or C<< >= >>
 
-The entire key/value pair represents the SQL expression C<<column >=
-?>> where I<column> is the column name and I<?> is the value.
+The entire key/value pair represents the SQL expression C<< column >=
+? >> where I<column> is the column name and I<?> is the value.
 
 =item C<-like>
 
