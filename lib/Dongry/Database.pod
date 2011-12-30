@@ -959,15 +959,25 @@ not be equal to the number of rows actually inserted into the table.
 
 =item $result->each ($code)
 
-XXX
+Iterate for each row in the result.  The argument must be a code
+reference.  The code is invoked for each row, with an argument which
+represents the row as a hash reference where key/value pairs represent
+column names and their values.  If there is no row in the result, the
+code reference will not be invoked at all.
 
-=item $result->all
+=item $list = $result->all
 
-XXX
+Return a list which contains all the rows in the result.  The method
+returns a L<List::Rubyish> object which contains zero or more hash
+references representing the rows.  The hash reference consists of
+key/value pairs representing column names and their values.
 
-=item $result->first
+=item $values = $result->first
 
-XXX
+Return the first row in the result.  If there is a row, the method
+returns the row as a hash reference where key/value pairs represent
+column names and their values.  If there is no row in the result,
+C<undef> is returned.
 
 =item $string = $result->debug_info
 
@@ -995,15 +1005,21 @@ C<undef>, otherwise.
 
 =item $result->each_as_row ($code)
 
-XXX
+Iterate for rows like the C<each> method does, but gives the table row
+object for each row to the specified code reference instead of a hash
+reference.
 
-=item $result->all_as_rows
+=item $list = $result->all_as_rows
 
-XXX
+Return a list of the table rows like the C<all> method does, but puts
+the table row objects for the rows in the list instead of hash
+references.
 
-=item $result->first_as_row
+=item $row = $result->first_as_row
 
-XXX
+Return the first table row, if any, like the C<first> method does, but
+gives the table row object for the first row instead of a hash
+reference.
 
 =back
 
@@ -1031,22 +1047,61 @@ work for tables using the MyISAM engine.
 
 =head1 INTERPREATTION OF STRINGS
 
-XXX utf8
+Lower-level interfaces of Dongry, i.e. methods of the database object
+such as C<execute>, C<select>, C<insert>, and so on, leave the
+interpretation of byte- or character-string (or the utf8 flag) to the
+underlying layers.  The underlying L<DBI> module, in turn, delegates
+the handling of it to the database driver such as L<DBD::mysql>.  See
+the documentation for database driver modules for their
+implementation.
+
+Higher-level interfaces of Dongry, namely the schema-aware APIs of the
+table and table row objects, handles strings as defined by the data
+type of the column.  Unless the type is explicitly specified, you
+should always specify or receive a byte (or unflagged) string.  If a
+column is expected to contain a character string, the column should be
+declared as of C<text> or C<text_as_ref> such that you can specify or
+receive a character (or flagged) string.  If you write a type handler,
+be careful for the parser to interpret byte strings and for the
+serializer to return character strings.
+
+Example:
+
+  my $result = $db->execute
+      ('SELECT * FROM table1 WHERE name = :name', 
+       {name => encode 'utf-8', $name});
+  $name = decode 'utf-8', $result->first->{name};
+
+  $db->schema ({table1 => {type => {name => 'text'}}});
+  $row = $db->table ('table1')->find ({name => $flagged_name});
+  $flagged_name = $row->get ('name');
+  $unflagged_name = $row->get_bare ('name');
+
+=head1 AVAILABILITY
+
+XXX TBD
+
+=head1 DEPENDENCY
+
+Dongry requires the L<DBI> module as underlying database API and
+L<List::Rubyish> as list object implementation.  Additional modules
+might be used by L<Dongry::Type> modules, but they are not required as
+long as you don't use such modules specificalliy.
 
 =head1 SEE ALSO
 
 L<DBI>.
 
-L<DBD::MySQL>.
+L<DBD::mysql>.
 
 MySQL Reference Manuals <http://dev.mysql.com/doc/index.html>.
 
 =head1 ACKNOWLEDGEMENTS
 
-The design of various features of Dongry is inspired by L<DBI>,
-L<DBIx::MoCo>, L<DBIx::MoCo::Query>, L<DBIx::MoCo::ColumnMethods>,
-L<DBIx::MoCo::TableExtras>, L<SQL::Abstract>,
-L<SQL::NamedPlaceholder>, and L<List::Rubyish>.
+Design and interfaces of various features in Dongry is largely
+inspired by L<DBI>, L<DBIx::MoCo>, L<DBIx::MoCo::Query>,
+L<DBIx::MoCo::ColumnMethods>, L<DBIx::MoCo::TableExtras>,
+L<SQL::Abstract>, L<SQL::NamedPlaceholder>, and L<List::Rubyish>.
 
 =head1 AUTHOR
 
