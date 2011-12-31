@@ -1119,6 +1119,11 @@ The latest version of Dongry is available from following Git
 repositories: <https://github.com/wakaba/dongry>,
 <http://suika.fam.cx/gate/git/wi/perl/dongry.git/tree>.
 
+If you are old school such that you like versioned packages rather
+than living Git repository, you can get tarballs from
+<http://wakaba.github.com/packages/#dongry>.  Please note that
+versioned packages are likely out-of-dated.
+
 =head1 DEPENDENCY
 
 Dongry requires the L<DBI> module as underlying database API.  Dongry
