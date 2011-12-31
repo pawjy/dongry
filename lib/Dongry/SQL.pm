@@ -74,6 +74,55 @@ sub fields ($) {
   }
 } # fields
 
+sub _where_exp ($$$$$) {
+  #my ($key, $type, $table_schema, $value, $placeholder) = @_;
+  my $op = {
+    -eq => '=',  '==' => '=',
+    -ne => '!=', '!=' => '!=', -not => '!=',
+    -lt => '<',  '<'  => '<',
+    -le => '<=', '<=' => '<=',
+    -gt => '>',  '>'  => '>',
+    -ge => '>=', '>=' => '>=',
+    -like => 'LIKE',
+    -prefix => 'LIKE', -infix => 'LIKE', -suffix => 'LIKE',
+    -regexp => 'REGEXP',
+    -in => '-in',
+  }->{$_[1] || ''}
+      or croak "Unknown operation |$_[1]| is specified for column |$_[0]|";
+
+  my $coltype = $_[2]->{type}->{$_[0]};
+  if ($coltype) {
+    my $handler = $Dongry::Types->{$coltype}
+        or croak "Type handler for |$coltype| is not defined";
+    $_[3] = $handler->{serialize}->($_[3]);
+  } else {
+    if (defined $_[3] and ref $_[3]) {
+      croak "Type for |$_[0]| is not defined but a reference is specified";
+    }
+  }
+
+  if (not defined $_[3]) {
+    if ($op eq '=') {
+      return ((quote $_[0]) . ' IS NULL');
+    } elsif ($op eq '!=') {
+      return ((quote $_[0]) . ' IS NOT NULL');
+    } else {
+      croak "Operator |$_[1]| does not allow an undef value";
+    }
+  } else {
+    if ($_[1] eq '-prefix') {
+      push @{$_[4]}, like ($_[3]) . '%';
+    } elsif ($_[1] eq '-suffix') {
+      push @{$_[4]}, '%' . like ($_[3]);
+    } elsif ($_[1] eq '-infix') {
+      push @{$_[4]}, '%' . like ($_[3]) . '%';
+    } else {
+      push @{$_[4]}, $_[3];
+    }
+    return ((quote $_[0]) . ' ' . $op . ' ?');
+  } # $_[3]
+} # _where_exp
+
 push @EXPORT, qw(where);
 sub where ($;$);
 sub where ($;$) {
@@ -82,29 +131,14 @@ sub where ($;$) {
     my @and;
     my @placeholder;
     for my $key (keys %$values) {
-      my $sql = quote $key;
-      my $type;
-      my $op;
-      my $value;
       if (defined $values->{$key} and ref $values->{$key} eq 'HASH') {
-        $type = [grep { /^[-<>!=]/ } keys %{$values->{$key}}]->[0];
-        $op = {
-            -eq => '=',  '==' => '=',
-            -ne => '!=', '!=' => '!=', -not => '!=',
-            -lt => '<',  '<'  => '<',
-            -le => '<=', '<=' => '<=',
-            -gt => '>',  '>'  => '>',
-            -ge => '>=', '>=' => '>=',
-            -like => 'LIKE',
-            -prefix => 'LIKE', -infix => 'LIKE', -suffix => 'LIKE',
-            -regexp => 'REGEXP',
-            -in => '-in',
-        }->{$type || ''} or croak "No known operator is specified for |$key|";
+        my $type = [grep { /^[-<>!=]/ } keys %{$values->{$key}}]->[0];
 
-        if ($op eq '-in') {
+        if ($type eq '-in') {
           my $list = $values->{$key}->{$type};
           croak "List for |-in| is empty" unless @{$list or []};
-          $sql .= ' IN (' . (join ', ', ('?') x @$list) . ')';
+          push @and, (quote $key) .
+              ' IN (' . (join ', ', ('?') x @$list) . ')';
           my $coltype = $table_schema->{type}->{$key};
           my $handler;
           if ($coltype) {
@@ -123,48 +157,14 @@ sub where ($;$) {
             }
           } @$list;
         } else {
-          $value = $values->{$key}->{$type};
-        } # $op
+          push @and,
+              _where_exp $key, $type, $table_schema, $values->{$key}->{$type}
+                  => \@placeholder;
+        } # $type
       } else {
-        $type = '-eq';
-        $op = '=';
-        $value = $values->{$key};
+        push @and, _where_exp $key, '-eq', $table_schema, $values->{$key}
+            => \@placeholder;
       } # $values->{$key}
-
-      unless ($type eq '-in') {
-        my $coltype = $table_schema->{type}->{$key};
-        if ($coltype) {
-          my $handler = $Dongry::Types->{$coltype}
-              or croak "Type handler for |$coltype| is not defined";
-          $value = $handler->{serialize}->($value);
-        } else {
-          if (defined $value and ref $value) {
-            croak "Type for |$key| is not defined but a reference is specified";
-          }
-        }
-        if (not defined $value) {
-          if ($op eq '=') {
-            $sql .= ' IS NULL';
-          } elsif ($op eq '!=') {
-            $sql .= ' IS NOT NULL';
-          } else {
-            croak "Operator |$type| does not allow an undef value";
-          }
-        } else {
-          $sql .= ' ' . $op . ' ?';
-          if ($type eq '-prefix') {
-            push @placeholder, like ($value) . '%';
-          } elsif ($type eq '-suffix') {
-            push @placeholder, '%' . like ($value);
-          } elsif ($type eq '-infix') {
-            push @placeholder, '%' . like ($value) . '%';
-          } else {
-            push @placeholder, $value;
-          }
-        } # $value
-      } # $type
-
-      push @and, $sql;
     } # $values
 
     if (@and) {
