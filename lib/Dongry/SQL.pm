@@ -90,18 +90,20 @@ sub _where_exp ($$$$$) {
   }->{$_[1] || ''}
       or croak "Unknown operation |$_[1]| is specified for column |$_[0]|";
 
+  my $value;
   my $coltype = $_[2]->{type}->{$_[0]};
   if ($coltype) {
     my $handler = $Dongry::Types->{$coltype}
         or croak "Type handler for |$coltype| is not defined";
-    $_[3] = $handler->{serialize}->($_[3]);
+    $value = \($handler->{serialize}->($_[3]));
   } else {
     if (defined $_[3] and ref $_[3]) {
       croak "Type for |$_[0]| is not defined but a reference is specified";
     }
+    $value = \($_[3]);
   }
 
-  if (not defined $_[3]) {
+  if (not defined $$value) {
     if ($op eq '=') {
       return ((quote $_[0]) . ' IS NULL');
     } elsif ($op eq '!=') {
@@ -111,13 +113,13 @@ sub _where_exp ($$$$$) {
     }
   } else {
     if ($_[1] eq '-prefix') {
-      push @{$_[4]}, like ($_[3]) . '%';
+      push @{$_[4]}, like ($$value) . '%';
     } elsif ($_[1] eq '-suffix') {
-      push @{$_[4]}, '%' . like ($_[3]);
+      push @{$_[4]}, '%' . like ($$value);
     } elsif ($_[1] eq '-infix') {
-      push @{$_[4]}, '%' . like ($_[3]) . '%';
+      push @{$_[4]}, '%' . like ($$value) . '%';
     } else {
-      push @{$_[4]}, $_[3];
+      push @{$_[4]}, $$value;
     }
     return ((quote $_[0]) . ' ' . $op . ' ?');
   } # $_[3]

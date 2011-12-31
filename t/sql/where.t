@@ -502,6 +502,18 @@ sub _where_named_parsed_type_error : Test(3) {
   };
 } # _where_named_parsed_type_error
 
+sub _where_no_modification : Test(1) {
+  my $where = {foo => 'bar', hoge => {-lt => 120}};
+  where $where;
+  eq_or_diff $where, {foo => 'bar', hoge => {-lt => 120}};
+} # _where_no_modification
+
+sub _where_no_modification_parsed : Test(1) {
+  my $where = {foo => 'bar', hoge => {-lt => \120}};
+  where $where, {type => {hoge => 'as_ref'}};
+  eq_or_diff $where, {foo => 'bar', hoge => {-lt => \120}};
+} # _where_no_modification_parsed
+
 __PACKAGE__->runtests;
 
 1;
