@@ -298,6 +298,12 @@ Examples:
   [col1 => 1, col2 => -1]          # `col1` ASC, `col2` DESC
   [col1 => 'ASC', col2 => 'DESC']  # `col1` ASC, `col2` DESC
 
+=item $order_specification = reverse_order_struct $order_specification
+
+Return an "order" struct that represents the reversed order of the
+"order" struct given as the argument.  This function is not
+destructive and a new "order" struct is returned.
+
 =back
 
 As a general rule, these methods accept both utf8-flagged and

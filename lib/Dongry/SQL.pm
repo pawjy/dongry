@@ -256,7 +256,7 @@ push @EXPORT, qw(order);
 sub order ($) {
   if (defined $_[0]) {
     my @s;
-    for (0..(int (($#{$_[0]} + 2) / 2) - 1)) {
+    for (0..(int (($#{$_[0] or []} + 2) / 2) - 1)) {
       push @s, (quote $_[0]->[$_ * 2]) . ' ' . (
         {
           'ASC' => 'ASC',
@@ -275,6 +275,28 @@ sub order ($) {
     return '';
   }
 } # order
+
+push @EXPORT, qw(reverse_order_struct);
+sub reverse_order_struct ($) {
+  if (defined $_[0]) {
+    my @s = @{$_[0] or []};
+    for my $i (0..(int (($#s + 2) / 2) - 1)) {
+      $s[$i * 2 + 1] = {
+        'ASC' => -1,
+        'asc' => -1,
+        '1' => -1,
+        '+1' => -1,
+        'DESC' => 1,
+        'desc' => 1,
+        '-1' => 1,
+      }->{$s[$i * 2 + 1] || 1} or
+      (croak sprintf 'Unknown order: %s', $_[0]->[$i * 2 + 1]);
+    }
+    return \@s;
+  } else {
+    return undef;
+  }
+} # reverse_order_struct
 
 # ------ Bare SQL fragment ------
 
