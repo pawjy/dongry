@@ -103,6 +103,7 @@ sub find ($$;%) {
   return $self->{db}
       ->select ($self->table_name, $values,
                 fields => $args{fields},
+                and_where => $args{and_where},
                 group => $args{group},
                 order => $args{order},
                 offset => $args{offset},
@@ -121,6 +122,7 @@ sub find_all ($$;%) {
       ->select ($self->table_name, $values,
                 distinct => $args{distinct},
                 fields => $args{fields},
+                and_where => $args{and_where},
                 group => $args{group},
                 order => $args{order},
                 offset => $args{offset},

@@ -2237,6 +2237,28 @@ sub _select_where_offset_limit_1_2 : Test(1) {
   eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [12, 23];
 } # _select_where_offset_limit_1_2
 
+sub _select_and_where : Test(2) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2), (3)');
+  
+  my $result = $db->select ('foo', {id => {-gt => 0}},
+                            and_where => {id => {-lt => 3}},
+                            order => [id => 1]);
+  is $result->row_count, 2;
+  eq_or_diff $result->all->map (sub { $_->{id} })->to_a, [1, 2];
+} # _select_and_where
+
+sub _select_and_where_undef : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2), (3)');
+  
+  my $result = $db->select ('foo', {id => {-gt => 0}},
+                            and_where => undef);
+  is $result->row_count, 3;
+} # _select_and_where_undef
+
 __PACKAGE__->runtests;
 
 1;

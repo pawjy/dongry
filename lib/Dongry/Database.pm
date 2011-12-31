@@ -288,6 +288,9 @@ sub last_insert_id ($) {
 sub select ($$$;%) {
   my ($self, $table_name, $where, %args) = @_;
 
+  if ($args{and_where}) {
+    $where = [':w1:sub AND :w2:sub', w1 => $where, w2 => $args{and_where}];
+  }
   my ($where_sql, $where_bind) = _where ($where, $args{_table_schema});
   croak 'No where' unless $where_sql;
   

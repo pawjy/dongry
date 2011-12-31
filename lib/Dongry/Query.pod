@@ -199,6 +199,13 @@ returned, but this could be modified by C<item_list_filter>.
 Following options is available: C<source_name>, and C<lock>.  If they
 are specified, methods with same names are ignored.
 
+In addition, the C<where_all> option can be specified.  The option, if
+specified, must take a value that is a "where" struct as described in
+the L<Dongry::SQL>.  It is interpreted in the schema-aware way.  The
+conditions represented by the struct is concatenated to the conditions
+of the "where" struct specified as C<< $q->where >> for the purpose of
+SQL execution in this method.
+
 =item $list = $q->find_all (%args)
 
 Execute the query represented by the object and return a list object
@@ -212,6 +219,13 @@ ignored.
 
 Options C<offset> and C<limit> are useful to implement pagers.
 
+In addition, the C<where_all> option can be specified.  The option, if
+specified, must take a value that is a "where" struct as described in
+the L<Dongry::SQL>.  It is interpreted in the schema-aware way.  The
+conditions represented by the struct is concatenated to the conditions
+of the "where" struct specified as C<< $q->where >> for the purpose of
+SQL execution in this method.
+
 =item $count = $q->count
 
 Execute the query represeted by the the object and return the number
@@ -221,6 +235,13 @@ This method is not affected by C<item_list_filter>.
 
 Following options is available: C<source_name>, and C<lock>.  If they
 are specified, methods with same names are ignored.
+
+In addition, the C<where_all> option can be specified.  The option, if
+specified, must take a value that is a "where" struct as described in
+the L<Dongry::SQL>.  It is interpreted in the schema-aware way.  The
+conditions represented by the struct is concatenated to the conditions
+of the "where" struct specified as C<< $q->where >> for the purpose of
+SQL execution in this method.
 
 =back
 

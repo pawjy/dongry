@@ -350,6 +350,42 @@ sub _find_3_limit : Test(6) {
   is $q->count (limit => 2), 3;
 } # _find_3_limit
 
+sub _find_and_where : Test(3) {
+  my $db = new_db schema => {foo => {}};
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2), (3)');
+  
+  my $q = $db->query (table_name => 'foo',
+                      where => {id => {-gt => 0}},
+                      order => [id => -1]);
+
+  my $row = $q->find (and_where => {id => {-lt => 3}});
+  is $row->get ('id'), 2;
+
+  my $list = $q->find_all (and_where => {id => {-lt => 3}});
+  eq_or_diff $list->map (sub { $_->get ('id') })->to_a, [2, 1];
+
+  is $q->count (and_where => {id => {-lt => 3}}), 2;
+} # _find_and_where
+
+sub _find_and_where_undef : Test(3) {
+  my $db = new_db schema => {foo => {}};
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2), (3)');
+  
+  my $q = $db->query (table_name => 'foo',
+                      where => {id => {-gt => 0}},
+                      order => [id => -1]);
+
+  my $row = $q->find (and_where => undef);
+  is $row->get ('id'), 3;
+
+  my $list = $q->find_all (and_where => undef);
+  eq_or_diff $list->map (sub { $_->get ('id') })->to_a, [3, 2, 1];
+
+  is $q->count (and_where => undef), 3;
+} # _find_and_where_undef
+
 sub _find_source_name : Test(22) {
   my $db1 = new_db schema => {
     table1 => {

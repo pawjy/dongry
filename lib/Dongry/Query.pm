@@ -78,6 +78,7 @@ sub find_all {
            ($self->where,
             distinct => $self->distinct,
             fields => $self->fields,
+            and_where => $args{and_where},
             group => $self->group,
             order => $self->order,
             offset => $args{offset},
@@ -93,6 +94,7 @@ sub find {
       ($self->table->find_all
            ($self->where,
             fields => $self->fields,
+            and_where => $args{and_where},
             group => $self->group,
             order => $self->order,
             offset => 0,
@@ -122,6 +124,7 @@ sub count {
   my $row = $self->table->find
       ($self->where,
        %param,
+       and_where => $args{and_where},
        source_name => $args{source_name} || $self->source_name,
        lock => $args{lock} || $self->lock);
   return $row ? $row->get ('count') : 0;

@@ -445,6 +445,42 @@ sub _find_limit : Test(10) {
   is ${$row_list->[1]->get ('col2')}, 'abc def';
 } # _find_limit
 
+sub _find_and_where : Test(2) {
+  my $db = new_db schema => {foo => {}};
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2), (3)');
+  
+  my $table = $db->table ('foo');
+
+  my $row = $table->find ({id => {-gt => 0}},
+                          and_where => {id => {-lt => 3}},
+                          order => [id => -1]);
+  is $row->get ('id'), 2;
+
+  my $list = $table->find_all ({id => {-gt => 0}},
+                               and_where => {id => {-lt => 3}},
+                               order => [id => -1]);
+  eq_or_diff $list->map (sub { $_->get ('id') })->to_a, [2, 1];
+} # _find_and_where
+
+sub _find_and_where_undef : Test(2) {
+  my $db = new_db schema => {foo => {}};
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2), (3)');
+  
+  my $table = $db->table ('foo');
+
+  my $row = $table->find ({id => {-gt => 0}},
+                          and_where => undef,
+                          order => [id => -1]);
+  is $row->get ('id'), 3;
+
+  my $list = $table->find_all ({id => {-gt => 0}},
+                               and_where => undef,
+                               order => [id => -1]);
+  eq_or_diff $list->map (sub { $_->get ('id') })->to_a, [3, 2, 1];
+} # _find_and_where_undef
+
 sub _find_source_name : Test(9) {
   my $schema = {
     table1 => {
