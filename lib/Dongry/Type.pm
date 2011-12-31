@@ -43,6 +43,36 @@ $Dongry::Types->{text_as_ref} = {
   }, # serialize
 }; # text_as_ref
 
+$Dongry::Types->{null_filled} = {
+  parse => sub {
+    if (defined $_[0]) {
+      my $v = $_[0];
+      $v =~ s/\x00+\z//;
+      return $v;
+    } else {
+      return undef;
+    }
+  }, # parse
+  serialize => sub {
+    return defined $_[0] ? encode 'utf-8', $_[0] : $_[0];
+  }, # serialize
+}; # null_filled
+
+$Dongry::Types->{text_null_filled} = {
+  parse => sub {
+    if (defined $_[0]) {
+      my $v = $_[0];
+      $v =~ s/\x00+\z//;
+      return decode 'utf-8', $v;
+    } else {
+      return undef;
+    }
+  }, # parse
+  serialize => sub {
+    return defined $_[0] ? encode 'utf-8', $_[0] : $_[0];
+  }, # serialize
+}; # text_null_filled
+
 1;
 
 =head1 LICENSE

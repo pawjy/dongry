@@ -544,7 +544,7 @@ sub _text_as_ref_zero_ref : Test(3) {
   is $row->get_bare ('value'), '0';
 } # _text_as_ref_zero_ref
 
-sub _text_as_ref_not_reef : Test(3) {
+sub _text_as_ref_not_ref : Test(3) {
   my $db = new_db schema => {
     table1 => {
       primary_keys => ['id'],
@@ -563,6 +563,106 @@ sub _text_as_ref_not_reef : Test(3) {
   };
   is $DBIx::ShowSQL::SQLCount, 0;
 } # _text_as_ref_not_ref
+
+sub _null_filled : Test(14) {
+  my $db = new_db schema => {
+    table1 => {
+      primary_keys => ['id'],
+      type => {value => 'null_filled'},
+      _create => 'CREATE TABLE table1 (id INT, value BINARY(12))',
+    },
+  };
+  $db->insert ('table1', [{id => 123, value => 'abc'}]);
+
+  my $row = $db->table ('table1')->find ({id => 123});
+  is $row->get ('value'), 'abc';
+  is $row->get_bare ('value'), "abc\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+
+  $row->update ({value => 'xyz'});
+  $row->reload;
+  is $row->get ('value'), 'xyz';
+  is $row->get_bare ('value'), "xyz\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+
+  $row->update ({value => '1234567890123456'});
+  $row->reload;
+  is $row->get ('value'), '123456789012';
+  is $row->get_bare ('value'), '123456789012';
+
+  $row->update ({value => undef});
+  $row->reload;
+  is $row->get ('value'), undef;
+  is $row->get_bare ('value'), undef;
+
+  $row->update ({value => ''});
+  $row->reload;
+  is $row->get ('value'), '';
+  is $row->get_bare ('value'), 
+      "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+
+  $row->update ({value => "\x00"});
+  $row->reload;
+  is $row->get ('value'), '';
+  is $row->get_bare ('value'),
+      "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+
+  $row->update ({value => "ab\x00c"});
+  $row->reload;
+  is $row->get ('value'), "ab\x00c";
+  is $row->get_bare ('value'), "ab\x00c\x00\x00\x00\x00\x00\x00\x00\x00";
+} # _null_filled
+
+sub _text_null_filled : Test(16) {
+  my $db = new_db schema => {
+    table1 => {
+      primary_keys => ['id'],
+      type => {value => 'text_null_filled'},
+      _create => 'CREATE TABLE table1 (id INT, value BINARY(12))',
+    },
+  };
+  $db->insert ('table1', [{id => 123, value => 'abc'}]);
+
+  my $row = $db->table ('table1')->find ({id => 123});
+  is $row->get ('value'), 'abc';
+  is $row->get_bare ('value'), "abc\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+
+  $row->update ({value => 'xyz'});
+  $row->reload;
+  is $row->get ('value'), 'xyz';
+  is $row->get_bare ('value'), "xyz\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+
+  $row->update ({value => '1234567890123456'});
+  $row->reload;
+  is $row->get ('value'), '123456789012';
+  is $row->get_bare ('value'), '123456789012';
+
+  $row->update ({value => undef});
+  $row->reload;
+  is $row->get ('value'), undef;
+  is $row->get_bare ('value'), undef;
+
+  $row->update ({value => "\x{6000}\x{2000}\x{100}"});
+  $row->reload;
+  is $row->get ('value'), "\x{6000}\x{2000}\x{100}";
+  is $row->get_bare ('value'),
+      encode 'utf-8', "\x{6000}\x{2000}\x{100}\x00\x00\x00\x00";
+
+  $row->update ({value => ''});
+  $row->reload;
+  is $row->get ('value'), '';
+  is $row->get_bare ('value'), 
+      "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+
+  $row->update ({value => "\x00"});
+  $row->reload;
+  is $row->get ('value'), '';
+  is $row->get_bare ('value'),
+      "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+
+  $row->update ({value => "ab\x00c"});
+  $row->reload;
+  is $row->get ('value'), "ab\x00c";
+  is $row->get_bare ('value'), "ab\x00c\x00\x00\x00\x00\x00\x00\x00\x00";
+} # _text_null_filled
 
 __PACKAGE__->runtests;
 

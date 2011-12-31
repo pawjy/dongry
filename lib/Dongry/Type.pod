@@ -112,6 +112,28 @@ in SQL.
 This data type might be useful when the column is known to handle a
 large length of UTF-8 encoded textual data.
 
+=item null_filled
+
+Accept a byte string or an C<undef> value.  The value is treated as a
+byte string when used as part of SQL.  Trailing U+0000 NULL characters
+in the string from the database is dropped to convert into the Perl
+representation.  The C<undef> value represents the C<NULL> value in
+SQL.
+
+This data type is intended for the use with the fixed-length SQL data
+types such as C<BINARY> or C<CHAR>.
+
+=item text_null_filled
+
+Accept a character string or an C<undef> value.  The value is encoded
+in the Perl C<utf-8> encoding when used as part of SQL.  Trailing
+U+0000 NULL characters in the string from the database is dropped to
+convert into the Perl representation.  The C<undef> value represents
+the C<NULL> value in SQL.
+
+This data type is intended for the use with the fixed-length SQL data
+types such as C<BINARY> or C<CHAR>.
+
 =back
 
 =head1 ADDITIONAL DATA TYPES
