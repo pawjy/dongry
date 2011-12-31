@@ -143,6 +143,29 @@ sub _find_complex : Test(3) {
   is $q->count, 3;
 } # _find_complex
 
+sub _find_distinct : Test(6) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT, val BLOB)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 1}]);
+
+  my $q = $db->query (table_name => 'table1', where => {id => 1});
+  $q->distinct (1);
+  $q->fields ('id');
+  my $row = $q->find;
+  is $row->get ('id'), 1;
+  my $list = $q->find_all;
+  isa_list_n_ok $list, 1;
+  is $list->[0]->get ('id'), 1;
+  is $q->count, 1;
+
+  $q->distinct (0);
+  isa_list_n_ok $q->find_all, 2;
+  is $q->count, 2;
+} # _find_distinct
+
 sub _find_fields : Test(4) {
   my $db = new_db schema => {
     table1 => {

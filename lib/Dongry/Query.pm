@@ -33,6 +33,10 @@ sub table {
   return $_[0]->{table} ||= $_[0]->db->table ($_[0]->table_name);
 } # table
 
+sub distinct ($;$) {
+  if (@_ > 1) { $_[0]->{distinct} = $_[1] } return $_[0]->{distinct};
+} # distinct
+
 sub fields {
   if (@_ > 1) { $_[0]->{fields} = $_[1] } return $_[0]->{fields};
 } # fields
@@ -72,6 +76,7 @@ sub find_all {
   return $self->item_list_filter
       ($self->table->find_all
            ($self->where,
+            distinct => $self->distinct,
             fields => $self->fields,
             group => $self->group,
             order => $self->order,
@@ -103,9 +108,15 @@ sub count {
   my %param;
   my $group = $self->group;
   if ($group) {
+    ## How |$self->group| and |$self->distinct| should interact is
+    ## unclear...
     $param{fields} = {-count => $group, distinct => 1, as => 'count'};
   } else {
-    $param{fields} = {-count => undef, as => 'count'};
+    if ($self->distinct) {
+      $param{fields} = {-count => $self->fields, distinct => 1, as => 'count'};
+    } else {
+      $param{fields} = {-count => undef, as => 'count'};
+    }
   }
 
   my $row = $self->table->find

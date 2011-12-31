@@ -176,8 +176,8 @@ The method returns a (possibly empty) list object containing table row
 objects representing the selected rows.
 
 Following options for the C<select> method of the database object also
-apply to this method: C<fields>, C<group>, C<order>, C<offset>,
-C<limit>, C<source_name>, and C<lock>.
+apply to this method: C<distinct>, C<fields>, C<group>, C<order>,
+C<offset>, C<limit>, C<source_name>, and C<lock>.
 
 Example:
 

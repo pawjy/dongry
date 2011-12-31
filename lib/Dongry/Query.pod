@@ -81,6 +81,12 @@ The database.
 
 The table name.
 
+=item $boolean = $q->distinct
+
+=item $q->distinct ($boolean)
+
+The "distinct" flag.
+
 =item $fields = $q->fields
 
 =item $q->fields ($fields)

@@ -247,6 +247,43 @@ sub _find_fields : Test(7) {
   is ${$row_list->[0]->get ('col2')}, 'abc def';
 } # _find_fields
 
+sub _find_fields_distinct : Test(7) {
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->execute ('insert into table1 (col1, col2)
+                 values ("2001-04-01 00:12:50", "abc def")');
+  $db->execute ('insert into table1 (col1, col2)
+                 values ("2001-04-01 00:12:50", "abc def")');
+
+  my $row = $db->table ('table1')->find
+      ({col1 => DateTime->new (year => 2001, month => 4, day => 1,
+                               hour => 0, minute => 12, second => 50),
+        col2 => \"abc def"},
+       fields => 'col1');
+  isa_ok $row, 'Dongry::Table::Row';
+  is_datetime $row->get ('col1'), '2001-04-01T00:12:50';
+  dies_here_ok { $row->get ('col2') };
+
+  my $row_list = $db->table ('table1')->find_all
+      ({col1 => DateTime->new (year => 2001, month => 4, day => 1,
+                               hour => 0, minute => 12, second => 50),
+        col2 => \"abc def"},
+       fields => 'col2',
+       distinct => 1);
+  isa_list_n_ok $row_list, 1;
+  isa_ok $row_list->[0], 'Dongry::Table::Row';
+  dies_here_ok { $row_list->[0]->get ('col1') };
+  is ${$row_list->[0]->get ('col2')}, 'abc def';
+} # _find_fields_distinct
+
 sub _find_group : Test(10) {
   my $schema = {
     table1 => {

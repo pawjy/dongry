@@ -119,6 +119,7 @@ sub find_all ($$;%) {
       croak sprintf "No schema for table |%s|", $self->table_name;
   return $self->{db}
       ->select ($self->table_name, $values,
+                distinct => $args{distinct},
                 fields => $args{fields},
                 group => $args{group},
                 order => $args{order},

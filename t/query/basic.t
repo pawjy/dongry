@@ -69,6 +69,17 @@ sub _table : Test(4) {
   is $q->table, $q->table;
 } # _table
 
+sub _distinct : Test(3) {
+  my $q = Dongry::Query->new;
+  ng $q->distinct;
+  
+  $q->distinct (1);
+  ok $q->distinct;
+
+  $q->distinct (0);
+  ng $q->distinct;
+} # _distinct
+
 sub _fields : Test(4) {
   my $q = Dongry::Query->new;
   is $q->fields, undef;

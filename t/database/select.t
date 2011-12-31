@@ -840,62 +840,6 @@ sub _select_distinct : Test(2) {
   eq_or_diff $result->all->to_a, [{id => 12, v1 => 'abc', v2 => '322'}];
 } # _select_distinct
 
-sub _fields_valid : Test(29) {
-  my $db = Dongry::Database->new;
-  for (
-    [undef, '*'],
-    ['abc', '`abc`'],
-    ['ab `\\c', '`ab ``\\c`'],
-    ['abc', '`abc`'],
-    ["\x{4010}\x{124}ab", qq{`\x{4010}\x{124}ab`}],
-    [['a', 'bcd'], '`a`, `bcd`'],
-    [['a', "\x{4010}\x{124}ab"], qq{`a`, `\x{4010}\x{124}ab`}],
-    [['a', ['b', ['c']]] => '`a`, `b`, `c`'],
-    [$db->bare_sql_fragment ('ab cde') => 'ab cde'],
-    [$db->bare_sql_fragment ("ab\x{8000} cde") => "ab\x{8000} cde"],
-    [['a', $db->bare_sql_fragment ('count(b) as c')] => '`a`, count(b) as c'],
-    [{-count => undef} => 'COUNT(*)'],
-    [{-count => 1} => 'COUNT(`1`)'],
-    [{-count => 'a'} => 'COUNT(`a`)'],
-    [{-count => "\x{5000}"} => qq{COUNT(`\x{5000}`)}],
-    [{-count => ['a', 'b']} => 'COUNT(`a`, `b`)'],
-    [{-count => 'a', as => 'ab c'} => 'COUNT(`a`) AS `ab c`'],
-    [{-count => 'a', as => "\x{8000}"} => qq{COUNT(`a`) AS `\x{8000}`}],
-    [{-count => undef, distinct => 1} => 'COUNT(DISTINCT *)'],
-    [{-count => 'a', distinct => 1} => 'COUNT(DISTINCT `a`)'],
-    [{-count => "\x{5000}", distinct => 1} => qq{COUNT(DISTINCT `\x{5000}`)}],
-    [{-count => ['a', 'b'], distinct => 1} => 'COUNT(DISTINCT `a`, `b`)'],
-    [{-count => 'a', distinct => 1, as => 'ab c'}
-         => 'COUNT(DISTINCT `a`) AS `ab c`'],
-    [{-count => 'a', distinct => 1, as => "\x{8000}"}
-         => qq{COUNT(DISTINCT `a`) AS `\x{8000}`}],
-    [{-min => 'a', distinct => 1, as => "\x{8000}"}
-         => qq{MIN(DISTINCT `a`) AS `\x{8000}`}],
-    [{-max => 'a', distinct => 1, as => "\x{8000}"}
-         => qq{MAX(DISTINCT `a`) AS `\x{8000}`}],
-    [{-sum => 'a', distinct => 1, as => "\x{8000}"}
-         => qq{SUM(DISTINCT `a`) AS `\x{8000}`}],
-    ['' => '``'],
-    [['a', undef] => '`a`, *'],
-  ) {
-    eq_or_diff Dongry::Database::_fields $_->[0], $_->[1];
-  }
-} # _fields_valid
-
-sub _fields_invalid : Test(5) {
-  for (
-    [],
-    {},
-    {-hoge => 1},
-    {count => 1},
-    [bless {}, 'hoge'],
-  ) {
-    dies_here_ok {
-      Dongry::Database::_fields $_;
-    };
-  }
-} # _fields_invalid
-
 sub _select_fields_none : Test(1) {
   reset_db_set;
   my $dsn = test_dsn 'test1';

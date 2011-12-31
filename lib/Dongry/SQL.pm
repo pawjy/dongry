@@ -27,6 +27,7 @@ sub like ($) {
 
 push @EXPORT, qw(fields);
 sub fields ($);
+our $NoAsInFields;
 sub fields ($) {
   if (not defined $_[0]) {
     return '*';
@@ -43,9 +44,13 @@ sub fields ($) {
     if ($func =~ /\A-(count|min|max|sum)\z/) {
       my $v = (uc $1) . '(';
       $v .= 'DISTINCT ' if $_[0]->{distinct};
-      $v .= fields ($_[0]->{$func});
+      {
+        local $NoAsInFields = 1;
+        $v .= fields ($_[0]->{$func});
+      }
       $v .= ')';
-      $v .= ' AS ' . quote $_[0]->{as} if defined $_[0]->{as};
+      $v .= ' AS ' . quote $_[0]->{as}
+          if defined $_[0]->{as} and not $NoAsInFields;
       return $v;
     } else {
       if ($func) {
