@@ -1328,6 +1328,30 @@ sub _insert_duplicate_update_found_utf8_flagged_value : Test(2) {
               {v1 => 2, v2 => 422, v3 => undef}];
 } # _insert_duplicate_update_found_utf8_flagged_value
 
+sub _insert_bare_fragment : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+
+  $db->insert ('foo', [{id => $db->bare_sql_fragment ('120 * 21')}]);
+
+  my $data = $db->select ('foo', {id => {-not => undef}})->first;
+  is $data->{id}, 120 * 21;
+} # _insert_bare_fragment
+
+sub _insert_bare_fragment_bad : Test(2) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+
+  dies_here_ok {
+    $db->insert ('foo', [{id => $db->bare_sql_fragment ('120 * ')}]);
+  };
+
+  my $data = $db->select ('foo', {id => {-not => undef}});
+  is $data->row_count, 0;
+} # _insert_bare_fragment_bad
+
+# ------ last_insert_id ------
+
 sub _last_insert_id_unknown : Test(1) {
   my $db = Dongry::Database->new;
   is $db->last_insert_id, undef;

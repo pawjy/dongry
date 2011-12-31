@@ -237,10 +237,22 @@ sub insert ($$$;%) {
   my @values;
   my @placeholders;
   for my $data (@$data) {
-    push @values, (map { exists $data->{$_} ? ($data->{$_}) : () } @col);
-    push @placeholders, 
-        '(' . (join ', ', (map { exists $data->{$_}
-                                     ? '?' : 'DEFAULT' } @col)) . ')';
+    push @values, (map {
+      exists $data->{$_}
+          ? (defined $data->{$_} and
+             ref $data->{$_} eq 'Dongry::SQL::BareFragment')
+              ? ()
+              : ($data->{$_})
+          : ()
+    } @col);
+    push @placeholders, '(' . (join ', ', (map {
+      exists $data->{$_}
+          ? (defined $data->{$_} and
+             ref $data->{$_} eq 'Dongry::SQL::BareFragment')
+              ? ${$data->{$_}}
+              : '?'
+          : 'DEFAULT'
+    } @col)) . ')';
   }
   
   my $sql = 'INSERT';
