@@ -15,8 +15,9 @@ geometry data as column value in Dongry.
 
 Perl -> SQL: The input must be a hash reference with keys C<-lat> and
 C<-lon>.  Their values must be the latitude and longitude of a
-geometrical location.  They are converted into the format appropriate
-for the MySQL C<GEOMETRY> data type.
+geometrical location, as decimal fractional numbers.  They are
+converted into the format appropriate for the MySQL C<GEOMETRY> data
+type.
 
 SQL -> Perl: Not supported.  Use functions C<-x> and C<-y> in the
 "fields" struct to extract latitude and longitude from a C<GEOMETRY>

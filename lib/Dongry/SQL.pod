@@ -63,29 +63,96 @@ A hash reference with key/value pairs are converted to function calls
 whose function name is specified by the key and the argument is
 specified by the value.
 
-Following function names are available: C<-count> (in SQL,
-C<COUNT()>), C<-min> (in SQL, C<MIN()>), C<-max> (in SQL, C<MAX()>),
-C<-sum> (in SQL, C<SUM()>), C<-date> (in SQL, C<DATE()>), C<-x> (in
-SQL, C<X()>), and C<-y> (in SQL, C<Y()>).
+Following functions are available:
 
-In addition, following name-value pairs can be specified in the hash
-reference: C<< as => name >> names an alias for the function value (in
-SQL, C<function() AS name>), and C<< distinct => boolean >> adds the
-C<DISTINCT> keyword (in SQL, C<function(DISTINCT args)>).  For the
-C<-date> function, C<< delta => seconds >> adds the specified numbers
-of seconds to the argument (in SQL, C<DATE(args + INTERVAL delta
-SECOND)>).
+=over 4
 
-The C<-distance> function can be used to obtain geographical distance
-between the location represented by a C<GEOMETRY> column and the
-specified location.  It is a shorthand of SQL function C<<
-GLength(GeomFromText(CONCAT('LineString(lon lat,', X(column), ' ',
-Y(column),')'))) >>, where I<lat> and I<lon> are values for keys
-C<lat> and C<lon> and I<column> is the value for the key C<-distance>.
+=item -count => fields-struct
 
-Instead of the function name, keyword C<-column> can be used to denote
-the column whoes name is specified as the value.  For the C<-column>
-"function", only the C<as> option is available.
+The SQL C<COUNT()> function.  The argument value is given by the
+"fields" struct specified as the value.  Options C<as> and C<distinct>
+apply to this function.
+
+=item -min => fields-struct
+
+The SQL C<MIN()> function.  The argument value is given by the
+"fields" struct specified as the value.  Options C<as> and C<distinct>
+apply to this function.
+
+=item -max => fields-struct
+
+The SQL C<MAX()> function.  The argument value is given by the
+"fields" struct specified as the value.  Options C<as> and C<distinct>
+apply to this function.
+
+=item -sum => fields-struct
+
+The SQL C<SUM()> function.  The argument value is given by the
+"fields" struct specified as the value.  Options C<as> and C<distinct>
+apply to this function.
+
+=item -date => column-name
+
+The SQL C<DATE()> function.  The column name used as the argument
+value must be specified as the value.  Options C<as> and C<delta>
+apply to this function.
+
+=item -x => column-name
+
+The SQL C<X()> function.  The column name used as the argument value
+must be specified as the value.  Option C<as> applies to this
+function.
+
+=item -y => column-name
+
+The SQL C<Y()> function.  The column name used as the argument value
+must be specified as the value.  Option C<as> applies to this
+function.
+
+=item -distance => column-name, lat => number, lon => number
+
+Geographical distance between the location represented by a
+C<GEOMETRY> column and the specified location.  It is a shorthand of
+SQL function C<< GLength(GeomFromText(CONCAT('LineString(lon lat,',
+X(column), ' ', Y(column),')'))) >>, where I<lat> and I<lon> are
+values for keys C<lat> and C<lon>, representing the location by its
+latitude and longitude as decimal fractional numbers, and I<column> is
+the value for the key C<-distance>.  Options C<lat> and C<lon> must be
+specified.
+
+=item -column => column-name
+
+The column whoes name is specified as the value.  Option C<as> applies
+to this function.  Without the C<as> option, this is equivalent to
+just specifying the colum name as a string (not within a hash
+reference).
+
+=back
+
+In addition to the function name/value pair, following options can be
+specified in the hash reference:
+
+=over 4
+
+=item as => name
+
+Define the alias name for the value (in SQL, C<... AS name>).
+
+=item distinct => boolean
+
+Add the C<DISTINCT> keyword in the function argument (in SQL,
+C<function(DISTINCT args)>).
+
+=item delta => seconds
+
+Add the specified numbers of seconds to the argument (in SQL,
+C<DATE(args + INTERVAL delta SECOND)>).  This option only applies to
+the C<-date> function.
+
+=back
+
+Options C<lat> and C<lon> only apply to C<-distance>, as described
+above.
 
 =item - Array reference
 
