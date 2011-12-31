@@ -38,5 +38,6 @@ $root_d->recurse (callback => sub {
           'Test::MySQL::CreateDatabase' => 0,
           'Data::Dumper' => 0,
           'SQL::ShowSQL' => 0,
+          'Dongry::Type::DateTime' => 0, # Oops...
       },
   };
