@@ -14,32 +14,47 @@ epoch time) format in Perl.
 
 =item timestamp
 
-SQL format: Canonical representation of L<TIMESTAMP> in MySQL 5, in
-the UTC time zone.
+Perl -> SQL: The input must be an integer or the C<undef> value.  If
+the input is an integer, it is interpreted as a Unix timestamp and
+converted into the canonical representation of the C<TIMESTAMP> data
+type in MySQL version 5, in the UTC time zone.  The C<undef> value is
+converted into C<0000-00-00 00:00:00>.
 
-Perl value: Integer of seconds from the Unix epoch (i.e. the Unix
-epoch time or time_t format).
-
-SQL C<0000-00-00 00:00:00> value is mapped to Perl C<undef> value.
+SQL -> Perl: The input must be a date-time in the canonical
+representation of the C<TIMESTAMP> data type in MySQL version 5, in
+the UTC time zone.  If the input is C<0000-00-00 00:00:00>, the
+C<undef> value is returned.  Otherwise, the Unix timestamp for the
+date-time is returned.
 
 =item timestamp_jst
 
-SQL format: Canonical representation of L<TIMESTAMP> in MySQL 5, in
-the Japanese Central Standard Time (+09:00).
+Perl -> SQL: The input must be an integer or the C<undef> value.  If
+the input is an integer, it is interpreted as a Unix timestamp and
+converted into the canonical representation of the C<TIMESTAMP> data
+type in MySQL version 5, in the Japanese Central Standard Time
+(+09:00).  The C<undef> value is converted into C<0000-00-00
+00:00:00>.
 
-Perl value: Integer of seconds from the Unix epoch (i.e. the Unix
-epoch time or time_t format).
-
-SQL C<0000-00-00 00:00:00> value is mapped to Perl C<undef> value.
+SQL -> Perl: The input must be a date-time in the canonical
+representation of the C<TIMESTAMP> data type in MySQL version 5, in
+the Japanese Central Standard Time (+09:00).  If the input is
+C<0000-00-00 00:00:00>, the C<undef> value is returned.  Otherwise,
+the Unix timestamp for the date-time is returned.
 
 =item date
 
-SQL format: Canonical representation of L<DATE> in MySQL 5.
+Perl -> SQL: The input must be an integer or the C<undef> value.  If
+the input is an integer, it is interpreted as a Unix timestamp and
+converted into the canonical representation of the C<DATE> data type
+in MySQL version 5, in the UTC time zone.  The time (hour, minute, and
+second) component is ignored.  The C<undef> value is converted into
+C<0000-00-00>.
 
-Perl value: Integer of seconds from the Unix epoch (i.e. the Unix
-epoch time or time_t format) of time 00:00:00 in UTC.
-
-SQL C<0000-00-00> value is mapped to Perl C<undef> value.
+SQL -> Perl: The input must be a date in the canonical representation
+of the C<DATE> data type in MySQL version 5.  If the input is
+C<0000-00-00>, the C<undef> value is returned.  Otherwise, the Unix
+timestamp for the date, with the time component set to 00:00:00 UTC,
+is returned.
 
 =back
 

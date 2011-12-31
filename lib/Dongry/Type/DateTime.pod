@@ -14,29 +14,45 @@ L<DateTime> object.
 
 =item timestamp_as_DateTime
 
-SQL format: Canonical representation of L<TIMESTAMP> in MySQL 5, in
-the UTC time zone.
+Perl -> SQL: The input must be a L<DateTime> object or the C<undef>
+value.  If the input is a L<DateTime> object, it is converted into the
+canonical representation of the C<TIMESTAMP> data type in MySQL
+version 5, in the UTC time zone.  The C<undef> value is converted into
+C<0000-00-00 00:00:00>.
 
-Perl value: Perl L<DateTime> object.
-
-SQL C<0000-00-00 00:00:00> value is mapped to Perl C<undef> value.
+SQL -> Perl: The input must be a date-time in the canonical
+representation of the C<TIMESTAMP> data type in MySQL version 5, in
+the UTC time zone.  If the input is C<0000-00-00 00:00:00>, the
+C<undef> value is returned.  Otherwise, the L<DateTime> object for the
+date-time is returned.
 
 =item timestamp_jst_as_DateTime
 
-SQL format: Canonical representation of L<TIMESTAMP> in MySQL 5, in
-the Japanese Central Standard Time (+09:00).
+Perl -> SQL: The input must be a L<DateTime> object or the C<undef>
+value.  If the input is a L<DateTime> object, it is converted into the
+canonical representation of the C<TIMESTAMP> data type in MySQL
+version 5, in the Japanese Central Standard Time (+09:00).  The
+C<undef> value is converted into C<0000-00-00 00:00:00>.
 
-Perl value: Perl L<DateTime> object.
-
-SQL C<0000-00-00 00:00:00> value is mapped to Perl C<undef> value.
+SQL -> Perl: The input must be a date-time in the canonical
+representation of the C<TIMESTAMP> data type in MySQL version 5, in
+the Japanese Central Standard Time (+09:00).  If the input is
+C<0000-00-00 00:00:00>, the C<undef> value is returned.  Otherwise,
+the L<DateTime> object for the date-time is returned.
 
 =item date_as_DateTime
 
-SQL format: Canonical representation of L<DATE> in MySQL 5.
+Perl -> SQL: The input must be a L<DateTime> object or the C<undef>
+value.  If the input is a L<DateTime> object, it is converted into the
+canonical representation of the C<DATE> data type in MySQL version 5,
+in the UTC time zone.  The time (hour, minute, and second) component
+is ignored.  The C<undef> value is converted into C<0000-00-00>.
 
-Perl value: Perl L<DateTime> object of time 00:00:00 in UTC.
-
-SQL C<0000-00-00> value is mapped to Perl C<undef> value.
+SQL -> Perl: The input must be a date in the canonical representation
+of the C<DATE> data type in MySQL version 5.  If the input is
+C<0000-00-00>, the C<undef> value is returned.  Otherwise, the
+L<DateTime> object for the date, with the time component set to
+00:00:00 UTC, is returned.
 
 =back
 

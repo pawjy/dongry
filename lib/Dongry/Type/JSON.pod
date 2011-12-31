@@ -13,11 +13,13 @@ JSON-encoded data structure as column value in Dongry.
 
 =item json
 
-SQL format: A byte string in the JSON format.
+Perl -> SQL: The input must be a scalar value.  If it is not the
+C<undef> value, it is converted into JSON.
 
-Perl value: A Perl scalar value.
+SQL -> Perl: The input must be a byte string or the C<undef> value.
+If it is not the C<undef> value, it is parsed as JSON.
 
-SQL C<NULL> value is mapped to Perl C<undef> value.
+The Perl C<undef> value represents the C<NULL> value of SQL.
 
 =back
 
