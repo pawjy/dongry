@@ -41,7 +41,7 @@ sub fields ($) {
     }
   } elsif (ref $_[0] eq 'HASH') {
     my $func = [grep { /^-/ } keys %{$_[0]}]->[0] || '';
-    if ($func =~ /\A-(count|min|max|sum)\z/) {
+    if ($func =~ /\A-(count|min|max|sum|date)\z/) {
       my $v = (uc $1) . '(';
       $v .= 'DISTINCT ' if $_[0]->{distinct};
       {
@@ -49,6 +49,11 @@ sub fields ($) {
         $v .= fields ($_[0]->{$func});
       }
       $v .= ')';
+      $v .= ' AS ' . quote $_[0]->{as}
+          if defined $_[0]->{as} and not $NoAsInFields;
+      return $v;
+    } elsif ($func eq '-column') {
+      my $v = quote $_[0]->{$func};
       $v .= ' AS ' . quote $_[0]->{as}
           if defined $_[0]->{as} and not $NoAsInFields;
       return $v;

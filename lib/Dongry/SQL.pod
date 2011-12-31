@@ -61,13 +61,19 @@ used as is.
 
 A hash reference with key/value pairs are converted to function calls
 whose function name is specified by the key and the argument is
-specified by the value.  Following function names are available:
-C<-count> (in SQL, C<COUNT()>), C<-min> (in SQL, C<MIN()>), C<-max>
-(in SQL, C<MAX()>), and C<-sum> (in SQL, C<SUM()>).  In addition,
-following name-value pairs can be specified in the hash reference: 
-C<< as => name >> names an alias for the function value (in SQL,
-C<function() AS name>), and C<< distinct => boolean >> adds the
+specified by the value.
+
+Following function names are available: C<-count> (in SQL,
+C<COUNT()>), C<-min> (in SQL, C<MIN()>), C<-max> (in SQL, C<MAX()>),
+C<-sum> (in SQL, C<SUM()>), and C<-date> (in SQL, C<DATE()>).  In
+addition, following name-value pairs can be specified in the hash
+reference: C<< as => name >> names an alias for the function value (in
+SQL, C<function() AS name>), and C<< distinct => boolean >> adds the
 C<DISTINCT> keyword (in SQL, C<function(DISTINCT args)>).
+
+Instead of the function name, keyword C<-column> can be used to denote
+the column whoes name is specified as the value.  For the C<-column>
+"function", only the C<as> option is available.
 
 =item - Array reference
 
