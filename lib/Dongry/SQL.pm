@@ -130,36 +130,41 @@ sub where ($;$) {
   if (ref $values eq 'HASH') {
     my @and;
     my @placeholder;
-    for my $key (keys %$values) {
+    my @key = keys %$values;
+    @key = sort { $a cmp $b } @key if $SortKeys;
+    for my $key (@key) {
       if (defined $values->{$key} and ref $values->{$key} eq 'HASH') {
-        my $type = [grep { /^[-<>!=]/ } keys %{$values->{$key}}]->[0];
-
-        if ($type eq '-in') {
-          my $list = $values->{$key}->{$type};
-          croak "List for |-in| is empty" unless @{$list or []};
-          push @and, (quote $key) .
-              ' IN (' . (join ', ', ('?') x @$list) . ')';
-          my $coltype = $table_schema->{type}->{$key};
-          my $handler;
-          if ($coltype) {
-            $handler = $Dongry::Types->{$coltype}
-                or croak "Type handler for |$coltype| is not defined";
-          }
-          push @placeholder, grep {
-            croak "An undef is found in |-in| list" if not defined $_;
-            croak "A reference is found in |-in| list" if ref $_;
-            1;
-          } map {
+        my @type = grep { /^[-<>!=]/ } keys %{$values->{$key}};
+        croak "No operation is specified for column |$key|" unless @type;
+        @type = sort { $a cmp $b } @type if $SortKeys;
+        for my $type (@type) {
+          if ($type eq '-in') {
+            my $list = $values->{$key}->{$type};
+            croak "List for |-in| is empty" unless @{$list or []};
+            push @and, (quote $key) .
+                ' IN (' . (join ', ', ('?') x @$list) . ')';
+            my $coltype = $table_schema->{type}->{$key};
+            my $handler;
             if ($coltype) {
-              $handler->{serialize}->($_);
-            } else {
-              $_;
+              $handler = $Dongry::Types->{$coltype}
+                  or croak "Type handler for |$coltype| is not defined";
             }
-          } @$list;
-        } else {
-          push @and,
-              _where_exp $key, $type, $table_schema, $values->{$key}->{$type}
-                  => \@placeholder;
+            push @placeholder, grep {
+              croak "An undef is found in |-in| list" if not defined $_;
+              croak "A reference is found in |-in| list" if ref $_;
+              1;
+            } map {
+              if ($coltype) {
+                $handler->{serialize}->($_);
+              } else {
+                $_;
+              }
+            } @$list;
+          } else {
+            push @and,
+                _where_exp $key, $type, $table_schema, $values->{$key}->{$type}
+                    => \@placeholder;
+          }
         } # $type
       } else {
         push @and, _where_exp $key, '-eq', $table_schema, $values->{$key}
@@ -168,7 +173,6 @@ sub where ($;$) {
     } # $values
 
     if (@and) {
-      @and = sort { $a cmp $b } @and if $SortKeys;
       return ((join ' AND ', @and), \@placeholder);
     } else {
       croak "No condition is specified";

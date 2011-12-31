@@ -123,8 +123,8 @@ If the value is not a hash reference, it is equivalent to specifying a
 hash reference whoes key is C<-eq> and whoes value is the specified
 value.
 
-If the value is a hash reference, it must contain a key/value pair
-whose key is one of the following values:
+If the value is a hash reference, it must contain one or more
+key/value pairs where a key is one of the following values:
 
 =over 4
 
@@ -200,6 +200,9 @@ values for the C<(?, ?, ..., ?)> portion.  It must not be empty.
 
 =back
 
+If more than one keys from the list above is specified, they are
+concatenated by the C<AND> operator.
+
 Column values are interpreted in schema-aware ways if a table schema
 is given to the function.
 
@@ -209,6 +212,7 @@ Examples:
   {foo => {-ne => undef}}          # `foo` IS NOT NULL
   {foo => {-prefix => '40%'}}      # `foo` LIKE '40\%%'
   {foo => {-in => ['abc', 'def']}} # `foo` IN ('abc', 'def')
+  {foo => {-gt => 20, -lt => 100}} # `foo` > 20 AND `foo` < 100
 
 =item - Array reference
 

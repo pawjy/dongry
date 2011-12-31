@@ -8,10 +8,11 @@ use base qw(Test::Class);
 use Dongry::SQL qw(where);
 use Dongry::Type::DateTime;
 use Encode;
+use Data::Dumper;
 
 $Dongry::SQL::SortKeys = 1;
 
-sub _where_valid_hashref : Test(48) {
+sub _where_valid_hashref : Test(51) {
   for (
       [{foo => undef} => ['`foo` IS NULL', []]],
       [{foo => ''} => ['`foo` = ?', ['']]],
@@ -64,15 +65,57 @@ sub _where_valid_hashref : Test(48) {
            => ['`baz` = ? AND `foo` = ?', ['hoge', 'bar']]],
       [{foo => 'bar', 'baz' => undef}
            => ['`baz` IS NULL AND `foo` = ?', ['bar']]],
+      [{bar => 160, foo => 120} => ['`bar` = ? AND `foo` = ?', [160, 120]]],
       [{foo => 'bar', 'baz' => {-not => undef}}
            => ['`baz` IS NOT NULL AND `foo` = ?', ['bar']]],
       [{foo => 'bar', 'baz' => {-not => undef}, 'ab `c)' => {-lt => 120}}
            => ['`ab ``c)` < ? AND `baz` IS NOT NULL AND `foo` = ?',
                [120, 'bar']]],
+      [{foo => {-le => 120, -gt => 89}}
+           => ['`foo` > ? AND `foo` <= ?', [89, 120]]],
+      [{foo => {-le => 120, -in => [10, 20]}}
+           => ['`foo` IN (?, ?) AND `foo` <= ?', [10, 20, 120]]],
   ) {
     eq_or_diff [where ($_->[0])], $_->[1];
   }
 } # _where_valid_hashref
+
+sub _where_no_sort : Test(5) {
+  local $Dongry::SQL::SortKeys = 0;
+  for (
+    [{foo => 12, bar => 23} =>
+     [
+       ['`foo` = ? AND `bar` = ?', [12, 23]],
+       ['`bar` = ? AND `foo` = ?', [23, 12]],
+     ]],
+    [{foo => 50, bar => 23} =>
+     [
+       ['`foo` = ? AND `bar` = ?', [50, 23]],
+       ['`bar` = ? AND `foo` = ?', [23, 50]],
+     ]],
+    [{foo => {-lt => 50}, bar => 23} =>
+     [
+       ['`foo` < ? AND `bar` = ?', [50, 23]],
+       ['`bar` = ? AND `foo` < ?', [23, 50]],
+     ]],
+    [{abc => {-lt => 50}, bar => 23} =>
+     [
+       ['`abc` < ? AND `bar` = ?', [50, 23]],
+       ['`bar` = ? AND `abc` < ?', [23, 50]],
+     ]],
+    [{foo => {-lt => 50, -gt => 20}, bar => 23} =>
+     [
+       ['`foo` < ? AND `foo` > ? AND `bar` = ?', [50, 20, 23]],
+       ['`foo` > ? AND `foo` < ? AND `bar` = ?', [20, 50, 23]],
+       ['`bar` = ? AND `foo` < ? AND `foo` > ?', [23, 50, 20]],
+       ['`bar` = ? AND `foo` > ? AND `foo` < ?', [23, 20, 50]],
+     ]],
+  ) {
+    my $got = Dumper [where ($_->[0])];
+    my @expected = map { Dumper $_ } @{$_->[1]};
+    ok ((grep { $got eq $_ } @expected), $got);
+  }
+} # _where_no_sort
 
 sub _where_bad_operator : Test(6) {
   for (
