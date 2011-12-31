@@ -156,6 +156,29 @@ The Perl C<undef> value represents the C<NULL> value of SQL.
 This data type is intended for the use with the fixed-length SQL data
 types such as C<BINARY> or C<CHAR>.
 
+=item set
+
+Perl -> SQL: The input must be a hash reference.  The hash keys whose
+values are true is joined by a comma (C<,>) character and then the
+result string is returned.
+
+SQL -> Perl: The input must be a byte string.  It is split by a comma
+(C<,>) character and then a hash reference where the hash keys are the
+obtained items and the hash values are true is returned.
+
+This data type is intended for the use with the SQL C<SET> data type.
+
+Example:
+
+  $db->schema ({foo => {bar => 'set'}});
+  my $row = $db->table ('foo')->find (...);
+  my $set = $row->get ('bar');    # {value2 => 1, value3 => 1}
+  warn $set->{value1} || 0, "\t",
+       $set->{value2} || 0, "\t",
+       $set->{value3} || 0;       # 0  1  1
+  $set->{value1} = delete $set->{value2};
+  $row->update (bar => $set);     # `bar` = 'value1,value3'
+
 =back
 
 =head1 ADDITIONAL DATA TYPES

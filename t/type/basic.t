@@ -564,6 +564,8 @@ sub _text_as_ref_not_ref : Test(3) {
   is $DBIx::ShowSQL::SQLCount, 0;
 } # _text_as_ref_not_ref
 
+# ------ null_filled ------
+
 sub _null_filled : Test(14) {
   my $db = new_db schema => {
     table1 => {
@@ -610,6 +612,8 @@ sub _null_filled : Test(14) {
   is $row->get ('value'), "ab\x00c";
   is $row->get_bare ('value'), "ab\x00c\x00\x00\x00\x00\x00\x00\x00\x00";
 } # _null_filled
+
+# ------ text_null_filled ------
 
 sub _text_null_filled : Test(16) {
   my $db = new_db schema => {
@@ -663,6 +667,53 @@ sub _text_null_filled : Test(16) {
   is $row->get ('value'), "ab\x00c";
   is $row->get_bare ('value'), "ab\x00c\x00\x00\x00\x00\x00\x00\x00\x00";
 } # _text_null_filled
+
+# ------ set ------
+
+sub _set : Test(4) {
+  my $db = new_db schema => {
+    table1 => {
+      primary_keys => ['id'],
+      type => {value => 'set'},
+      _create => 'CREATE TABLE table1 (id INT, value SET("a","b","c"))',
+    },
+  };
+  $db->insert ('table1', [{id => 123, value => 'a,b'}]);
+
+  my $row = $db->table ('table1')->find ({id => 123});
+  eq_or_diff $row->get ('value'), {a => 1, b => 1};
+  is $row->get_bare ('value'), 'a,b';
+
+  $row->update ({value => {a => 2, b => 0, c => 1, d => 4}});
+  $row->reload;
+  eq_or_diff $row->get ('value'), {a => 1, c => 1};
+  like $row->get_bare ('value'), qr{^(?:a,c|c,a)$};
+} # _set
+
+sub _set_2 : Test(6) {
+  my $db = new_db schema => {
+    table1 => {
+      primary_keys => ['id'],
+      type => {value => 'set'},
+      _create => 'CREATE TABLE table1 (id INT, value SET("hoge","fug"))',
+    },
+  };
+  $db->insert ('table1', [{id => 123, value => undef}]);
+
+  my $row = $db->table ('table1')->find ({id => 123});
+  eq_or_diff $row->get ('value'), {};
+  is $row->get_bare ('value'), undef;
+
+  $row->update ({value => undef});
+  $row->reload;
+  eq_or_diff $row->get ('value'), {};
+  is $row->get_bare ('value'), '';
+
+  $row->update ({value => {hoge => 1}});
+  $row->reload;
+  eq_or_diff $row->get ('value'), {hoge => 1};
+  is $row->get_bare ('value'), 'hoge';
+} # _set_2
 
 __PACKAGE__->runtests;
 

@@ -73,6 +73,15 @@ $Dongry::Types->{text_null_filled} = {
   }, # serialize
 }; # text_null_filled
 
+$Dongry::Types->{set} = {
+  parse => sub {
+    return defined $_[0] ? {map { $_ => 1 } split /,/, $_[0]} : {};
+  }, # parse
+  serialize => sub {
+    return join ',', grep { $_[0]->{$_} } keys %{$_[0] or {}};
+  }, # serialize
+}; # set
+
 1;
 
 =head1 LICENSE
