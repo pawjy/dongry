@@ -1,0 +1,51 @@
+=head1 NAME
+
+Dongry::Type::Geo - Dongry data types for geometry data
+
+=head1 DESCRIPTION
+
+The C<Dongry::Type::Geometry> module defines data types for handing
+geometry data as column value in Dongry.
+
+=head1 DATA TYPES
+
+=over 4
+
+=item geometry
+
+Perl -> SQL: The input must be a hash reference with keys C<-lat> and
+C<-lon>.  Their values must be the latitude and longitude of a
+geometrical location.  They are converted into the format appropriate
+for the MySQL C<GEOMETRY> data type.
+
+SQL -> Perl: Not supported.  Use functions C<-x> and C<-y> in the
+"fields" struct to extract latitude and longitude from a C<GEOMETRY>
+column, as described in L<Dongry::SQL> documentation.
+
+At the time of writing the data type supports only a limited aspect of
+the C<GEOMETRY> data type of MySQL.
+
+=back
+
+=head1 SEE ALSO
+
+L<Dongry::Type>.
+
+MySQL 5.6 Manual - MySQL Spatial Data Types
+<http://dev.mysql.com/doc/refman/5.6/en/mysql-spatial-datatypes.html>.
+
+MySQL 5.6 Manual - Creating Spatial Values
+<http://dev.mysql.com/doc/refman/5.6/en/creating-spatial-values.html>.
+
+=head1 AUTHOR
+
+Wakaba <w@suika.fam.cx>.
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

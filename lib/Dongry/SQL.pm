@@ -41,7 +41,7 @@ sub fields ($) {
     }
   } elsif (ref $_[0] eq 'HASH') {
     my $func = [grep { /^-/ } keys %{$_[0]}]->[0] || '';
-    if ($func =~ /\A-(count|min|max|sum|date)\z/) {
+    if ($func =~ /\A-(count|min|max|sum|date|x|y)\z/) {
       my $v = (uc $1) . '(';
       $v .= 'DISTINCT ' if $_[0]->{distinct};
       {

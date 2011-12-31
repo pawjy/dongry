@@ -65,7 +65,8 @@ specified by the value.
 
 Following function names are available: C<-count> (in SQL,
 C<COUNT()>), C<-min> (in SQL, C<MIN()>), C<-max> (in SQL, C<MAX()>),
-C<-sum> (in SQL, C<SUM()>), and C<-date> (in SQL, C<DATE()>).
+C<-sum> (in SQL, C<SUM()>), C<-date> (in SQL, C<DATE()>), C<-x> (in
+SQL, C<X()>), and C<-y> (in SQL, C<Y()>).
 
 In addition, following name-value pairs can be specified in the hash
 reference: C<< as => name >> names an alias for the function value (in
