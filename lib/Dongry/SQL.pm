@@ -48,6 +48,9 @@ sub fields ($) {
         local $NoAsInFields = 1;
         $v .= fields ($_[0]->{$func});
       }
+      if ($func eq '-date' and $_[0]->{delta}) {
+        $v .= sprintf ' + INTERVAL %d SECOND', $_[0]->{delta};
+      }
       $v .= ')';
       $v .= ' AS ' . quote $_[0]->{as}
           if defined $_[0]->{as} and not $NoAsInFields;

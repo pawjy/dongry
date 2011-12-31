@@ -65,11 +65,15 @@ specified by the value.
 
 Following function names are available: C<-count> (in SQL,
 C<COUNT()>), C<-min> (in SQL, C<MIN()>), C<-max> (in SQL, C<MAX()>),
-C<-sum> (in SQL, C<SUM()>), and C<-date> (in SQL, C<DATE()>).  In
-addition, following name-value pairs can be specified in the hash
+C<-sum> (in SQL, C<SUM()>), and C<-date> (in SQL, C<DATE()>).
+
+In addition, following name-value pairs can be specified in the hash
 reference: C<< as => name >> names an alias for the function value (in
 SQL, C<function() AS name>), and C<< distinct => boolean >> adds the
-C<DISTINCT> keyword (in SQL, C<function(DISTINCT args)>).
+C<DISTINCT> keyword (in SQL, C<function(DISTINCT args)>).  For the
+C<-date> function, C<< delta => seconds >> adds the specified numbers
+of seconds to the argument (in SQL, C<DATE(args + INTERVAL delta
+SECOND)>).
 
 Instead of the function name, keyword C<-column> can be used to denote
 the column whoes name is specified as the value.  For the C<-column>

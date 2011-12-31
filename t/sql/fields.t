@@ -11,7 +11,7 @@ sub bare_sql_fragment ($) {
   return bless \($_[0]), 'Dongry::SQL::BareFragment';
 } # bare_sql_fragment
 
-sub _fields_valid : Test(36) {
+sub _fields_valid : Test(40) {
   for (
     [undef, '*'],
     ['abc', '`abc`'],
@@ -56,6 +56,14 @@ sub _fields_valid : Test(36) {
          => 'MAX(DATE(`created`)) AS `date`'],
     [{-count => {-date => 'created'}, as => 'date', distinct => 1}
          => 'COUNT(DISTINCT DATE(`created`)) AS `date`'],
+    [{-date => 'created', as => 'date', delta => 0}
+         => 'DATE(`created`) AS `date`'],
+    [{-date => 'created', as => 'date', delta => 120}
+         => 'DATE(`created` + INTERVAL 120 SECOND) AS `date`'],
+    [{-date => 'created', as => 'date', delta => -120}
+         => 'DATE(`created` + INTERVAL -120 SECOND) AS `date`'],
+    [{-date => 'created', as => 'date', delta => 'abc'}
+         => 'DATE(`created` + INTERVAL 0 SECOND) AS `date`'],
   ) {
     eq_or_diff fields $_->[0], $_->[1];
   }
