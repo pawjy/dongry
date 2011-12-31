@@ -1,0 +1,22 @@
+  {
+      main_module_name => 'Dongry::Type::JSON',
+      file_names => [qw(
+          lib/Dongry/Type/JSON.pm
+          lib/Dongry/Type/JSON.pod
+          t/lib/Test/Dongry.pm
+          t/type/json.t
+          config/dist/dongry-type-json.pi
+      )],
+      req_modules => {
+          'Dongry::Database' => 0,
+          'Carp' => 0,
+          'JSON::Functions::XS' => 0,
+      },
+      t_req_modules => {
+          'Path::Class' => 0,
+          'Test::Class' => 0,
+          'Test::MoreMore' => 0,
+          'Test::MySQL::CreateDatabase' => 0,
+          'SQL::ShowSQL' => 0,
+      },
+  };
