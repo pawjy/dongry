@@ -231,6 +231,9 @@ contain the following syntax:
 Replaced by the value of the key/value pair whoes key is equal to
 I<key>.  It is interpreted as an SQL quoted string.
 
+If the value is an array reference, it is expanded as comma-separated
+values.
+
 If the table schema is available, the value is interpreted as the
 value for the column whoes name is equal to I<key>.
 
@@ -245,6 +248,9 @@ The I<operator> must be one of the following SQL operators: C<=>, C<<
 
 Replaced by the value of the key/value pair whoes key is equal to
 I<key>.  It is interpreted as an SQL quoted string.
+
+If the value is an array reference, it is expanded as comma-separated
+values.
 
 If the table schema is available, the value is interpreted as the
 value for the column whoes name is equal to I<column>.
@@ -263,6 +269,13 @@ Replaced by the value of the key/value pair whoes key is equal to
 I<key>.  It is interpreted as an SQL expression.  The value must be a
 "where" construct.
 
+=item :I<key>:optsub
+
+Replaced by the value of the key/value pair whoes key is equal to
+I<key>.  It is interpreted as an SQL expression.  The value must be a
+"where" construct or an C<undef> value.  If the value is C<undef>, SQL
+expression C<1 = 1>, which is always true, is inserted instead.
+
 =back
 
 Please note that Dongry does not assure the output is a (fragment of)
@@ -275,6 +288,8 @@ Examples:
    foo => 'abc', bar => 'def']
   ['foo = ?', foo => 'abc']     # foo = 'abc'
 
+  ['foo IN (:foo)', foo => ['v1', 'v2']] # foo IN ('v1', 'v2')
+
   $lang = 'en';
   [':namecol:id = :name',       # `name_en` = 'abc'
    namecol => 'name_' . $lang,
@@ -285,14 +300,19 @@ Examples:
   [':created1::created <= created AND
    created <= :created2::created',
    created1 => $date1, created2 => $date2]      
-  # ? <= created AND created <= ?
-  # with serialized $date1, $date2
+      # ? <= created AND created <= ?
+      # with serialized $date1, $date2
   
   [':cond1:sub OR :cond2:sub',   
    cond1 => {foo => 1, bar => 2},
    cond2 => {foo => 2, bar => 1}]
-  # (`foo` = '1' AND `bar` = '2') OR
-  # (`foo` = '2' AND `bar` = '1')
+      # (`foo` = '1' AND `bar` = '2') OR
+      # (`foo` = '2' AND `bar` = '1')
+
+  $hoge = {hoge => 1} if $cond;
+  [':hoge:optsub AND fuga = 2', hoge => $hoge]
+      # If $cond is true:  `hoge` = 1 AND fuga = 2
+      # If $cond is false: (1 = 1) AND fuga = 2
 
 =back
 
