@@ -55,6 +55,13 @@ sub fields ($) {
       $v .= ' AS ' . quote $_[0]->{as}
           if defined $_[0]->{as} and not $NoAsInFields;
       return $v;
+    } elsif ($func eq '-distance') {
+      my $col = quote $_[0]->{$func};
+      my $v = sprintf q<GLength(GeomFromText(CONCAT('LineString(%.10f %.10f,', X(%s), ' ', Y(%s),')')))>,
+          $_[0]->{lon}, $_[0]->{lat}, $col, $col;
+      $v .= ' AS ' . quote $_[0]->{as}
+          if defined $_[0]->{as} and not $NoAsInFields;
+      return $v;
     } elsif ($func eq '-column') {
       my $v = quote $_[0]->{$func};
       $v .= ' AS ' . quote $_[0]->{as}

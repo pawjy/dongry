@@ -76,6 +76,13 @@ C<-date> function, C<< delta => seconds >> adds the specified numbers
 of seconds to the argument (in SQL, C<DATE(args + INTERVAL delta
 SECOND)>).
 
+The C<-distance> function can be used to obtain geographical distance
+between the location represented by a C<GEOMETRY> column and the
+specified location.  It is a shorthand of SQL function C<<
+GLength(GeomFromText(CONCAT('LineString(lon lat,', X(column), ' ',
+Y(column),')'))) >>, where I<lat> and I<lon> are values for keys
+C<lat> and C<lon> and I<column> is the value for the key C<-distance>.
+
 Instead of the function name, keyword C<-column> can be used to denote
 the column whoes name is specified as the value.  For the C<-column>
 "function", only the C<as> option is available.

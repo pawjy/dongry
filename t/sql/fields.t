@@ -11,7 +11,7 @@ sub bare_sql_fragment ($) {
   return bless \($_[0]), 'Dongry::SQL::BareFragment';
 } # bare_sql_fragment
 
-sub _fields_valid : Test(40) {
+sub _fields_valid : Test(42) {
   for (
     [undef, '*'],
     ['abc', '`abc`'],
@@ -64,6 +64,9 @@ sub _fields_valid : Test(40) {
          => 'DATE(`created` + INTERVAL -120 SECOND) AS `date`'],
     [{-date => 'created', as => 'date', delta => 'abc'}
          => 'DATE(`created` + INTERVAL 0 SECOND) AS `date`'],
+    [{-distance => 'lat`lon', lat => -10.211111, lon => 20.24222111,
+      as => 'ho`ge'}
+         => qq<GLength(GeomFromText(CONCAT('LineString(20.2422211100 -10.2111110000,', X(`lat``lon`), ' ', Y(`lat``lon`),')'))) AS `ho``ge`>],
   ) {
     eq_or_diff fields $_->[0], $_->[1];
   }
