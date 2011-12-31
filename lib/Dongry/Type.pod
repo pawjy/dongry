@@ -116,11 +116,11 @@ stored in the column.
 =item text_as_ref
 
 Perl -> SQL: The input must be a reference to a character string or
-the C<undfe> value.  If the input is a reference to a string, it is
+the C<undef> value.  If the input is a reference to a string, it is
 dereferenced and then encoded in the Perl C<utf-8> encoding.
 
-SQL -> Perl: The input must be a byte string or the C,undf> value.  If
-the input is a string, it is decoded as a text in the Perl C<utf-8>
+SQL -> Perl: The input must be a byte string or the C<undef> value.
+If the input is a string, it is decoded as a text in the Perl C<utf-8>
 encoding and then a reference to it is returned.
 
 The Perl C<undef> value represents the C<NULL> value of SQL.

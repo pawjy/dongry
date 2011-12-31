@@ -1,0 +1,62 @@
+=head1 NAME
+
+Dongry::Type::PerlEUCText - Dongry data types for texts encoded in EUC-JP
+
+=head1 DESCRIPTION
+
+The C<Dongry::Type::PerlEUCText> module defines data types for handing
+textual data eucoded in Perl C<euc-jp> encoding in Dongry.
+
+=head1 DATA TYPES
+
+=over 4
+
+=item perl_euc_text
+
+Perl -> SQL: The input must be a character string or the C<undef>
+value.  If the input is a string, it is encoded in the Perl C<euc-jp>
+encoding.
+
+SQL -> Perl: The input must be a byte string or the C<undef> value.
+If the input is a string, it is decoded as a text in the Perl
+C<euc-jp> encoding.
+
+The Perl C<undef> value represents the C<NULL> value of SQL.
+
+This data type should be used when a textual data encoded in (Perl
+variant of) EUC-JP character encoding is stored in the column.
+
+=item perl_euc_text_as_ref
+
+Perl -> SQL: The input must be a reference to a character string or
+the C<undef> value.  If the input is a reference to a string, it is
+dereferenced and then encoded in the Perl C<euc-jp> encoding.
+
+SQL -> Perl: The input must be a byte string or the C<undef> value.
+If the input is a string, it is decoded as a text in the Perl
+C<euc-jp> encoding and then a reference to it is returned.
+
+The Perl C<undef> value represents the C<NULL> value of SQL.
+
+This data type might be useful when the column is known to handle a
+large length of textual data encoded in (Perl variant of) EUC-JP
+character encoding.
+
+=back
+
+=head1 SEE ALSO
+
+L<Dongry::Type>.
+
+=head1 AUTHOR
+
+Wakaba <w@suika.fam.cx>.
+
+=head1 LICENSE
+
+Copyright 2011 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
