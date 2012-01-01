@@ -39,6 +39,7 @@ $root_d->recurse (callback => sub {
 
     my $data = $f->slurp;
     $data =~ s{Dongry::}{${dest_package}::Dongry::}g;
+    $data =~ s{List::Ish}{${dest_package}::Dongry::List::Ish}g;
     
     $dest_f->dir->mkpath;
     my $dest_file = $dest_f->openw;
@@ -54,6 +55,7 @@ $root_d->recurse (callback => sub {
     my $data = $f->slurp;
     $data =~ s{Dongry::}{${dest_package}::Dongry::}g;
     $data =~ s{Test::Dongry}{Test::${dest_package}::Dongry}g;
+    $data =~ s{List::Ish}{${dest_package}::Dongry::List::Ish}g;
 
     my $dest_lib_d = $dest_d->subdir ('lib')->relative ($dest_f->dir);
     $data =~ s{use lib .*?;}
@@ -77,6 +79,7 @@ $root_d->recurse (callback => sub {
     my $data = $f->slurp;
     $data =~ s{Dongry::}{${dest_package}::Dongry::}g;
     $data =~ s{Test::Dongry}{Test::${dest_package}::Dongry}g;
+    $data =~ s{List::Ish}{${dest_package}::Dongry::List::Ish}g;
     
     $dest_f->dir->mkpath;
     my $dest_file = $dest_f->openw;
@@ -94,12 +97,32 @@ $root_d->recurse (callback => sub {
     my $data = $f->slurp;
     $data =~ s{Dongry::}{${dest_package}::Dongry::}g;
     $data =~ s{Test::Dongry}{Test::${dest_package}::Dongry}g;
+    $data =~ s{List::Ish}{${dest_package}::Dongry::List::Ish}g;
     
     $dest_f->dir->mkpath;
     my $dest_file = $dest_f->openw;
     print $dest_file $data;
   }
 });
+
+for (
+  ['modules/perl-ooutils/lib', 'List/Ish.pm'],
+  ['modules/perl-ooutils/lib', 'List/Ish.pod'],
+) {
+  my $f = $root_d->subdir ($_->[0])->file ($_->[1]);
+  my $dest_f = $dest_d
+      ->subdir ('lib', $dest_lib_dir_name, 'Dongry')
+      ->file ($_->[1]);
+
+  warn "$f => $dest_f\n";
+
+  my $data = $f->slurp;
+  $data =~ s{List::Ish}{${dest_package}::Dongry::List::Ish}g;
+  
+  $dest_f->dir->mkpath;
+  my $dest_file = $dest_f->openw;
+  print $dest_file $data;
+}
 
 for (
   ['modules/perl-test-moremore/lib', 'Test/MoreMore.pm'],
