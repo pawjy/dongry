@@ -7,3 +7,6 @@
 [submodule "modules/perl-test-moremore"]
 	path = modules/perl-test-moremore
 	url = git://github.com/wakaba/perl-test-moremore.git
+[submodule "modules/perl-ooutils"]
+	path = modules/perl-ooutils
+	url = git://github.com/wakaba/perl-ooutils.git
