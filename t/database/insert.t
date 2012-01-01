@@ -7,6 +7,7 @@ use Test::Dongry;
 use base qw(Test::Class);
 use Dongry::Database;
 use Encode;
+use List::Rubyish;
 
 sub _insert_a_row : Test(2) {
   reset_db_set;
