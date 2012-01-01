@@ -1127,11 +1127,14 @@ versioned packages are likely out-of-dated.
 =head1 DEPENDENCY
 
 Dongry requires the L<DBI> module as underlying database API.  Dongry
-uses the L<List::Rubyish> module as list object implementation by
-default, but this can be configured by the
-C<$Dongry::Database::ListClass> variable.  Additional modules might be
-used by L<Dongry::Type> modules, but they are not required as long as
-you don't use such modules specificalliy.
+uses the L<List::Ish> module as list object implementation by default,
+but this can be configured by the C<$Dongry::Database::ListClass>
+variable.  You can use L<List::Rubyish> or L<DBIx::MoCo::List>
+instead, for example.  The L<List::Ish> module is available at
+<https://github.com/wakaba/perl-ooutils/blob/master/lib/List/Ish.pm>.
+
+Additional modules might be used by L<Dongry::Type> modules, but they
+are not required as long as you don't use such modules specificalliy.
 
 The GitHub repository of Dongry contains submodules.  The
 C<modules/perl-json-functions-xs> submodule is required by

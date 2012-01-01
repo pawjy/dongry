@@ -22,7 +22,7 @@ push our @CARP_NOT, qw(
   Dongry::SQL
 );
 
-our $ListClass ||= 'List::Rubyish';
+our $ListClass ||= 'List::Ish';
 
 sub _list {
   eval qq{ require $ListClass } or die $@;

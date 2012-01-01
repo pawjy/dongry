@@ -8,6 +8,7 @@ use base qw(Test::Class);
 use Dongry::Database;
 use Dongry::Type::DateTime;
 use Encode;
+use List::Rubyish;
 
 # ------ |insert| ------
 
