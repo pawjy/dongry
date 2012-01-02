@@ -29,6 +29,12 @@ sub _list {
   return $ListClass->new ($_[1] || []);
 } # _list
 
+our $SQLDebugClass ||= 'DBIx::ShowSQL';
+
+if ($ENV{SQL_DEBUG}) {
+  eval qq{ require $SQLDebugClass } or die $@;
+}
+
 # ------ Construction ------
 
 sub new ($;%) {
