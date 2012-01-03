@@ -20,6 +20,8 @@ push our @CARP_NOT, qw(
   Dongry::Database::Transaction Dongry::Database::ForceSource
   Dongry::Table Dongry::Table::Row Dongry::Query
   Dongry::SQL
+  Dongry::Database::BrokenConnection
+  AnyEvent::DBI AnyEvent::DBI::Hashref AnyEvent::DBI::Carp
 );
 
 our $ListClass ||= 'List::Ish';
@@ -86,12 +88,26 @@ sub onerror ($) {
   }
   return $_[0]->{onerror} || sub {
     my ($self, %args) = @_;
-    local $Carp::CarpLevel = $Carp::CarpLevel - 1;
-    croak $self->source ($args{source_name})->{dsn} .
-        ': ' . $args{text} .
-        (defined $args{sql} ? ': ' . $args{sql} : '');
+    $args{text} =~ s/\n$//g;
+    if ($args{anyevent}) {
+      warn $self->source ($args{source_name})->{dsn} .
+          ': ' . $args{text} .
+          (defined $args{sql} ? ': ' . $args{sql} : '') .
+          " at $args{file_name} line $args{line}\n";
+      ## Don't die in AnyEvent mode.
+    } else {
+      local $Carp::CarpLevel = $Carp::CarpLevel - 1;
+      croak $self->source ($args{source_name})->{dsn} .
+          ': ' . $args{text} .
+          (defined $args{sql} ? ': ' . $args{sql} : '');
+    }
   };
 } # onerror
+
+sub _get_caller () {
+  return scalar Carp::caller_info
+      (Carp::short_error_loc || Carp::long_error_loc);
+} # _get_caller
 
 sub connect ($$) {
   my $self = shift;
@@ -100,26 +116,79 @@ sub connect ($$) {
   my $source = $self->{sources}->{$name}
       or croak "Data source |$name| is not defined";
 
-  my $onerror_args = {db => $self};
-  weaken $onerror_args->{db};
-  $self->{dbhs}->{$name} = DBI->connect
-      ($source->{dsn}, $source->{username}, $source->{password},
-       {RaiseError => 1, PrintError => 0, HandleError => sub {
-          #my ($msg, $dbh, $returned) = @_:
-          {
-            local $Carp::CarpLevel = $Carp::CarpLevel + 1; 
-            $onerror_args->{db}->onerror
-                ->($onerror_args->{db},
-                   text => $_[0],
-                   source_name => $name,
-                   sql => $onerror_args->{db}->{last_sql});
-          }
-          croak $_[0];
-          #return 0;
-        }, AutoCommit => 1, ReadOnly => !$source->{writable}});
-  {
-    $self->onconnect->($self, source_name => $name);
+  if ($source->{anyevent}) {
+    require AnyEvent::DBI::Carp;
+    require AnyEvent::DBI::Hashref;
+
+    my $onerror_args = {db => $self, caller => _get_caller};
+    weaken $onerror_args->{db};
+    $self->{dbhs}->{$name} = AnyEvent::DBI::Carp->new
+        ($source->{dsn}, $source->{username}, $source->{password},
+         on_error => sub {
+           #my ($dbh, $filename, $line, $fatal) = @_;
+
+           ## Please note that there are |local $@|s outside of this
+           ## callback within the call stack (specifically, in
+           ## AnyEvent::DBI), such that |die|s might not work as
+           ## intended.
+
+           my $error_text = $@;
+           my $file_name = $_[1];
+           my $line = $_[2];
+           if ($_[2] == $onerror_args->{connect_line}) {
+             $file_name = $onerror_args->{caller}->{file};
+             $line = $onerror_args->{caller}->{line};
+           }
+
+           if ($_[3]) { # fatal
+             ## Remove remaining pointer to the broken AnyEvent::DBI
+             ## object.
+             $onerror_args->{db}->{dbhs}->{$name} = bless {
+               error_text => $error_text,
+             }, 'Dongry::Database::BrokenConnection';
+           }
+
+           eval {
+             local $Carp::CarpLevel = $Carp::CarpLevel + 1; 
+             $onerror_args->{db}->onerror
+                 ->($onerror_args->{db},
+                    anyevent => 1,
+                    text => $error_text,
+                    file_name => $file_name,
+                    line => $line,
+                    source_name => $name,
+                    sql => $onerror_args->{db}->{last_sql});
+             1;
+           } or do {
+             warn "Died within the |onerror| handler: $@";
+           };
+           
+           ## Don't |die| here.  |die| does not work well.  Just
+           ## continue and leave the error handling for the
+           ## application.
+         }, # on_error
+         RaiseError => 0, PrintError => 0);
+    $onerror_args->{connect_line} = __LINE__ - 1;
+  } else {
+    my $onerror_args = {db => $self};
+    weaken $onerror_args->{db};
+    $self->{dbhs}->{$name} = DBI->connect
+        ($source->{dsn}, $source->{username}, $source->{password},
+         {RaiseError => 1, PrintError => 0, HandleError => sub {
+            #my ($msg, $dbh, $returned) = @_:
+            {
+              local $Carp::CarpLevel = $Carp::CarpLevel + 1; 
+              $onerror_args->{db}->onerror
+                  ->($onerror_args->{db},
+                     text => $_[0],
+                     source_name => $name,
+                     sql => $onerror_args->{db}->{last_sql});
+            }
+            croak $_[0];
+            #return 0;
+          }, AutoCommit => 1, ReadOnly => !$source->{writable}});
   }
+  $self->onconnect->($self, source_name => $name);
 } # connect
 
 sub disconnect ($$) {
@@ -134,7 +203,8 @@ sub disconnect ($$) {
     }
     
     if ($self->{dbhs}->{$name}) {
-      $self->{dbhs}->{$name}->disconnect;
+      $self->{dbhs}->{$name}->disconnect
+          if $self->{dbhs}->{$name}->can ('disconnect');
       delete $self->{dbhs}->{$name};
     }
   }
@@ -179,6 +249,8 @@ our $ReadOnlyQueryPattern = qr/^\s*(?:
   [Ee][Xx][Pp][Ll][Aa][Ii][Nn]
 )\b/x;
 
+our $EmbedCallerInSQL;
+
 sub execute ($$;$%) {
   my ($self, $sql, $values, %args) = @_;
 
@@ -211,13 +283,43 @@ sub execute ($$;$%) {
   if (defined $values and ref $values eq 'HASH') {
     ($sql, $values) = _where [$sql, %$values];
   }
+  
+  if ($EmbedCallerInSQL) {
+    my $caller = _get_caller;
+    my $text = $name . ' at ' . $caller->{file} . ' line ' . $caller->{line};
+    $text =~ s{\*/}{\* /}g;
+    $sql .= ' /* ' . $text . ' */';
+  }
 
-  my $sth = $self->{dbhs}->{$name}->prepare ($self->{last_sql} = $sql);
-  my $rows = $sth->execute (@{$values or []});
-  return unless defined wantarray;
+  if ($self->{sources}->{$name}->{anyevent}) {
+    weaken ($self = $self);
+    $self->{dbhs}->{$name}->exec_as_hashref
+        ($sql, @{$values or []}, sub {
+           $self->{last_sql} = $sql;
+           if ($#_) {
+             if ($args{cb}) {
+               my $result = bless {db => $self,
+                                   data => $_[1],
+                                   row_count => $_[2]},
+                   'Dongry::Database::Executed::Inserted';
+               $args{cb}->($self, $result);
+             }
+           } else {
+             if ($args{onerror}) {
+               $args{onerror}->($self, text => $@, sql => $sql);
+             }
+           }
+         });
+    return bless {}, 'Dongry::Database::Executed::NotAvailable'
+        if defined wantarray;
+  } else {
+    my $sth = $self->{dbhs}->{$name}->prepare ($self->{last_sql} = $sql);
+    my $rows = $sth->execute (@{$values or []});
+    return unless defined wantarray;
 
-  return bless {db => $self, sth => $sth, row_count => $rows},
-      'Dongry::Database::Executed';
+    return bless {db => $self, sth => $sth, row_count => $rows},
+        'Dongry::Database::Executed';
+  }
 } # execute
 
 # ------ Structured SQL executions ------
@@ -227,7 +329,8 @@ sub set_tz ($;$%) {
   $tz ||= '+00:00';
   $self->execute ('SET time_zone = ?', [$tz],
                   source_name => $args{source_name},
-                  even_if_read_only => 1);
+                  even_if_read_only => 1,
+                  cb => $args{cb}, onerror => $args{onerror});
 } # set_tz
 
 sub insert ($$$;%) {
@@ -289,7 +392,8 @@ sub insert ($$$;%) {
   }
 
   my $return = $self->execute
-      ($sql, \@values, source_name => $args{source_name});
+      ($sql, \@values, source_name => $args{source_name},
+       cb => $args{cb}, onerror => $args{onerror});
 
   return unless defined wantarray;
   bless $return, 'Dongry::Database::Executed::Inserted';
@@ -336,8 +440,10 @@ sub select ($$$;%) {
   my $return = $self->execute
       ($sql, $where_bind,
        source_name => $args{source_name},
-       must_be_writable => $args{must_be_writable});
+       must_be_writable => $args{must_be_writable},
+       cb => $args{cb}, onerror => $args{onerror});
 
+  return unless defined wantarray;
   bless $return, 'Dongry::Database::Executed';
   $return->{table_name} = $table_name;
   return $return;
@@ -375,7 +481,8 @@ sub update ($$$%) {
   croak 'Offset is not supported' if defined $args{offset};
   $sql .= sprintf ' LIMIT %d', $args{limit} || 1 if defined $args{limit};
   my $return = $self->execute
-     ($sql, [@bound_value, @$where_bind], source_name => $args{source_name});
+     ($sql, [@bound_value, @$where_bind], source_name => $args{source_name},
+      cb => $args{cb}, onerror => $args{onerror});
 
   return unless defined wantarray;
   bless $return, 'Dongry::Database::Executed';
@@ -394,7 +501,8 @@ sub delete ($$$;%) {
   croak 'Offset is not supported' if defined $args{offset};
   $sql .= sprintf ' LIMIT %d', $args{limit} || 1 if defined $args{limit};
   my $return = $self->execute
-      ($sql, $where_bind, source_name => $args{source_name});
+      ($sql, $where_bind, source_name => $args{source_name},
+       cb => $args{cb}, onerror => $args{onerror});
 
   return unless defined wantarray;
   bless $return, 'Dongry::Database::Executed';
@@ -608,6 +716,15 @@ sub first_as_row ($) {
       'Dongry::Table::Row';
 } # first_as_row
 
+package Dongry::Database::Executed::NotAvailable;
+our $VERSION = '1.0';
+push our @ISA, 'Dongry::Database::Executed';
+use Carp;
+
+sub row_count ($) {
+  croak "Result is not available";
+} # row_count
+
 # ------ Transaction ------
 
 package Dongry::Database::Transaction;
@@ -665,6 +782,17 @@ sub debug_info ($) {
 sub DESTROY {
   $_[0]->end;
 } # DESTROY
+
+# ------ Dummy objects ------
+
+package Dongry::Database::BrokenConnection;
+our $VERSION = '1.0';
+
+sub exec_as_hashref {
+  my $cb = pop;
+  local $@ = $_[0]->{error_text};
+  $cb->($_[0]);
+} # exec_as_hashref
 
 1;
 
