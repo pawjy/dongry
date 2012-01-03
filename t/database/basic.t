@@ -13,7 +13,7 @@ sub _version : Test(6) {
   ok $Dongry::Database::Executed::Inserted::VERSION;
   ok $Dongry::Database::Transaction::VERSION;
   ok $Dongry::Database::ForceSource::VERSION;
-  ok $Dongry::Database::AnyEvent::DBI::BrokenConnection::VERSION;
+  ok $Dongry::Database::BrokenConnection::VERSION;
 } # _version
 
 sub _inheritance : Test(1) {
@@ -155,7 +155,7 @@ __PACKAGE__->runtests;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
