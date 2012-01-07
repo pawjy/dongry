@@ -673,6 +673,8 @@ sub _execute_transaction_rollback_commit : Test(2) {
 
 __PACKAGE__->runtests;
 
+$Dongry::LeakTest = 1;
+
 1;
 
 =head1 LICENSE

@@ -785,6 +785,9 @@ sub DESTROY {
     die "Transaction is rollbacked since it is not explicitly committed",
         Carp::shortmess;
   }
+  if ($Dongry::LeakTest) {
+    warn "Possible memory leak by object " . ref $_[0];
+  }
 } # DESTROY
 
 package Dongry::Database::Transaction::AnyEvent;
@@ -856,6 +859,9 @@ sub debug_info ($) {
 
 sub DESTROY {
   $_[0]->end;
+  if ($Dongry::LeakTest) {
+    warn "Possible memory leak by object " . ref $_[0];
+  }
 } # DESTROY
 
 # ------ Dummy objects ------

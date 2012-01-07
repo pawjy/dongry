@@ -172,6 +172,8 @@ sub _execute_embedded_line : Test(1) {
 
 __PACKAGE__->runtests;
 
+$Dongry::LeakTest = 1;
+
 1;
 
 =head1 LICENSE

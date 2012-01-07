@@ -487,6 +487,8 @@ sub _execute_return_value : Test(9) {
 
 __PACKAGE__->runtests;
 
+$Dongry::LeakTest = 1;
+
 1;
 
 =head1 LICENSE
