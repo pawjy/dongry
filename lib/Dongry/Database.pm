@@ -329,8 +329,10 @@ sub execute ($$;$%) {
                $args{cb}->($self, $result);
              }
            } else {
-             if ($args{onerror}) {
-               $args{onerror}->($self, text => $@, sql => $sql);
+             if ($args{cb}) {
+               my $result = bless {error_text => $@, error_sql => $sql},
+                   'Dongry::Database::Executed::NotAvailable';
+               $args{cb}->($self, $result);
              }
            }
          });
@@ -354,7 +356,7 @@ sub set_tz ($;$%) {
   $self->execute ('SET time_zone = ?', [$tz],
                   source_name => $args{source_name},
                   even_if_read_only => 1,
-                  cb => $args{cb}, onerror => $args{onerror});
+                  cb => $args{cb});
 } # set_tz
 
 sub insert ($$$;%) {
@@ -417,7 +419,7 @@ sub insert ($$$;%) {
 
   my $return = $self->execute
       ($sql, \@values, source_name => $args{source_name},
-       cb => $args{cb}, onerror => $args{onerror});
+       cb => $args{cb});
 
   return unless defined wantarray;
   bless $return, 'Dongry::Database::Executed::Inserted';
@@ -465,7 +467,7 @@ sub select ($$$;%) {
       ($sql, $where_bind,
        source_name => $args{source_name},
        must_be_writable => $args{must_be_writable},
-       cb => $args{cb}, onerror => $args{onerror});
+       cb => $args{cb});
 
   return unless defined wantarray;
   bless $return, 'Dongry::Database::Executed';
@@ -506,7 +508,7 @@ sub update ($$$%) {
   $sql .= sprintf ' LIMIT %d', $args{limit} || 1 if defined $args{limit};
   my $return = $self->execute
      ($sql, [@bound_value, @$where_bind], source_name => $args{source_name},
-      cb => $args{cb}, onerror => $args{onerror});
+      cb => $args{cb});
 
   return unless defined wantarray;
   bless $return, 'Dongry::Database::Executed';
@@ -526,7 +528,7 @@ sub delete ($$$;%) {
   $sql .= sprintf ' LIMIT %d', $args{limit} || 1 if defined $args{limit};
   my $return = $self->execute
       ($sql, $where_bind, source_name => $args{source_name},
-       cb => $args{cb}, onerror => $args{onerror});
+       cb => $args{cb});
 
   return unless defined wantarray;
   bless $return, 'Dongry::Database::Executed';
@@ -581,6 +583,17 @@ our $VERSION = '1.0';
 use Carp;
 
 push our @CARP_NOT, qw(Dongry::Database);
+
+sub is_success ($) { 1 }
+sub is_error ($) { 0 }
+
+sub error_text ($) {
+  return $_[0]->{error_text};
+} # error_text
+
+sub error_sql ($) {
+  return $_[0]->{error_sql};
+} # error_sql
 
 sub row_count ($) {
   return $_[0]->{row_count} + 0;
@@ -745,6 +758,9 @@ our $VERSION = '1.0';
 push our @ISA, 'Dongry::Database::Executed';
 use Carp;
 
+sub is_success ($) { 0 }
+sub is_error ($) { 1 }
+
 sub row_count ($) {
   croak "Result is not available";
 } # row_count
@@ -806,11 +822,14 @@ sub commit ($;%) {
     $self->{db}->{dbhs}->{master}->commit (sub {
       if ($#_ || !$@) { ## AnyEvent::DBI documentation is wrong...
         if ($args{cb}) {
-          $args{cb}->($self->{db});
+          my $result = bless {}, 'Dongry::Database::Executed::Inserted';
+          $args{cb}->($self->{db}, $result);
         }
       } else {
-        if ($args{onerror}) {
-          $args{onerror}->($self->{db});
+        if ($args{cb}) {
+          my $result = bless {error_text => $@, error_sql => 'commit'},
+              'Dongry::Database::Executed::NotAvailable';
+          $args{cb}->($self->{db}, $result);
         }
       }
     });
@@ -827,11 +846,14 @@ sub rollback ($;%) {
     $self->{db}->{dbhs}->{master}->rollback (sub {
       if ($#_ || !$@) { ## AnyEvent::DBI document is wrong...
         if ($args{cb}) {
-          $args{cb}->($self->{db});
+          my $result = bless {}, 'Dongry::Database::Executed::Inserted';
+          $args{cb}->($self->{db}, $result);
         }
       } else {
-        if ($args{onerror}) {
-          $args{onerror}->($self->{db});
+        if ($args{cb}) {
+          my $result = bless {error_text => $@, error_sql => 'rollback'},
+              'Dongry::Database::Executed::NotAvailable';
+          $args{cb}->($self->{db}, $result);
         }
       }
     });

@@ -43,20 +43,14 @@ sub _connect_ae_dsn_error : Test(5) {
 
   $cv->begin;
   $db->execute ('show tables', undef, source_name => 'hoge', cb => sub {
-    $success++;
-    $cv->end;
-  }, onerror => sub {
-    $error++;
+    $_[1]->is_success ? $success++ : $error++;
     $cv->end;
   });
 
   $cv->begin;
   $db->execute ('select * from foo', undef, source_name => 'hoge',
                 cb => sub {
-    $success++;
-    $cv->end;
-  }, onerror => sub {
-    $error++;
+    $_[1]->is_success ? $success++ : $error++;
     $cv->end;
   });
 
@@ -69,10 +63,7 @@ sub _connect_ae_dsn_error : Test(5) {
   $cv = AnyEvent->condvar;
   $db->execute ('select * from foo', undef, source_name => 'hoge', 
                 cb => sub {
-    $success++;
-    $cv->send;
-  }, onerror => sub {
-    $error++;
+    $_[1]->is_success ? $success++ : $error++;
     $cv->send;
   });
 
@@ -103,20 +94,14 @@ sub _connect_ae_dsn_error_with_onerror : Test(9) {
 
   $cv->begin;
   $db->execute ('show tables', undef, source_name => 'hoge', cb => sub {
-    $success++;
-    $cv->end;
-  }, onerror => sub {
-    $error++;
+    $_[1]->is_success ? $success++ : $error++;
     $cv->end;
   });
 
   $cv->begin;
   $db->execute ('select * from foo', undef, source_name => 'hoge',
                 cb => sub {
-    $success++;
-    $cv->end;
-  }, onerror => sub {
-    $error++;
+    $_[1]->is_success ? $success++ : $error++;
     $cv->end;
   });
 
@@ -129,10 +114,7 @@ sub _connect_ae_dsn_error_with_onerror : Test(9) {
   $cv = AnyEvent->condvar;
   $db->execute ('select * from foo', undef, source_name => 'hoge', 
                 cb => sub {
-    $success++;
-    $cv->send;
-  }, onerror => sub {
-    $error++;
+    $_[1]->is_success ? $success++ : $error++;
     $cv->send;
   });
 
@@ -164,10 +146,7 @@ sub _connect_ae_dsn_error_with_onerror_implied_connect : Test(9) {
 
   $cv->begin;
   $db->execute ('show tables', undef, source_name => 'hoge', cb => sub {
-    $success++;
-    $cv->end;
-  }, onerror => sub {
-    $error++;
+    $_[1]->is_success ? $success++ : $error++;
     $cv->end;
   });
   my $error_line = __LINE__ - 1;
@@ -176,10 +155,7 @@ sub _connect_ae_dsn_error_with_onerror_implied_connect : Test(9) {
   $cv->begin;
   $db->execute ('select * from foo', undef, source_name => 'hoge',
                 cb => sub {
-    $success++;
-    $cv->end;
-  }, onerror => sub {
-    $error++;
+    $_[1]->is_success ? $success++ : $error++;
     $cv->end;
   });
 
@@ -192,10 +168,7 @@ sub _connect_ae_dsn_error_with_onerror_implied_connect : Test(9) {
   $cv = AnyEvent->condvar;
   $db->execute ('select * from foo', undef, source_name => 'hoge', 
                 cb => sub {
-    $success++;
-    $cv->send;
-  }, onerror => sub {
-    $error++;
+    $_[1]->is_success ? $success++ : $error++;
     $cv->send;
   });
 
@@ -232,20 +205,14 @@ sub _connect_ae_dsn_error_with_onerror_die : Test(9) {
 
   $cv->begin;
   $db->execute ('show tables', undef, source_name => 'hoge', cb => sub {
-    $success++;
-    $cv->end;
-  }, onerror => sub {
-    $error++;
+    $_[1]->is_success ? $success++ : $error++;
     $cv->end;
   });
 
   $cv->begin;
   $db->execute ('select * from foo', undef, source_name => 'hoge',
                 cb => sub {
-    $success++;
-    $cv->end;
-  }, onerror => sub {
-    $error++;
+    $_[1]->is_success ? $success++ : $error++;
     $cv->end;
   });
 
@@ -258,10 +225,7 @@ sub _connect_ae_dsn_error_with_onerror_die : Test(9) {
   $cv = AnyEvent->condvar;
   $db->execute ('select * from foo', undef, source_name => 'hoge', 
                 cb => sub {
-    $success++;
-    $cv->send;
-  }, onerror => sub {
-    $error++;
+    $_[1]->is_success ? $success++ : $error++;
     $cv->send;
   });
 
@@ -308,7 +272,6 @@ sub _connect_onconnect_timing : Test(2) {
                    sync => {dsn => $dsn, writable => 1}});
 #  $db->onconnect (sub {
 #    my ($db, %args) = @_;
-#warn 444;
 #    $db->execute ('select * from foo where id = 1', undef,
 #                  source_name => 'sync', cb => sub {
 #    })

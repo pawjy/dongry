@@ -297,7 +297,7 @@ sub _execute_select_return_no_rows_all_as_rows : Test(12) {
   dies_here_ok { $result->first_as_row };
 } # _execute_select_return_no_rows_all_as_rows
 
-sub _execute_select_return_no_rows_first : Test(11) {
+sub _execute_select_return_no_rows_first : Test(15) {
   reset_db_set;
   my $dsn = test_dsn 'testtable';
   my $db0 = Dongry::Database->new
@@ -322,6 +322,10 @@ sub _execute_select_return_no_rows_first : Test(11) {
   is $invoked, 0;
   dies_here_ok { $result->all };
   dies_here_ok { $result->all_as_rows };
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
 } # _execute_select_return_no_rows_first
 
 sub _execute_select_return_no_rows_first_as_row : Test(11) {
@@ -351,7 +355,7 @@ sub _execute_select_return_no_rows_first_as_row : Test(11) {
   dies_here_ok { $result->all_as_rows };
 } # _execute_select_return_no_rows_first_as_row
 
-sub _execute_select_return_a_row_each : Test(12) {
+sub _execute_select_return_a_row_each : Test(16) {
   reset_db_set;
   my $dsn = test_dsn 'testtable';
   my $db0 = Dongry::Database->new
@@ -381,6 +385,10 @@ sub _execute_select_return_a_row_each : Test(12) {
   dies_here_ok { $result->all_as_rows };
   dies_here_ok { $result->first };
   dies_here_ok { $result->first_as_row };
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
 } # _execute_select_return_a_row_each
 
 sub _execute_select_return_a_row_each_as_row : Test(12) {
