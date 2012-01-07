@@ -7,11 +7,12 @@ use Test::Dongry;
 use base qw(Test::Class);
 use Dongry::Database;
 
-sub _version : Test(6) {
+sub _version : Test(7) {
   ok $Dongry::Database::VERSION;
   ok $Dongry::Database::Executed::VERSION;
   ok $Dongry::Database::Executed::Inserted::VERSION;
   ok $Dongry::Database::Transaction::VERSION;
+  ok $Dongry::Database::Transaction::AnyEvent::VERSION;
   ok $Dongry::Database::ForceSource::VERSION;
   ok $Dongry::Database::BrokenConnection::VERSION;
 } # _version
