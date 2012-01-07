@@ -666,8 +666,13 @@ sub first_as_row ($) {
 
 sub debug_info ($) {
   my $self = shift;
-  return sprintf '{DBExecuted: %s}',
-      defined $self->{table_name} ? $self->{table_name} : '(no table)';
+  my @info;
+  push @info, 'error' if $self->is_error;
+  for my $name (qw(table_name error_text error_sql)) {
+    my $v = $self->$name;
+    push @info, $v . ' = ' . $v if defined $v;
+  }
+  return sprintf '{DBExecuted: %s}', join '; ', @info;
 } # debug_info
 
 sub DESTROY {
