@@ -315,7 +315,7 @@ sub _execute_syntax_error_onerror : Test(8) {
   is $onerror_info->{source_name}, 'ae';
 } # _execute_syntax_error_onerror
 
-sub _execute_syntax_error_followed : Test(5) {
+sub _execute_syntax_error_followed : Test(3) {
   my $db = new_db;
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (1), (2)');
@@ -331,15 +331,13 @@ sub _execute_syntax_error_followed : Test(5) {
 
   my $success;
   my $error;
-  my $result;
   $cv->begin;
   $db->execute ('select * from foo', undef, source_name => 'ae',
                 cb => sub { 
-                  is $_[0], $db;
-                  $result = $_[1];
                   $success++;
                   $cv->end;
                 }, onerror => sub {
+                  is $_[0], $db;
                   $error++;
                   $cv->end;
                 });
@@ -347,13 +345,11 @@ sub _execute_syntax_error_followed : Test(5) {
   $cv->end;
   $cv->recv;
 
-  is $success, 1;
-  isa_ok $result, 'Dongry::Database::Executed';
-  is $result->row_count, 2;
-  ng $error;
+  ng $success;
+  is $error, 1;
 } # _execute_syntax_error_followed
 
-sub _execute_syntax_error_followed_2 : Test(5) {
+sub _execute_syntax_error_followed_2 : Test(3) {
   my $db = new_db;
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (1), (2)');
@@ -364,17 +360,15 @@ sub _execute_syntax_error_followed_2 : Test(5) {
 
   my $success;
   my $error;
-  my $result;
   $db->execute ('select * from', undef, source_name => 'ae',
                 cb => sub { $cv->send }, onerror => sub {
                   $db->execute ('select * from foo', undef,
                                 source_name => 'ae',
                                 cb => sub {
-                                  is $_[0], $db;
-                                  $result = $_[1];
                                   $success++;
                                   $cv->send;
                                 }, onerror => sub {
+                                  is $_[0], $db;
                                   $error++;
                                   $cv->send;
                                 });
@@ -382,10 +376,8 @@ sub _execute_syntax_error_followed_2 : Test(5) {
 
   $cv->recv;
 
-  is $success, 1;
-  isa_ok $result, 'Dongry::Database::Executed';
-  is $result->row_count, 2;
-  ng $error;
+  ng $success;
+  is $error, 1;
 } # _execute_syntax_error_followed_2
 
 sub _execute_connection_error : Test(5) {

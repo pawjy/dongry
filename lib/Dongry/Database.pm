@@ -198,7 +198,11 @@ sub disconnect ($$) {
   ) {
     if ($self->{in_transaction} and $name eq 'master') {
       carp "$self->{sources}->{$name}->{dsn}: A transaction is rollbacked because the database is disconnected before the transaction is committed";
-      $self->{dbhs}->{$name}->rollback;
+      if ($self->{sources}->{$name}->{anyevent}) {
+        $self->{dbhs}->{$name}->rollback (sub { });
+      } else {
+        $self->{dbhs}->{$name}->rollback;
+      }
       delete $self->{in_transaction};
     }
     
@@ -216,8 +220,8 @@ sub DESTROY {
 
 # ------ Transaction and source selection ------
 
-sub transaction ($) {
-  my $self = shift;
+sub transaction ($;%) {
+  my ($self, %args) = @_;
   croak "Can't start new transaction before committing the current transaction"
       if $self->{in_transaction};
   croak "Can't start new transaction while a source is forced"
@@ -225,8 +229,24 @@ sub transaction ($) {
 
   $self->connect ('master');
   $self->{in_transaction} = 1;
-  $self->{dbhs}->{master}->begin_work;
-  return bless {db => $self}, 'Dongry::Database::Transaction';
+  if ($self->{sources}->{master}->{anyevent}) {
+    weaken ($self = $self);
+    $self->{dbhs}->{master}->begin_work (sub {
+      if ($_[1]) {
+        if ($args{cb}) {
+          $args{cb}->($self);
+        }
+      } else {
+        if ($args{onerror}) {
+          $args{onerror}->($self);
+        }
+      }
+    });
+    return bless {db => $self}, 'Dongry::Database::Transaction::AnyEvent';
+  } else {
+    $self->{dbhs}->{master}->begin_work ($args{cb});
+    return bless {db => $self}, 'Dongry::Database::Transaction';
+  }
 } # transaction
 
 sub force_source_name ($$) {
@@ -250,6 +270,10 @@ our $ReadOnlyQueryPattern = qr/^\s*(?:
 )\b/x;
 
 our $EmbedCallerInSQL;
+
+if ($ENV{SQL_DEBUG} && $ENV{SQL_DEBUG} =~ /embed_caller/) {
+  $EmbedCallerInSQL ||= 1;
+}
 
 sub execute ($$;$%) {
   my ($self, $sql, $values, %args) = @_;
@@ -293,7 +317,7 @@ sub execute ($$;$%) {
 
   if ($self->{sources}->{$name}->{anyevent}) {
     weaken ($self = $self);
-    $self->{dbhs}->{$name}->exec_as_hashref
+    $self->{dbhs}->{$name}->exec_or_fatal_as_hashref
         ($sql, @{$values or []}, sub {
            $self->{last_sql} = $sql;
            if ($#_) {
@@ -733,7 +757,7 @@ use Carp;
 
 push our @CARP_NOT, qw(Dongry::Database);
 
-sub commit ($) {
+sub commit ($;%) {
   if ($_[0]->{db}->{in_transaction}) {
     $_[0]->{db}->{dbhs}->{master}->commit;
     delete $_[0]->{db}->{in_transaction};
@@ -742,7 +766,7 @@ sub commit ($) {
   }
 } # commit
 
-sub rollback ($) {
+sub rollback ($;%) {
   if ($_[0]->{db}->{in_transaction}) {
     $_[0]->{db}->{dbhs}->{master}->rollback;
     delete $_[0]->{db}->{in_transaction};
@@ -762,6 +786,57 @@ sub DESTROY {
         Carp::shortmess;
   }
 } # DESTROY
+
+package Dongry::Database::Transaction::AnyEvent;
+our $VERSION = '1.0';
+push our @ISA, qw(Dongry::Database::Transaction);
+use Scalar::Util qw(weaken);
+use Carp;
+
+## Please note that the |in_transaction| flag does not sync with the
+## actual state of the transaction in the async mode.
+
+sub commit ($;%) {
+  my ($self, %args) = @_;
+  if ($self->{db}->{in_transaction}) {
+    weaken ($self = $self);
+    $self->{db}->{dbhs}->{master}->commit (sub {
+      if ($#_ || !$@) { ## AnyEvent::DBI documentation is wrong...
+        if ($args{cb}) {
+          $args{cb}->($self->{db});
+        }
+      } else {
+        if ($args{onerror}) {
+          $args{onerror}->($self->{db});
+        }
+      }
+    });
+    delete $self->{db}->{in_transaction};
+  } else {
+    croak "This transaction can no longer be committed";
+  }
+} # commit
+
+sub rollback ($;%) {
+  my ($self, %args) = @_;
+  if ($self->{db}->{in_transaction}) {
+    weaken ($self = $self);
+    $self->{db}->{dbhs}->{master}->rollback (sub {
+      if ($#_ || !$@) { ## AnyEvent::DBI document is wrong...
+        if ($args{cb}) {
+          $args{cb}->($self->{db});
+        }
+      } else {
+        if ($args{onerror}) {
+          $args{onerror}->($self->{db});
+        }
+      }
+    });
+    delete $self->{db}->{in_transaction};
+  } else {
+    croak "This transaction can no longer be rollbacked";
+  }
+} # rollback
 
 # ------ Source selection ------
 
@@ -788,7 +863,7 @@ sub DESTROY {
 package Dongry::Database::BrokenConnection;
 our $VERSION = '1.0';
 
-sub exec_as_hashref {
+sub exec_or_fatal_as_hashref {
   my $cb = pop;
   local $@ = $_[0]->{error_text};
   $cb->($_[0]);
