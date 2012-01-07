@@ -341,10 +341,12 @@ sub execute ($$;$%) {
   } else {
     my $sth = $self->{dbhs}->{$name}->prepare ($self->{last_sql} = $sql);
     my $rows = $sth->execute (@{$values or []});
-    return unless defined wantarray;
+    return if not defined wantarray and not $args{cb};
 
-    return bless {db => $self, sth => $sth, row_count => $rows},
+    my $result = bless {db => $self, sth => $sth, row_count => $rows},
         'Dongry::Database::Executed';
+    $args{cb}->($self, $result) if $args{cb};
+    return $result;
   }
 } # execute
 
@@ -357,6 +359,7 @@ sub set_tz ($;$%) {
                   source_name => $args{source_name},
                   even_if_read_only => 1,
                   cb => $args{cb});
+  return undef;
 } # set_tz
 
 sub insert ($$$;%) {

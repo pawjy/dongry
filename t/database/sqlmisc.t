@@ -142,13 +142,37 @@ sub _set_tz_source_name : Test(12) {
           (DateTime->now (time_zone => '+04:00'));
 } # _set_tz_source_name
 
+sub _set_tz_cb : Test(5) {
+  my $db = new_db;
+  my $invoked;
+  $db->set_tz ('', cb => sub {
+    is $_[0], $db;
+    isa_ok $_[1], 'Dongry::Database::Executed';
+    ok $_[1]->is_success;
+    ng $_[1]->is_error;
+    $invoked++;
+  });
+  is $invoked, 1;
+} # _set_tz_cb
+
+sub _set_tz_cb_bad : Test(2) {
+  my $db = new_db;
+  my $invoked;
+  dies_here_ok {
+    $db->set_tz ('hoge', cb => sub {
+      $invoked++;
+    });
+  };
+  ng $invoked;
+} # _set_tz_cb_bad
+
 __PACKAGE__->runtests;
 
 1;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

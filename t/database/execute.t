@@ -1805,6 +1805,76 @@ sub _execute_non_utf8_value : Test(1) {
       ->first->{value}, "\x98\xDCz";
 } # _execute_non_utf8_value
 
+sub _execute_callback : Test(6) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+
+  my $result;
+  $db->execute ('insert into foo (id) values (43), (31)', undef, cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  is $result->row_count, 2;
+  dies_ok { $result->all };
+} # _execute_callback
+
+sub _execute_callback_fetch : Test(6) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (5), (543)');
+
+  my $result;
+  $db->execute ('select * from foo order by id asc', undef, cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  is $result->row_count, 2;
+  eq_or_diff $result->all->to_a, [{id => 5}, {id => 543}];
+} # _execute_callback_fetch
+
+sub _execute_callback_error : Test(2) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+
+  my $result;
+  dies_here_ok {
+    $db->execute ('insert into syntax error', undef, cb => sub {
+      $result = $_[1];
+    });
+  };
+
+  is $result, undef;
+} # _execute_callback_error
+
+sub _execute_callback_and_return : Test(8) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+
+  my $result;
+  my $result2 = $db->execute
+      ('insert into foo (id) values (43), (31)', undef, cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  is $result->row_count, 2;
+  dies_ok { $result->all };
+
+  is $result2, $result;
+  is $result2->row_count, 2;
+} # _execute_callback_and_return
+
 {
   package MyListClass;
   $INC{'MyListClass.pm'} = 1;
@@ -1842,7 +1912,7 @@ __PACKAGE__->runtests;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
