@@ -139,7 +139,7 @@ sub _execute_cb_rollback : Test(8) {
   eq_or_diff $result2->all->to_a, [];
 } # _execute_cb_rollback
 
-sub _execute_cb_rollback_failed : Test(9) {
+sub _execute_cb_rollback_failed : Test(8) {
   my $db = new_db;
   $db->source ('master')->{anyevent} = 1;
   my $dsn = $db->source ('master')->{dsn};
@@ -165,7 +165,6 @@ sub _execute_cb_rollback_failed : Test(9) {
       } else {
         $success++;
         is $_[0], $db;
-        is $@, 'rollback error';
       }
       $result = $_[1];
       $cv->send;
