@@ -1351,6 +1351,83 @@ sub _insert_bare_fragment_bad : Test(2) {
   is $data->row_count, 0;
 } # _insert_bare_fragment_bad
 
+sub _insert_cb : Test(8) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+
+  my $result;
+  $db->insert ('foo', [{id => 12}, {id => 12}], cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  is $result->row_count, 2;
+  eq_or_diff $result->all->to_a, [{id => 12}, {id => 12}];
+} # _insert_cb
+
+sub _insert_cb_return : Test(10) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+
+  my $result;
+  my $result2 = $db->insert ('foo', [{id => 12}, {id => 12}], cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  is $result->row_count, 2;
+  eq_or_diff $result->all->to_a, [{id => 12}, {id => 12}];
+  is $result2, $result;
+  is $result2->row_count, $result->row_count;
+} # _insert_cb_return
+
+sub _insert_cb_exception : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+
+  eval {
+    $db->insert ('foo', [{id => 12}, {id => 12}], cb => sub {
+      die 'abbc ';
+    });
+  };
+  is $@, 'abbc  at ' . __FILE__ . ' line ' . (__LINE__ - 3) . ".\n";
+} # _insert_cb_exception
+
+sub _insert_cb_exception_croak : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+
+  eval {
+    $db->insert ('foo', [{id => 12}, {id => 12}], cb => sub {
+      Carp::croak 'abbc ';
+    });
+  };
+  is $@, 'abbc  at ' . __FILE__ . ' line ' . (__LINE__ - 2) . "\n";
+} # _insert_cb_exception_croak
+
+sub _insert_cb_onerror : Test(2) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+
+  my $invoked;
+  dies_here_ok {
+    $db->insert ('foo', [{id => 12}, {notid => 12}], cb => sub {
+      $invoked++;
+    });
+  };
+  ng $invoked;
+} # _insert_cb_onerror
+
 # ------ last_insert_id ------
 
 sub _last_insert_id_unknown : Test(1) {

@@ -437,11 +437,24 @@ sub insert ($$$;%) {
         @sql_value;
   }
 
+  my $cb = $args{cb};
+  if ($cb) {
+    my $cb_orig = $cb;
+    $cb = sub {
+      unless ($_[1]->is_error) {
+        bless $_[1], 'Dongry::Database::Executed::Inserted';
+        $_[1]->{table_name} = $table_name;
+        $_[1]->{data} = $data;
+      }
+      goto &$cb_orig;
+    }; # $cb
+  }
+
   my $return = $self->execute
-      ($sql, \@values, source_name => $args{source_name},
-       cb => $args{cb});
+      ($sql, \@values, source_name => $args{source_name}, cb => $cb);
 
   return unless defined wantarray;
+  return $return if $return->is_error;
   bless $return, 'Dongry::Database::Executed::Inserted';
   $return->{table_name} = $table_name;
   $return->{data} = $data;
