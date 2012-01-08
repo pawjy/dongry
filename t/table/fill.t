@@ -533,13 +533,139 @@ sub _fill_related_rows_too_many_2 : Test(8) {
   is $mock7->related_row->get ('id'), 7;
 } # _fill_related_rows_too_many_2
 
+sub _fill_related_rows_error : Test(2) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id int)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  my $table = $db->table ('table1');
+
+  $table->create ({id => 124});
+  $table->create ({id => 12345});
+
+  my $mock1 = Test::MoreMore::Mock->new (related_id => 12345);
+
+  dies_here_ok {
+    $table->fill_related_rows
+        ([$mock1] => {related_id => 'notid'} => 'related_row');
+  };
+  ng $mock1->related_row;
+} # _fill_related_rows_error
+
+sub _fill_related_rows_cb : Test(5) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id int)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  my $table = $db->table ('table1');
+
+  $table->create ({id => 124});
+  $table->create ({id => 12345});
+
+  my $mock1 = Test::MoreMore::Mock->new (related_id => 12345);
+
+  my $invoked;
+  my $result;
+  $table->fill_related_rows
+      ([$mock1] => {related_id => 'id'} => 'related_row', cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $invoked++;
+  });
+
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+} # _fill_related_rows_cb
+
+sub _fill_related_rows_cb_error : Test(2) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id int)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  my $table = $db->table ('table1');
+
+  $table->create ({id => 124});
+  $table->create ({id => 12345});
+
+  my $mock1 = Test::MoreMore::Mock->new (related_id => 12345);
+
+  my $invoked;
+  dies_here_ok {
+    $table->fill_related_rows
+        ([$mock1] => {related_id => 'notid'} => 'related_row', cb => sub {
+      $invoked++;
+    });
+  };
+  ng $invoked;
+} # _fill_related_rows_cb_error
+
+sub _fill_related_rows_cb_exception : Test(1) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id int)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  my $table = $db->table ('table1');
+
+  $table->create ({id => 124});
+  $table->create ({id => 12345});
+
+  my $mock1 = Test::MoreMore::Mock->new (related_id => 12345);
+
+  eval {
+    $table->fill_related_rows
+        ([$mock1] => {related_id => 'id'} => 'related_row', cb => sub {
+      die "abc";
+    });
+    ng 1;
+  };
+
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 5) . ".\n";
+} # _fill_related_rows_cb_exception
+
+sub _fill_related_rows_cb_exception_carp : Test(1) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id int)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  my $table = $db->table ('table1');
+
+  $table->create ({id => 124});
+  $table->create ({id => 12345});
+
+  my $mock1 = Test::MoreMore::Mock->new (related_id => 12345);
+
+  eval {
+    $table->fill_related_rows
+        ([$mock1] => {related_id => 'id'} => 'related_row', cb => sub {
+      Carp::croak "abc";
+    });
+    ng 1;
+  };
+
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 4) . "\n";
+} # _fill_related_rows_cb_exception_carp
+
 __PACKAGE__->runtests;
+
+$Dongry::LeakTest = 1;
 
 1;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

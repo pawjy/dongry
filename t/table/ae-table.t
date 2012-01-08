@@ -4,6 +4,7 @@ use warnings;
 use Path::Class;
 use lib file (__FILE__)->dir->parent->subdir ('lib')->stringify;
 use Test::Dongry;
+use Test::MoreMore::Mock;
 use base qw(Test::Class);
 use AnyEvent;
 use Dongry::Type::Time;
@@ -296,7 +297,170 @@ sub _find_all_cb_return : Test(4) {
        {id => 21, value => '1991-02-12 12:12:01'}];
 } # _find_all_cb_return
 
+sub _fill_related_rows_cb : Test(5) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id int)',
+    },
+  };
+  my $db = new_db schema => $schema, ae => 1;
+  my $table = $db->table ('table1');
+
+  $table->create ({id => 124});
+  $table->create ({id => 12345});
+
+  my $mock1 = Test::MoreMore::Mock->new (related_id => 12345);
+
+  my $cv = AnyEvent->condvar;
+
+  my $invoked;
+  my $result;
+  $table->fill_related_rows
+      ([$mock1] => {related_id => 'id'} => 'related_row', cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $invoked++;
+    $cv->send;
+  }, source_name => 'ae');
+
+  $cv->recv;
+
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+} # _fill_related_rows_cb
+
+sub _fill_related_rows_cb_error : Test(6) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id int)',
+    },
+  };
+  my $db = new_db schema => $schema, ae => 1;
+  my $table = $db->table ('table1');
+
+  $table->create ({id => 124});
+  $table->create ({id => 12345});
+
+  my $mock1 = Test::MoreMore::Mock->new (related_id => 12345);
+
+  my $cv = AnyEvent->condvar;
+
+  my $result;
+  $table->fill_related_rows
+      ([$mock1] => {related_id => 'notid'} => 'related_row', cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $cv->send;
+  }, source_name => 'ae');
+
+  $cv->recv;
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ng $result->is_success;
+  ok $result->is_error;
+  like $result->error_text, qr{notid};
+  ng $mock1->related_row;
+} # _fill_related_rows_cb_error
+
+sub _fill_related_rows_cb_none_error : Test(2) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id int)',
+    },
+  };
+  my $db = new_db schema => $schema, ae => 1;
+  my $table = $db->table ('table1');
+
+  $table->create ({id => 124});
+  $table->create ({id => 12345});
+
+  my $mock1 = Test::MoreMore::Mock->new (related_id => 12345);
+
+  my $cv = AnyEvent->condvar;
+
+  my $result;
+  $table->fill_related_rows
+      ([$mock1] => {related_id => 'notid'} => 'related_row',
+       source_name => 'ae');
+
+  $table->find ({id => 124}, cb => sub { $result = $_[1]; $cv->send },
+                source_name => 'ae');
+
+  $cv->recv;
+
+  ok $result->is_error;
+  ng $mock1->related_row;
+} # _fill_related_rows_cb_none_error
+
+sub _fill_related_rows_cb_exception : Test(2) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id int)',
+    },
+  };
+  my $db = new_db schema => $schema, ae => 1;
+  my $table = $db->table ('table1');
+
+  $table->create ({id => 124});
+  $table->create ({id => 12345});
+
+  my $mock1 = Test::MoreMore::Mock->new (related_id => 12345);
+
+  my $cv = AnyEvent->condvar;
+
+  $table->fill_related_rows
+      ([$mock1] => {related_id => 'id'} => 'related_row', cb => sub {
+    die "abc";
+  }, source_name => 'ae');
+
+  eval {
+    $cv->recv;
+    ng 1;
+  };
+  
+  like $@, qr<^abc at >;
+  ok $mock1->related_row;
+} # _fill_related_rows_cb_exception
+
+sub _fill_related_rows_cb_exception_error : Test(3) {
+  my $schema = {
+    table1 => {
+      _create => 'create table table1 (id int)',
+    },
+  };
+  my $db = new_db schema => $schema, ae => 1;
+  my $table = $db->table ('table1');
+
+  $table->create ({id => 124});
+  $table->create ({id => 12345});
+
+  my $mock1 = Test::MoreMore::Mock->new (related_id => 12345);
+
+  my $warn;
+  local $SIG{__WARN__} = sub { $warn = $_[0] };
+
+  my $cv = AnyEvent->condvar;
+
+  $table->fill_related_rows
+      ([$mock1] => {related_id => 'notid'} => 'related_row', cb => sub {
+    die "abc";
+  }, source_name => 'ae');
+
+  eval {
+    $cv->recv;
+    ng 1;
+  };
+  
+  ok defined $@;
+  like $warn, qr<^abc at >;
+  ng $mock1->related_row;
+} # _fill_related_rows_cb_exception_error
+
 __PACKAGE__->runtests;
+
+$Dongry::LeakTest = 1;
 
 1;
 

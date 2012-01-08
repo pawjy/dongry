@@ -185,32 +185,47 @@ sub fill_related_rows ($$$$;%) {
        $where,
        fields => $args{fields},
        source_name => $args{source_name},
-       lock => $args{lock})
-      ->each_as_row ($args{multiple} ? sub {
-    my $hash = $map;
-    for my $col (@cols) {
-      $hash = $hash->{$_->get_bare ($col)} ||= {};
+       lock => $args{lock}, 
+       cb => sub {
+    my $db = $_[0];
+    if ($_[1]->is_error) {
+      if ($args{cb}) {
+        $args{cb}->($db, $_[1]);
+      }
+      return;
     }
-    ($hash->{$_->get_bare ($col)} ||= $self->{db}->_list)->push ($_);
-  } : sub {
-    my $hash = $map;
-    for my $col (@cols) {
-      $hash = $hash->{$_->get_bare ($col)} ||= {};
+
+    $_[1]->each_as_row ($args{multiple} ? sub {
+      my $hash = $map;
+      for my $col (@cols) {
+        $hash = $hash->{$_->get_bare ($col)} ||= {};
+      }
+      ($hash->{$_->get_bare ($col)} ||= $db->_list)->push ($_);
+    } : sub {
+      my $hash = $map;
+      for my $col (@cols) {
+        $hash = $hash->{$_->get_bare ($col)} ||= {};
+      }
+      if ($hash->{$_->get_bare ($col)}) {
+        carp "More than one rows found for an object";
+      } else {
+        $hash->{$_->get_bare ($col)} = $_;
+      }
+    });
+    my $default = $args{multiple} ? $db->_list : undef;
+    for my $obj (@$list) {
+      my $hash = $map;
+      for my $method_name (@methods) {
+        $hash = $hash->{$obj->$method_name} ||= {};
+      }
+      $obj->$object_method_name ($hash->{$obj->$method_name} || $default);
     }
-    if ($hash->{$_->get_bare ($col)}) {
-      carp "More than one rows found for an object";
-    } else {
-      $hash->{$_->get_bare ($col)} = $_;
+
+    if ($args{cb}) {
+      my $result = bless {}, 'Dongry::Database::Executed';
+      $args{cb}->($db, $result);
     }
   });
-  my $default = $args{multiple} ? $self->{db}->_list : undef;
-  for my $obj (@$list) {
-    my $hash = $map;
-    for my $method_name (@methods) {
-      $hash = $hash->{$obj->$method_name} ||= {};
-    }
-    $obj->$object_method_name ($hash->{$obj->$method_name} || $default);
-  }
 } # fill_related_rows
 
 # ------ Development -------
@@ -219,6 +234,12 @@ sub debug_info ($) {
   my $self = shift;
   return sprintf '{Table: %s}', $self->table_name;
 } # debug_info
+
+sub DESTROY {
+  if ($Dongry::LeakTest) {
+    warn "Possible memory leak by object " . ref $_[0];
+  }
+} # DESTROY
 
 # ------------ Table rows ------------
 
@@ -359,11 +380,17 @@ sub debug_info ($) {
   }
 } # debug_info
 
+sub DESTROY {
+  if ($Dongry::LeakTest) {
+    warn "Possible memory leak by object " . ref $_[0];
+  }
+} # DESTROY
+
 1;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
