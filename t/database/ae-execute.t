@@ -548,6 +548,29 @@ sub _execute_cb_error_die : Test(3) {
   is $warn, 'hoge at ' . __FILE__ . ' line ' . $line . ".\n";
 } # _execute_cb_die
 
+sub _execute_cb_onerror_order : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2)');
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+
+  my @error;
+  $db->onerror (sub {
+    push @error, 'onerror';
+  });
+
+  my $cv = AnyEvent->condvar;
+  $db->execute ('select syntax error', undef, cb => sub {
+    push @error, 'cb';
+    $cv->send;
+  }, source_name => 'ae');
+
+  $cv->recv;
+
+  eq_or_diff \@error, ['cb', 'onerror'];
+} # _execute_cb_onerror_order
+
 __PACKAGE__->runtests;
 
 $Dongry::LeakTest = 1;
