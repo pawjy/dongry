@@ -906,6 +906,68 @@ sub _insert_not_arrayref : Test(2) {
      [];
 } # _insert_not_arrayref
 
+sub _insert_cb : Test(9) {
+  my $db = new_db schema => {
+    foo => {
+      _create => 'create table foo (id int)',
+    },
+  };
+
+  my $result;
+  $db->table ('foo')->insert ([{id => 21}, {id => 52}], cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+  
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  is $result->row_count, 2;
+  is $result->table_name, 'foo';
+  eq_or_diff $result->all->to_a, [{id => 21}, {id => 52}];
+} # _insert_cb
+
+sub _insert_cb_exception : Test(2) {
+  my $db = new_db schema => {
+    foo => {
+      _create => 'create table foo (id int)',
+    },
+  };
+
+  eval {
+    $db->table ('foo')->insert ([{id => 21}, {id => 52}], cb => sub {
+      die "a123";
+    });
+    ng 1;
+  };
+  
+  is $@, 'a123 at ' . __FILE__ . ' line ' . (__LINE__ - 5) . ".\n";
+
+  eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
+      [{id => 21}, {id => 52}];
+} # _insert_cb_exception
+
+sub _insert_cb_error : Test(3) {
+  my $db = new_db schema => {
+    foo => {
+      _create => 'create table foo (id int)',
+    },
+  };
+
+  my $invoked;
+  dies_here_ok {
+    $db->table ('foo')->insert ([{id => 21}, {ida => 52}], cb => sub {
+      $invoked++;
+    });
+  };
+  ng $invoked;
+
+  eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
+      [];
+} # _insert_cb_error
+
 # ------ |create| ------
 
 sub _create_inserted_serialized : Test(6) {
@@ -1075,13 +1137,33 @@ sub _create_no_value : Test(1) {
      [{col1 => undef, col2 => undef}];
 } # _create_no_value
 
+sub _create_cb : Test(3) {
+  my $schema = {
+    table1 => {
+      type => {col1 => 'as_ref'},
+      _create => 'create table table1 (col1 blob, col2 int unique key)
+                  engine = InnoDB',
+    },
+  };
+  my $db = new_db schema => $schema;
+  
+  my $invoked;
+  dies_here_ok {
+    $db->table ('table1')->create ({col1 => 'hoge', col2 => 42}, cb => sub {
+      $invoked++;
+    });
+  };
+  ng $invoked;
+  ng $db->table ('table1')->find ({col2 => 42});
+} # _create_cb
+
 __PACKAGE__->runtests;
 
 1;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

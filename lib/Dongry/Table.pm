@@ -78,9 +78,19 @@ sub insert ($$;%) {
     $args{duplicate} = $self->_serialize_values ($args{duplicate});
   }
 
-  if (defined wantarray) {
-    my $return = $self->{db}->insert ($self->table_name, $s_data, %args);
-    $return->{parsed_data} = $data;
+  if (defined wantarray or $args{cb}) {
+    my $cb = $args{cb};
+    if ($cb) {
+      my $orig_cb = $cb;
+      $cb = sub {
+        $_[1]->{parsed_data} = $data unless $_[1]->is_error;
+        goto &$orig_cb;
+      }; # $cb
+    }
+
+    my $return = $self->{db}->insert
+        ($self->table_name, $s_data, %args, cb => $cb);
+    $return->{parsed_data} = $data unless $return->is_error;
     return $return;
   } else {
     $self->{db}->insert ($self->table_name, $s_data, %args);
@@ -89,6 +99,7 @@ sub insert ($$;%) {
 
 sub create ($$;%) {
   my ($self, $values, %args) = @_;
+  croak "Option |cb| is not supported" if $args{cb};
   my $row = $self->insert ([$values], %args)->first_as_row;
   $row->{flags} = $args{flags} if $args{flags};
   return $row;
@@ -100,7 +111,7 @@ sub find ($$;%) {
   my ($self, $values, %args) = @_;
   my $schema = $self->table_schema
       or croak sprintf "No schema for table |%s|", $self->table_name;
-  return $self->{db}
+  my $result = $self->{db}
       ->select ($self->table_name, $values,
                 fields => $args{fields},
                 and_where => $args{and_where},
@@ -110,15 +121,16 @@ sub find ($$;%) {
                 limit => 1,
                 lock => $args{lock},
                 source_name => $args{source_name},
-                _table_schema => $schema)
-      ->first_as_row;
+                _table_schema => $schema,
+                cb => $args{cb});
+  return $result->first_as_row if defined wantarray;
 } # find
 
 sub find_all ($$;%) {
   my ($self, $values, %args) = @_;
   my $schema = $self->table_schema or
       croak sprintf "No schema for table |%s|", $self->table_name;
-  return $self->{db}
+  my $result = $self->{db}
       ->select ($self->table_name, $values,
                 distinct => $args{distinct},
                 fields => $args{fields},
@@ -129,8 +141,9 @@ sub find_all ($$;%) {
                 limit => $args{limit},
                 lock => $args{lock},
                 source_name => $args{source_name},
-                _table_schema => $schema)
-      ->all_as_rows;
+                _table_schema => $schema,
+                cb => $args{cb});
+  return $result->all_as_rows if defined wantarray;
 } # find_all
 
 our $MaxFillItems ||= 100;

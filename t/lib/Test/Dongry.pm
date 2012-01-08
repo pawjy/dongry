@@ -32,6 +32,9 @@ sub new_db (%) {
       $db->execute ($args{schema}->{$name}->{_create});
     }
   }
+  if ($args{ae}) {
+    $db->source (ae => {dsn => $dsn, writable => 1, anyevent => 1});
+  }
   return $db;
 } # new_db
 

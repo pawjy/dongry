@@ -668,13 +668,128 @@ sub _find_transaction_2 : Test(4) {
   $transaction->rollback;
 } # _find_transaction_2
 
+sub _find_cb : Test(6) {
+  my $db = new_db schema => {
+    foo => {
+      type => {value => 'timestamp'},
+      _create => 'create table foo (id int, value timestamp)',
+    },
+  };
+  $db->execute ('insert into foo (id, value) values
+                     (12, "2012-01-01 00:12:12"),
+                     (21, "1991-02-12 12:12:01")');
+
+  my $result;
+  $db->table ('foo')->find ({id => {-gt => 4}},
+                            order => [id => 1], cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  is $result->table_name, 'foo';
+  eq_or_diff $result->all->to_a, 
+      [{id => 12, value => '2012-01-01 00:12:12'}];
+} # _find_cb
+
+sub _find_all_cb : Test(6) {
+  my $db = new_db schema => {
+    foo => {
+      type => {value => 'timestamp'},
+      _create => 'create table foo (id int, value timestamp)',
+    },
+  };
+  $db->execute ('insert into foo (id, value) values
+                     (12, "2012-01-01 00:12:12"),
+                     (21, "1991-02-12 12:12:01")');
+
+  my $result;
+  $db->table ('foo')->find_all ({id => {-gt => 4}},
+                                order => [id => 1], cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  is $result->table_name, 'foo';
+  eq_or_diff $result->all->to_a, 
+      [{id => 12, value => '2012-01-01 00:12:12'},
+       {id => 21, value => '1991-02-12 12:12:01'}];
+} # _find_all_cb
+
+sub _find_cb_return : Test(9) {
+  my $db = new_db schema => {
+    foo => {
+      type => {value => 'timestamp'},
+      _create => 'create table foo (id int, value timestamp)',
+    },
+  };
+  $db->execute ('insert into foo (id, value) values
+                     (12, "2012-01-01 00:12:12"),
+                     (21, "1991-02-12 12:12:01")');
+
+  my $result;
+  my $return = $db->table ('foo')->find ({id => {-gt => 4}},
+                                         order => [id => 1], cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  is $result->table_name, 'foo';
+  dies_here_ok { $result->all };
+
+  isa_ok $return, 'Dongry::Table::Row';
+  is $return->table_name, 'foo';
+  eq_or_diff $return->{data}, {id => 12, value => '2012-01-01 00:12:12'};
+} # _find_cb_return
+
+sub _find_all_cb_return : Test(13) {
+  my $db = new_db schema => {
+    foo => {
+      type => {value => 'timestamp'},
+      _create => 'create table foo (id int, value timestamp)',
+    },
+  };
+  $db->execute ('insert into foo (id, value) values
+                     (12, "2012-01-01 00:12:12"),
+                     (21, "1991-02-12 12:12:01")');
+
+  my $result;
+  my $return = $db->table ('foo')->find_all ({id => {-gt => 4}},
+                                             order => [id => 1], cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  is $result->table_name, 'foo';
+  dies_here_ok { $result->all };
+
+  isa_list_n_ok $return, 2;
+  isa_ok $return->[0], 'Dongry::Table::Row';
+  is $return->[0]->table_name, 'foo';
+  eq_or_diff $return->[0]->{data}, {id => 12, value => '2012-01-01 00:12:12'};
+  isa_ok $return->[1], 'Dongry::Table::Row';
+  is $return->[1]->table_name, 'foo';
+  eq_or_diff $return->[1]->{data}, {id => 21, value => '1991-02-12 12:12:01'};
+} # _find_all_cb_return
+
 __PACKAGE__->runtests;
 
 1;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
