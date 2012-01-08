@@ -221,10 +221,7 @@ sub fill_related_rows ($$$$;%) {
       $obj->$object_method_name ($hash->{$obj->$method_name} || $default);
     }
 
-    if ($args{cb}) {
-      my $result = bless {}, 'Dongry::Database::Executed';
-      $args{cb}->($db, $result);
-    }
+    goto &{$args{cb}} if $args{cb};
   });
 } # fill_related_rows
 
@@ -313,13 +310,23 @@ sub primary_key_bare_values ($) {
 sub reload ($;%) {
   my ($self, %args) = @_;
   my $pk_values = $self->primary_key_bare_values;
-  my $result = $self->{db}->select
-      ($self->table_name, $pk_values, %args, limit => 2);
-  if ($result->row_count != 1) {
-    croak sprintf "There are %d rows for the primary keys", $result->row_count;
-  }
-  $self->{data} = $result->first;
-  delete $self->{parsed_data};
+  $self->{db}->select
+      ($self->table_name, $pk_values, %args, limit => 2, cb => sub {
+         if ($_[1]->is_error) {
+           goto &{$args{cb}} if $args{cb};
+           return:
+         }
+
+         if ($_[1]->row_count != 1) {
+           local $Carp::CarpLevel = $Carp::CarpLevel - 1;
+           croak sprintf "There are %d rows for the primary keys",
+               $_[1]->row_count;
+         }
+         $self->{data} = $_[1]->first;
+         delete $self->{parsed_data};
+
+         goto &{$args{cb}} if $args{cb};
+       });
   return $self;
 } # reload
 
@@ -354,17 +361,27 @@ sub update ($$;%) {
     }
   }
 
-  my $result = $self->{db}->update
+  $self->{db}->update
       ($self->table_name, $s_values,
        where => $pk_values,
-       source_name => $args{source_name});
-  croak "@{[$result->{row_count}]} rows are modified by an update"
-      unless $result->{row_count} == 1;
+       source_name => $args{source_name},
+       cb => sub {
+    if ($_[1]->is_error) {
+      goto &{$args{cb}} if $args{cb};
+      return:
+    }
 
-  for (keys %$values) {
-    $self->{data}->{$_} = $s_values->{$_};
-    $self->{parsed_data}->{$_} = $values->{$_};
-  }
+    local $Carp::CarpLevel = $Carp::CarpLevel - 1;
+    croak "@{[$_[1]->{row_count}]} rows are modified by an update"
+        unless $_[1]->{row_count} == 1;
+    
+    for (keys %$values) {
+      $self->{data}->{$_} = $s_values->{$_};
+      $self->{parsed_data}->{$_} = $values->{$_};
+    }
+
+    goto &{$args{cb}} if $args{cb};
+  });
 } # update
 
 sub debug_info ($) {

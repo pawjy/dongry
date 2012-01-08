@@ -784,13 +784,116 @@ sub _reload_in_transaction_locked : Test(3) {
   is $row->get ('col3'), 'aa xy';
 } # _reload_in_transaction_locked
 
+sub _reload_multiple : Test(3) {
+  my $schema = {
+    table1 => {
+      primary_keys => [qw/col2/],
+      _create => 'create table table1 (col3 blob, col2 blob,
+                                       col1 int primary key auto_increment)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->insert ('table1', [{col2 => 'abc def', col3 => 'zyaa'}]);
+
+  my $row = $db->table ('table1')->create
+      ({col3 => 'a e aaaa', col2 => 'abc def'});
+
+  dies_here_ok {
+    my $row2 = $row->reload;
+  };
+  is $row->get ('col2'), 'abc def';
+  is $row->get_bare ('col2'), 'abc def';
+} # _reload_multiple
+
+sub _reload_cb : Test(7) {
+  my $schema = {
+    table1 => {
+      primary_keys => [qw/col2/],
+      _create => 'create table table1 (col3 blob, col2 blob,
+                                       col1 int primary key auto_increment)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $row = $db->table ('table1')->create
+      ({col3 => 'a e aaaa', col2 => 'abc def'});
+  $db->execute ('update table1 set col3 = "xyz"');
+
+  my $result;
+  my $invoked;
+  $row->reload (cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $invoked++;
+  });
+
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  is $row->get ('col3'), 'xyz';
+  is $row->get_bare ('col3'), 'xyz';
+} # _reload_cb
+
+sub _reload_cb_error : Test(4) {
+  my $schema = {
+    table1 => {
+      primary_keys => [qw/col2/],
+      _create => 'create table table1 (col3 blob, col2 blob,
+                                       col1 int primary key auto_increment)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $row = $db->table ('table1')->create
+      ({col3 => 'a e aaaa', col2 => 'abc def'});
+  $db->execute ('drop table table1');
+
+  my $result;
+  my $invoked;
+  dies_here_ok {
+    $row->reload (cb => sub {
+      $invoked++;
+    });
+  };
+
+  ng $invoked;
+  is $row->get ('col3'), 'a e aaaa';
+  is $row->get_bare ('col3'), 'a e aaaa';
+} # _reload_cb_error
+
+sub _reload_cb_exception : Test(3) {
+  my $schema = {
+    table1 => {
+      primary_keys => [qw/col2/],
+      _create => 'create table table1 (col3 blob, col2 blob,
+                                       col1 int primary key auto_increment)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $row = $db->table ('table1')->create
+      ({col3 => 'a e aaaa', col2 => 'abc def'});
+  $db->execute ('update table1 set col3 = "xyz"');
+
+  dies_here_ok {
+    $row->reload (cb => sub {
+      die "abc";
+    });
+  };
+  is $row->get ('col3'), 'xyz';
+  is $row->get_bare ('col3'), 'xyz';
+} # _reload_cb_exception
+
 __PACKAGE__->runtests;
+
+$Dongry::LeakTest = 1;
 
 1;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

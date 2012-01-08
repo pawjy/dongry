@@ -486,13 +486,91 @@ sub _update_empty : Test(2) {
   is $row->get ('col2'), 'abc def';
 } # _update_empty
 
+sub _update_cb : Test(6) {
+  my $schema = {
+    table1 => {
+      primary_keys => [qw/col1/],
+      _create => 'create table table1 (col1 int, col2 blob, col3 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->execute ('insert into table1 (col1, col2)
+                 values (120, "abc def")');
+
+  my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
+
+  my $invoked;
+  my $result;
+  $row->update ({col2 => 'xyz'}, cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $invoked++;
+  });
+
+  is $row->get ('col2'), 'xyz';
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+} # _update_cb
+
+sub _update_cb_error : Test(3) {
+  my $schema = {
+    table1 => {
+      primary_keys => [qw/col1/],
+      _create => 'create table table1 (col1 int, col2 blob, col3 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->execute ('insert into table1 (col1, col2)
+                 values (120, "abc def")');
+
+  my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
+
+  my $invoked;
+  dies_here_ok {
+    $row->update ({col4 => 'xyz'}, cb => sub {
+      $invoked++;
+    });
+  };
+
+  dies_here_ok { $row->get ('col4') };
+  ng $invoked;
+} # _update_cb_error
+
+sub _update_cb_exception : Test(2) {
+  my $schema = {
+    table1 => {
+      primary_keys => [qw/col1/],
+      _create => 'create table table1 (col1 int, col2 blob, col3 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+  $db->execute ('insert into table1 (col1, col2)
+                 values (120, "abc def")');
+
+  my $row = $db->select ('table1', {col1 => {-not => undef}})->first_as_row;
+
+  eval {
+    $row->update ({col2 => 'xyz'}, cb => sub {
+      die "abc";
+    });
+    ng 1;
+  };
+
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 5) . ".\n";
+  is $row->get ('col2'), 'xyz';
+} # _update_cb_exception
+
 __PACKAGE__->runtests;
+
+$Dongry::LeakTest = 1;
 
 1;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
