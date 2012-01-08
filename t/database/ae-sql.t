@@ -318,6 +318,324 @@ sub _select_cb_exception_error : Test(2) {
   is $warn, 'fu ga at ' . __FILE__ . ' line ' . (__LINE__ - 12) . ".\n";
 } # _select_cb_exception_error
 
+# ------ update ------
+
+sub _update_cb : Test(10) {
+  my $db = new_db;
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (34), (4)');
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  my $result;
+  $cv->begin;
+  $db->update ('foo', {id => 54}, where => {id => 4}, cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $cv->end;
+  }, source_name => 'ae');
+
+  $cv->end;
+  $cv->recv;
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  ng $result->table_name;
+  is $result->row_count, 1;
+  dies_here_ok { $result->all };
+
+  eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
+      [{id => 34}, {id => 54}];
+} # _update_cb
+
+sub _update_cb_return : Test(8) {
+  my $db = new_db;
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (34), (4)');
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  $cv->begin;
+  my $result = $db->update ('foo', {id => 54}, where => {id => 4}, cb => sub {
+    $cv->end;
+  }, source_name => 'ae');
+
+  $cv->end;
+  $cv->recv;
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ng $result->is_success;
+  ok $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  ng $result->table_name;
+  dies_here_ok { $result->row_count };
+  dies_here_ok { $result->all };
+} # _update_cb_return
+
+sub _update_cb_error : Test(10) {
+  my $db = new_db;
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (34), (4)');
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  my $result;
+  $cv->begin;
+  $db->update ('foo', {xid => 54}, where => {id => 4}, cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $cv->end;
+  }, source_name => 'ae');
+
+  $cv->end;
+  $cv->recv;
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ng $result->is_success;
+  ok $result->is_error;
+  like $result->error_text, qr{xid};
+  like $result->error_sql, qr{xid};
+  ng $result->table_name;
+  dies_here_ok { $result->row_count };
+  dies_here_ok { $result->all };
+
+  eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
+      [{id => 4}, {id => 34}];
+} # _update_cb_error
+
+sub _update_cb_exception : Test(2) {
+  my $db = new_db;
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (34), (4)');
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  my $result;
+  $cv->begin;
+  $db->update ('foo', {id => 54}, where => {id => 4}, cb => sub {
+    die "abc";
+  }, source_name => 'ae');
+
+  $cv->end;
+  eval {
+    $cv->recv;
+    ng 1;
+  };
+
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 9) . ".\n";
+
+  eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
+      [{id => 34}, {id => 54}];
+} # _update_cb_exception
+
+sub _update_cb_exception_error : Test(3) {
+  my $db = new_db;
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (34), (4)');
+
+  my $warn;
+  local $SIG{__WARN__} = sub { $warn = $_[0] };
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  my $result;
+  $cv->begin;
+  $db->update ('foo', {idx => 54}, where => {id => 4}, cb => sub {
+    die "abc";
+    $cv->end;
+  }, source_name => 'ae');
+
+  $cv->end;
+  eval {
+    $cv->recv;
+    ng 1;
+  };
+
+  ok defined $@;
+  is $warn, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 11) . ".\n";
+
+  eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
+      [{id => 4}, {id => 34}];
+} # _update_cb_exception_error
+
+# ------ delete ------
+
+sub _delete_cb : Test(10) {
+  my $db = new_db;
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (34), (4)');
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  my $result;
+  $cv->begin;
+  $db->delete ('foo', {id => 4}, cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $cv->end;
+  }, source_name => 'ae');
+
+  $cv->end;
+  $cv->recv;
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  ng $result->table_name;
+  is $result->row_count, 1;
+  dies_here_ok { $result->all };
+
+  eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
+      [{id => 34}];
+} # _delete_cb
+
+sub _delete_cb_return : Test(8) {
+  my $db = new_db;
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (34), (4)');
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  $cv->begin;
+  my $result = $db->delete ('foo', {id => 4}, cb => sub {
+    $cv->end;
+  }, source_name => 'ae');
+
+  $cv->end;
+  $cv->recv;
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ng $result->is_success;
+  ok $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  ng $result->table_name;
+  dies_here_ok { $result->row_count };
+  dies_here_ok { $result->all };
+} # _delete_cb_return
+
+sub _delete_cb_error : Test(10) {
+  my $db = new_db;
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (34), (4)');
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  my $result;
+  $cv->begin;
+  $db->delete ('foo', {xid => 4}, cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $cv->end;
+  }, source_name => 'ae');
+
+  $cv->end;
+  $cv->recv;
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ng $result->is_success;
+  ok $result->is_error;
+  like $result->error_text, qr{xid};
+  like $result->error_sql, qr{xid};
+  ng $result->table_name;
+  dies_here_ok { $result->row_count };
+  dies_here_ok { $result->all };
+
+  eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
+      [{id => 4}, {id => 34}];
+} # _delete_cb_error
+
+sub _delete_cb_exception : Test(2) {
+  my $db = new_db;
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (34), (4)');
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  my $result;
+  $cv->begin;
+  $db->delete ('foo', {id => 4}, cb => sub {
+    die "abc";
+  }, source_name => 'ae');
+
+  $cv->end;
+  eval {
+    $cv->recv;
+    ng 1;
+  };
+
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 9) . ".\n";
+
+  eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
+      [{id => 34}];
+} # _delete_cb_exception
+
+sub _delete_cb_exception_error : Test(3) {
+  my $db = new_db;
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (34), (4)');
+
+  my $warn;
+  local $SIG{__WARN__} = sub { $warn = $_[0] };
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  my $result;
+  $cv->begin;
+  $db->delete ('foo', {xid => 4}, cb => sub {
+    die "abc";
+    $cv->end;
+  }, source_name => 'ae');
+
+  $cv->end;
+  eval {
+    $cv->recv;
+    ng 1;
+  };
+
+  ok defined $@;
+  is $warn, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 11) . ".\n";
+
+  eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
+      [{id => 4}, {id => 34}];
+} # _delete_cb_exception_error
+
 # ------ set_tz ------
 
 sub _set_tz_cb : Test(7) {

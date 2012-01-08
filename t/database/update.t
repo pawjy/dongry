@@ -19,7 +19,7 @@ sub _update_nop : Test(66) {
     my $result = $db->update ('foo', {id => 23}, where => {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 0;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -44,7 +44,7 @@ sub _update_a_row_updated : Test(72) {
     my $result = $db->update ('foo', {id => 23}, where => {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -73,7 +73,7 @@ sub _update_two_row_updated : Test(72) {
     my $result = $db->update ('foo', {id => 23}, where => {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 2;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -104,7 +104,7 @@ sub _update_a_row_updated_utf8_flagged_value : Test(72) {
     my $result = $db->update ('foo', {id => "\x{5000}"}, where => {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -134,7 +134,7 @@ sub _update_a_row_updated_utf8_unflagged_value : Test(72) {
         ('foo', {id => encode 'utf-8', "\x{5000}"}, where => {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -163,7 +163,7 @@ sub _update_a_row_updated_stupid_value : Test(72) {
     my $result = $db->update ('foo', {id => "a ` b);"}, where => {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -193,7 +193,7 @@ sub _update_a_row_updated_utf8_flagged_column : Test(72) {
                               where => {"\x{5000}" => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -224,7 +224,7 @@ sub _update_a_row_updated_utf8_unflagged_column : Test(72) {
          where => {(encode 'utf-8', "\x{5000}") => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -255,7 +255,7 @@ sub _update_a_row_updated_stupid_column : Test(72) {
          where => {(encode 'utf-8', "`ab(;") => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -1022,15 +1022,97 @@ sub _update_duplicate_ignore : Test(2) {
        {id => 32, v1 => 3, v2 => undef}];
 } # _update_duplicate_ignore
 
-sub _bare_sql_fragment_class : Test(1) {
-  my $sql = Dongry::Database->bare_sql_fragment ('abc def');
-  is $$sql, 'abc def';
-} # _bare_sql_fragment_class
+sub _update_cb : Test(10) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (12), (423)');
+  
+  my $result;
+  $db->update ('foo', {id => 65}, where => {id => 12}, cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
 
-sub _bare_sql_fragment_instance : Test(1) {
-  my $sql = Dongry::Database->new->bare_sql_fragment ('abc def');
-  is $$sql, 'abc def';
-} # _bare_sql_fragment_instance
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  is $result->row_count, 1;
+  ng $result->table_name;
+  dies_here_ok { $result->each (sub { }) };
+
+  eq_or_diff $db->select ('foo', {id => {-not => undef}},
+                          order => [id => 1])->all->to_a,
+      [{id => 65}, {id => 423}];
+} # _update_cb
+
+sub _update_cb_return : Test(12) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (12), (423)');
+  
+  my $result;
+  my $result2 = $db->update
+      ('foo', {id => 65}, where => {id => 12}, cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+
+  is $result2, $result;
+  is $result2->row_count, $result->row_count;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  is $result->row_count, 1;
+  ng $result->table_name;
+  dies_here_ok { $result->each (sub { }) };
+
+  eq_or_diff $db->select ('foo', {id => {-not => undef}},
+                          order => [id => 1])->all->to_a,
+      [{id => 65}, {id => 423}];
+} # _update_cb_return
+
+sub _update_cb_exception : Test(2) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (12), (423)');
+  
+  my $result;
+  eval {
+    $db->update ('foo', {id => 65}, where => {id => 12}, cb => sub {
+      die "ab cd";
+    });
+    ng 1;
+  };
+  is $@, 'ab cd at ' . __FILE__ . ' line ' . (__LINE__ - 4) . ".\n";
+
+  eq_or_diff $db->select ('foo', {id => {-not => undef}},
+                          order => [id => 1])->all->to_a,
+      [{id => 65}, {id => 423}];
+} # _update_cb_exception
+
+sub _update_cb_error : Test(2) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (12), (423)');
+  
+  my $result;
+  my $invoked;
+  eval {
+    $db->update ('bar', {id => 65}, where => {id => 12}, cb => sub {
+      $invoked++;
+    });
+    ng 1;
+  };
+  like $@, qr{bar};
+
+  eq_or_diff $db->select ('foo', {id => {-not => undef}},
+                          order => [id => 1])->all->to_a,
+      [{id => 12}, {id => 423}];
+} # _update_cb_error
 
 __PACKAGE__->runtests;
 
@@ -1038,7 +1120,7 @@ __PACKAGE__->runtests;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

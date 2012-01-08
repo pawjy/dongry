@@ -19,7 +19,7 @@ sub _delete_nop : Test(66) {
     my $result = $db->delete ('foo', {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 0;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -44,7 +44,7 @@ sub _delete_a_row_deleted : Test(72) {
     my $result = $db->delete ('foo', {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -73,7 +73,7 @@ sub _delete_two_row_deleted : Test(72) {
     my $result = $db->delete ('foo', {id => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 2;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -104,7 +104,7 @@ sub _delete_a_row_deleted_utf8_flagged_value : Test(72) {
     my $result = $db->delete ('foo', {id => "\x{5000}"});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -134,7 +134,7 @@ sub _delete_a_row_deleted_utf8_unflagged_value : Test(72) {
         ('foo', {id => encode 'utf-8', "\x{6000}"});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -163,7 +163,7 @@ sub _delete_a_row_deleted_stupid_value : Test(72) {
     my $result = $db->delete ('foo', {id => "a ` b);"});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -192,7 +192,7 @@ sub _delete_a_row_deleted_utf8_flagged_column : Test(72) {
     my $result = $db->delete ('foo', {"\x{5000}" => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -222,7 +222,7 @@ sub _delete_a_row_deleted_utf8_unflagged_column : Test(72) {
         ('foo', {(encode 'utf-8', "\x{5000}") => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -252,7 +252,7 @@ sub _delete_a_row_deleted_stupid_column : Test(72) {
         ('foo', {(encode 'utf-8', "`ab(;") => 12});
     isa_ok $result, 'Dongry::Database::Executed';
     is $result->row_count, 1;
-    is $result->table_name, 'foo';
+    ng $result->table_name;
     my $invoked = 0;
     dies_here_ok { $result->$method (sub { $invoked++ }) };
     dies_here_ok { $result->all };
@@ -836,13 +836,105 @@ sub _delete_order_desc_limit : Test(2) {
       [{id => 12, v1 => 1, v2 => undef}];
 } # _delete_order_desc_limit
 
+sub _delete_cb : Test(10) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (12), (423)');
+  
+  my $result;
+  $db->delete ('foo', {id => 12}, cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  is $result->row_count, 1;
+  ng $result->table_name;
+  dies_here_ok { $result->each (sub { }) };
+
+  eq_or_diff $db->select ('foo', {id => {-not => undef}},
+                          order => [id => 1])->all->to_a,
+      [{id => 423}];
+} # _delete_cb
+
+sub _delete_cb_return : Test(12) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (12), (423)');
+  
+  my $result;
+  my $result2 = $db->delete
+      ('foo', {id => 12}, cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+
+  is $result2, $result;
+  is $result2->row_count, $result->row_count;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  is $result->row_count, 1;
+  ng $result->table_name;
+  dies_here_ok { $result->each (sub { }) };
+
+  eq_or_diff $db->select ('foo', {id => {-not => undef}},
+                          order => [id => 1])->all->to_a,
+      [{id => 423}];
+} # _delete_cb_return
+
+sub _delete_cb_exception : Test(2) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (12), (423)');
+  
+  my $result;
+  eval {
+    $db->delete ('foo', {id => 12}, cb => sub {
+      die "ab cd";
+    });
+    ng 1;
+  };
+  is $@, 'ab cd at ' . __FILE__ . ' line ' . (__LINE__ - 4) . ".\n";
+
+  eq_or_diff $db->select ('foo', {id => {-not => undef}},
+                          order => [id => 1])->all->to_a,
+      [{id => 423}];
+} # _delete_cb_exception
+
+sub _delete_cb_error : Test(2) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (12), (423)');
+  
+  my $result;
+  my $invoked;
+  eval {
+    $db->delete ('bar', {id => 12}, cb => sub {
+      $invoked++;
+    });
+    ng 1;
+  };
+  like $@, qr{bar};
+
+  eq_or_diff $db->select ('foo', {id => {-not => undef}},
+                          order => [id => 1])->all->to_a,
+      [{id => 12}, {id => 423}];
+} # _delete_cb_error
+
 __PACKAGE__->runtests;
 
 1;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

@@ -543,14 +543,10 @@ sub update ($$$%) {
   $sql .= ' ORDER BY ' . _order ($args{order}) if $args{order};
   croak 'Offset is not supported' if defined $args{offset};
   $sql .= sprintf ' LIMIT %d', $args{limit} || 1 if defined $args{limit};
-  my $return = $self->execute
+
+  return $self->execute
      ($sql, [@bound_value, @$where_bind], source_name => $args{source_name},
       cb => $args{cb});
-
-  return unless defined wantarray;
-  bless $return, 'Dongry::Database::Executed';
-  $return->{table_name} = $table_name;
-  return $return;
 } # update
 
 sub delete ($$$;%) {
@@ -563,14 +559,10 @@ sub delete ($$$;%) {
   $sql .= ' ORDER BY ' . _order ($args{order}) if $args{order};
   croak 'Offset is not supported' if defined $args{offset};
   $sql .= sprintf ' LIMIT %d', $args{limit} || 1 if defined $args{limit};
-  my $return = $self->execute
+
+  return $self->execute
       ($sql, $where_bind, source_name => $args{source_name},
        cb => $args{cb});
-
-  return unless defined wantarray;
-  bless $return, 'Dongry::Database::Executed';
-  $return->{table_name} = $table_name;
-  return $return;
 } # delete
 
 sub bare_sql_fragment ($$) {

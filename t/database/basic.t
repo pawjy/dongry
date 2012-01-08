@@ -150,6 +150,16 @@ sub _transaction_debug_info : Test(1) {
   $transaction->commit;
 } # _transaction_debug_info
 
+sub _bare_sql_fragment_class : Test(1) {
+  my $sql = Dongry::Database->bare_sql_fragment ('abc def');
+  is $$sql, 'abc def';
+} # _bare_sql_fragment_class
+
+sub _bare_sql_fragment_instance : Test(1) {
+  my $sql = Dongry::Database->new->bare_sql_fragment ('abc def');
+  is $$sql, 'abc def';
+} # _bare_sql_fragment_instance
+
 __PACKAGE__->runtests;
 
 1;
