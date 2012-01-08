@@ -581,14 +581,6 @@ Example:
   #   ('13', 'Bar', DEFAULT),
   #   ('14', NULL, '2012-03-01')
 
-=item $id = $db->last_insert_id
-
-Returns the I<last insert ID> as returned by the database.  It is
-usually the auto-increment primary key value of the last inserted row,
-but exactly when and what can be retrieved depend on the database
-implementation.  Please consult the reference manual of the database
-for more information.
-
 =item $result = $db->select ($table_name, $where, %opts)
 
 Select rows from the table specified as the first argument.

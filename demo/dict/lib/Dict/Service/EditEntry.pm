@@ -38,7 +38,7 @@ sub create_category_if_necessary {
   unless ($cat_row) {
     $cat_row = $dictdb->table ('category')->create
         ({'name_' . $lang => $args{category_name}});
-    $cat_row->{data}->{id} = $dictdb->last_insert_id;
+    #$cat_row->{data}->{id} = $dictdb->last_insert_id;
   }
   $transaction->commit;
 

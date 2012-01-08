@@ -461,11 +461,6 @@ sub insert ($$$;%) {
   return $return;
 } # insert
 
-sub last_insert_id ($) {
-  my $dbh = $_[0]->{dbhs}->{master} or return undef;
-  return $dbh->last_insert_id (undef, undef, undef, undef);
-} # last_insert_id
-
 sub select ($$$;%) {
   my ($self, $table_name, $where, %args) = @_;
 
