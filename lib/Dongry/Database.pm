@@ -332,7 +332,21 @@ sub execute ($$;$%) {
              if ($args{cb}) {
                my $result = bless {error_text => $@, error_sql => $sql},
                    'Dongry::Database::Executed::NotAvailable';
-               $args{cb}->($self, $result);
+               eval {
+                 $args{cb}->($self, $result);
+                 1;
+               } or do {
+                 ## Because of |local $@| in AnyEvent::DBI, any
+                 ## exception thrown in the callback will be ate by
+                 ## it.  Therefore the callback should not throw an
+                 ## exception.  We catch any exception and then
+                 ## rethrow here such that unintentional exceptions
+                 ## (e.g. method not found error) can be warned here.
+                 ## Applications should not rely on this behavior for
+                 ## purposes other than development.
+                 warn $@;
+                 die $@;
+               };
              }
            }
          });
@@ -345,7 +359,10 @@ sub execute ($$;$%) {
 
     my $result = bless {db => $self, sth => $sth, row_count => $rows},
         'Dongry::Database::Executed';
-    $args{cb}->($self, $result) if $args{cb};
+    if ($args{cb}) {
+      local $Carp::CarpLevel = $Carp::CarpLevel + 1;
+      $args{cb}->($self, $result);
+    }
     return $result;
   }
 } # execute

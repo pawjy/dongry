@@ -166,6 +166,16 @@ sub _set_tz_cb_bad : Test(2) {
   ng $invoked;
 } # _set_tz_cb_bad
 
+sub _set_tz_cb_croak : Test(1) {
+  my $db = new_db;
+  eval {
+    $db->set_tz ('', cb => sub {
+      Carp::croak 'hoge';
+    });
+  };
+  is $@, 'hoge at ' . __FILE__ . ' line ' . (__LINE__ - 2) . "\n";
+} # _set_tz_cb_croak
+
 __PACKAGE__->runtests;
 
 1;

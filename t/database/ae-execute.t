@@ -447,6 +447,107 @@ sub _execute_return_value : Test(9) {
   dies_here_ok { $result->each_as_row (sub { }) };
 } # _execute_return_value
 
+sub _execute_cb_croak : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2)');
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+
+  my $cv = AnyEvent->condvar;
+
+  my $result;
+  $db->execute ('select * from foo order by id asc', undef,
+                cb => sub {
+                  Carp::croak "hoge";
+                },
+                source_name => 'ae');
+
+  eval {
+    $cv->recv;
+  };
+  like $@, qr{^hoge at }; ## file/line is meaningless
+} # _execute_cb_croak
+
+sub _execute_cb_die : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2)');
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+
+  my $cv = AnyEvent->condvar;
+
+  my $result;
+  $db->execute ('select * from foo order by id asc', undef,
+                cb => sub {
+                  die "hoge";
+                },
+                source_name => 'ae');
+
+  eval {
+    $cv->recv;
+  };
+  is $@, 'hoge at ' . __FILE__ . ' line ' . (__LINE__ - 7) . ".\n";
+} # _execute_cb_die
+
+sub _execute_cb_die_by_error : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2)');
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+
+  my $cv = AnyEvent->condvar;
+
+  my $result;
+  $db->execute ('select * from foo order by id asc', undef,
+                cb => sub {
+                  function_not_found();
+                },
+                source_name => 'ae');
+
+  eval {
+    $cv->recv;
+  };
+  like $@,
+      qr{function_not_found.* at \Q@{[__FILE__]} line @{[__LINE__ - 8]}.\E$};
+} # _execute_cb_die_by_error
+
+sub _execute_cb_error_die : Test(3) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2)');
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+
+  my $line;
+  my $warn;
+  {
+    local $SIG{__WARN__} = sub {
+      $warn = $_[0];
+    };
+
+    my $cv = AnyEvent->condvar;
+
+    $line = __LINE__ + 3;
+    $db->execute ('select syntax error', undef,
+                  cb => sub {
+                    die "hoge";
+                  },
+                  source_name => 'ae');
+
+    eval {
+      $cv->recv;
+      1;
+    } or do {
+      ok 1;
+    };
+  };
+  ok defined $@; ## Actual exception is hidden by AnyEvent::DBI.
+  is $warn, 'hoge at ' . __FILE__ . ' line ' . $line . ".\n";
+} # _execute_cb_die
+
 __PACKAGE__->runtests;
 
 $Dongry::LeakTest = 1;

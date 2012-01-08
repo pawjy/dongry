@@ -1875,6 +1875,36 @@ sub _execute_callback_and_return : Test(8) {
   is $result2->row_count, 2;
 } # _execute_callback_and_return
 
+sub _execute_callback_croak : Test(2) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+
+  eval {
+    $db->execute ('insert into foo (id) values (43), (31)', undef, cb => sub {
+      Carp::croak "hoge";
+    });
+  };
+  is $@, 'hoge at ' . __FILE__ . ' line ' . (__LINE__ - 2) . "\n";
+
+  eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
+      [{id => 31}, {id => 43}];
+} # _execute_callback_croak
+
+sub _execute_callback_die : Test(2) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+
+  eval {
+    $db->execute ('insert into foo (id) values (43), (31)', undef, cb => sub {
+      die "hoge";
+    });
+  };
+  is $@, 'hoge at ' . __FILE__ . ' line ' . (__LINE__ - 3) . ".\n";
+
+  eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
+      [{id => 31}, {id => 43}];
+} # _execute_callback_die
+
 {
   package MyListClass;
   $INC{'MyListClass.pm'} = 1;
