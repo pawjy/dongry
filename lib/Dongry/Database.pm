@@ -854,7 +854,14 @@ sub commit ($;%) {
         if ($args{cb}) {
           my $result = bless {error_text => $@, error_sql => 'commit'},
               'Dongry::Database::Executed::NotAvailable';
-          $args{cb}->($self->{db}, $result);
+          eval {
+            $args{cb}->($self->{db}, $result);
+            1;
+          } or do {
+            ## See note for |execute|.
+            warn $@;
+            die $@;
+          };
         }
       }
     });
@@ -869,7 +876,7 @@ sub rollback ($;%) {
   if ($self->{db}->{in_transaction}) {
     weaken ($self = $self);
     $self->{db}->{dbhs}->{master}->rollback (sub {
-      if ($#_ || !$@) { ## AnyEvent::DBI document is wrong...
+      if ($#_ || !$@) { ## AnyEvent::DBI documentation is wrong...
         if ($args{cb}) {
           my $result = bless {}, 'Dongry::Database::Executed::Inserted';
           $args{cb}->($self->{db}, $result);
@@ -878,7 +885,14 @@ sub rollback ($;%) {
         if ($args{cb}) {
           my $result = bless {error_text => $@, error_sql => 'rollback'},
               'Dongry::Database::Executed::NotAvailable';
-          $args{cb}->($self->{db}, $result);
+          eval {
+            $args{cb}->($self->{db}, $result);
+            1;
+          } or do {
+            ## See note for AnyEvent::DBI.
+            warn $@;
+            die $@;
+          };
         }
       }
     });

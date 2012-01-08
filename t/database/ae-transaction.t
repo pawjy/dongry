@@ -59,6 +59,7 @@ sub _execute_commit_failed : Test(7) {
 
   require AnyEvent::DBI;
   no warnings 'redefine';
+  no warnings 'once';
   local *AnyEvent::DBI::req_commit = sub {
     die ["commit error"];
   };
@@ -646,6 +647,182 @@ sub _execute_transaction_rollback_commit : Test(2) {
       ('select * from foo order by id', undef, source_name => 'default');
   eq_or_diff $result->all->to_a, [];
 } # _execute_transaction_rollback_commit
+
+sub _commit_cb_exception : Test(4) {
+  my $db = new_db;
+  $db->source ('master')->{anyevent} = 1;
+
+  my $warn;
+  {
+    local $SIG{__WARN__} = sub {
+      $warn = $_[0];
+    };
+    
+    my $cv = AnyEvent->condvar;
+    
+    $db->execute ('create table foo (id int primary key) engine=innodb');
+    $cv->begin;
+    
+    my $transaction = $db->transaction;
+    $cv->begin;
+    $db->execute ('insert into foo (id) values (1), (2)', undef, cb => sub {
+      $cv->end;
+    });
+    
+    $cv->begin;
+    $transaction->commit (cb => sub {
+      die "ho ge";
+      $cv->end;
+    });
+    
+    $cv->end;
+    eval {
+      $cv->recv;
+      1;
+    } or do {
+      ok 1;
+    };
+  }
+
+  is $@, 'ho ge at ' . __FILE__ . ' line ' . (__LINE__ - 13) . ".\n";
+  is $warn, undef;
+
+  my $result = $db->execute
+      ('select * from foo order by id', undef, source_name => 'default');
+  eq_or_diff $result->all->to_a, [{id => 1}, {id => 2}];
+} # _commit_cb_exception
+
+sub _commit_cb_exception_error : Test(4) {
+  my $db = new_db;
+  $db->source ('master')->{anyevent} = 1;
+
+  my $warn;
+  {
+    local $SIG{__WARN__} = sub {
+      $warn = $_[0];
+    };
+    
+    my $cv = AnyEvent->condvar;
+    
+    $db->execute ('create table foo (id int primary key) engine=innodb');
+    $cv->begin;
+    
+    my $transaction = $db->transaction;
+    $cv->begin;
+    $db->execute ('insert error', undef, cb => sub {
+      $cv->end;
+    });
+    
+    $cv->begin;
+    $transaction->commit (cb => sub {
+      die "ho ge";
+      $cv->end;
+    });
+    
+    $cv->end;
+    eval {
+      $cv->recv;
+      1;
+    } or do {
+      ok 1;
+    };
+  }
+
+  ok defined $@; ## Hidden by AnyEvent::DBI.
+  is $warn, 'ho ge at ' . __FILE__ . ' line ' . (__LINE__ - 14) . ".\n";
+
+  my $result = $db->execute
+      ('select * from foo order by id', undef, source_name => 'default');
+  eq_or_diff $result->all->to_a, [];
+} # _commit_cb_exception_error
+
+sub _rollback_cb_exception : Test(4) {
+  my $db = new_db;
+  $db->source ('master')->{anyevent} = 1;
+
+  my $warn;
+  {
+    local $SIG{__WARN__} = sub {
+      $warn = $_[0];
+    };
+    
+    my $cv = AnyEvent->condvar;
+    
+    $db->execute ('create table foo (id int primary key) engine=innodb');
+    $cv->begin;
+    
+    my $transaction = $db->transaction;
+    $cv->begin;
+    $db->execute ('insert into foo (id) values (1), (2)', undef, cb => sub {
+      $cv->end;
+    });
+    
+    $cv->begin;
+    $transaction->rollback (cb => sub {
+      die "ho ge";
+      $cv->end;
+    });
+    
+    $cv->end;
+    eval {
+      $cv->recv;
+      1;
+    } or do {
+      ok 1;
+    };
+  }
+
+  is $@, 'ho ge at ' . __FILE__ . ' line ' . (__LINE__ - 13) . ".\n";
+  is $warn, undef;
+
+  my $result = $db->execute
+      ('select * from foo order by id', undef, source_name => 'default');
+  eq_or_diff $result->all->to_a, [];
+} # _rollback_cb_exception
+
+sub _rollback_cb_exception_error : Test(4) {
+  my $db = new_db;
+  $db->source ('master')->{anyevent} = 1;
+
+  my $warn;
+  {
+    local $SIG{__WARN__} = sub {
+      $warn = $_[0];
+    };
+    
+    my $cv = AnyEvent->condvar;
+    
+    $db->execute ('create table foo (id int primary key) engine=innodb');
+    $cv->begin;
+    
+    my $transaction = $db->transaction;
+    $cv->begin;
+    $db->execute ('insert error', undef, cb => sub {
+      $cv->end;
+    });
+    
+    $cv->begin;
+    $transaction->rollback (cb => sub {
+      die "ho ge";
+      $cv->end;
+    });
+    
+    $cv->end;
+    eval {
+      $cv->recv;
+      1;
+    } or do {
+      ok 1;
+    };
+  }
+
+  ok defined $@; ## Hidden by AnyEvent::DBI.
+  is $warn, 'ho ge at ' . __FILE__ . ' line ' . (__LINE__ - 14) . ".\n";
+
+  my $result = $db->execute
+      ('select * from foo order by id', undef, source_name => 'default');
+  eq_or_diff $result->all->to_a, [];
+} # _rollback_cb_exception_error
 
 __PACKAGE__->runtests;
 
