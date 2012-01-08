@@ -491,15 +491,24 @@ sub select ($$$;%) {
     $sql .= ' LOCK IN SHARE MODE' if $args{lock} eq 'share';
     $args{must_be_writable} = 1;
   }
+
+  my $cb = $args{cb};
+  if ($cb) {
+    my $cb_orig = $cb;
+    $cb = sub {
+      $_[1]->{table_name} = $table_name unless $_[1]->is_error;
+      goto &$cb_orig;
+    }; # $cb
+  }
+
   my $return = $self->execute
       ($sql, $where_bind,
        source_name => $args{source_name},
        must_be_writable => $args{must_be_writable},
-       cb => $args{cb});
-
+       cb => $cb);
   return unless defined wantarray;
-  bless $return, 'Dongry::Database::Executed';
-  $return->{table_name} = $table_name;
+
+  $return->{table_name} = $table_name unless $return->is_error;
   return $return;
 } # select
 

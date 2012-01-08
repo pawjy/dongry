@@ -200,6 +200,124 @@ sub _insert_cb_error_exception_carp : Test(2) {
   like $warn, qr{^ab cd at }; ## Location is not helpful
 } # _insert_cb_error_exception_carp
 
+# ------ select ------
+
+sub _select_cb : Test(9) {
+  my $db = new_db;
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (34), (4)');
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  my $result;
+  $cv->begin;
+  $db->select ('foo', {id => {-gt => 1}}, order => [id => 1], cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $cv->end;
+  }, source_name => 'ae');
+
+  $cv->end;
+  $cv->recv;
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  is $result->table_name, 'foo';
+  is $result->row_count, 2;
+  eq_or_diff $result->all->to_a, [{id => 4}, {id => 34}];
+} # _select_cb
+
+sub _select_cb_return : Test(8) {
+  my $db = new_db;
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (34), (4)');
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  $cv->begin;
+  my $result = $db->select
+      ('foo', {id => {-gt => 1}}, order => [id => 1], cb => sub {
+    $cv->end;
+  }, source_name => 'ae');
+
+  $cv->end;
+  $cv->recv;
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ng $result->is_success;
+  ok $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  ng $result->table_name;
+  dies_here_ok { $result->row_count };
+  dies_here_ok { $result->first };
+} # _select_cb_return
+
+sub _select_cb_exception : Test(1) {
+  my $db = new_db;
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (34), (4)');
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  $cv->begin;
+  $db->select ('foo', {id => {-gt => 1}}, order => [id => 1], cb => sub {
+    die "fu ga";
+    $cv->end;
+  }, source_name => 'ae');
+
+  $cv->end;
+
+  eval {
+    $cv->recv;
+    ng 1;
+  };
+
+  is $@, 'fu ga at ' . __FILE__ . ' line ' . (__LINE__ - 11) . ".\n";
+} # _select_cb_exception
+
+sub _select_cb_exception_error : Test(2) {
+  my $db = new_db;
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (34), (4)');
+
+  my $warn;
+  local $SIG{__WARN__} = sub { $warn = $_[0] };
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  $cv->begin;
+  $db->select ('foo', {mid => {-gt => 1}}, order => [id => 1], cb => sub {
+    die "fu ga";
+    $cv->end;
+  }, source_name => 'ae');
+
+  $cv->end;
+
+  eval {
+    $cv->recv;
+    ng 1;
+  };
+
+  ok defined $@;
+  is $warn, 'fu ga at ' . __FILE__ . ' line ' . (__LINE__ - 12) . ".\n";
+} # _select_cb_exception_error
+
 # ------ set_tz ------
 
 sub _set_tz_cb : Test(7) {

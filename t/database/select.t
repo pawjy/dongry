@@ -2259,13 +2259,107 @@ sub _select_and_where_undef : Test(1) {
   is $result->row_count, 3;
 } # _select_and_where_undef
 
+sub _select_cb : Test(9) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (321), (331)');
+  
+  my $result;
+  $db->select ('foo', {id => {-ne => undef}}, order => [id => 1], cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  is $result->table_name, 'foo';
+  is $result->row_count, 2;
+  eq_or_diff $result->all->to_a,
+      [{id => 321}, {id =>331}];
+} # _select_cb
+
+sub _select_cb_return : Test(11) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (321), (331)');
+  
+  my $result;
+  my $result2 = $db->select
+      ('foo', {id => {-ne => undef}}, order => [id => 1], cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+  });
+
+  is $result2, $result;
+  is $result2->row_count, $result->row_count;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  is $result->table_name, 'foo';
+  is $result->row_count, 2;
+  eq_or_diff $result->all->to_a,
+      [{id => 321}, {id =>331}];
+} # _select_cb_return
+
+sub _select_cb_error : Test(2) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (321), (331)');
+  
+  my $result;
+  dies_here_ok {
+    $db->select ('foo', {hoge => 3}, cb => sub {
+      $result = $_[1];
+    });
+  };
+  
+  ng $result;
+} # _select_cb_error
+
+sub _select_cb_exception : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (321), (331)');
+  
+  eval {
+    $db->select
+        ('foo', {id => {-ne => undef}}, order => [id => 1], cb => sub {
+      die "hoa fuga";
+    });
+    ng 1;
+  };
+
+  is $@, 'hoa fuga at ' . __FILE__ . ' line ' . (__LINE__ - 5) . ".\n";
+} # _select_cb_exception
+
+sub _select_cb_exception_carp : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (321), (331)');
+  
+  eval {
+    $db->select
+        ('foo', {id => {-ne => undef}}, order => [id => 1], cb => sub {
+      Carp::croak "hoa fuga";
+    });
+    ng 1;
+  };
+
+  is $@, 'hoa fuga at ' . __FILE__ . ' line ' . (__LINE__ - 4) . "\n";
+} # _select_cb_exception_carp
+
 __PACKAGE__->runtests;
 
 1;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
