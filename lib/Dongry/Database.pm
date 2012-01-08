@@ -699,7 +699,7 @@ sub debug_info ($) {
   push @info, 'error' if $self->is_error;
   for my $name (qw(table_name error_text error_sql)) {
     my $v = $self->$name;
-    push @info, $v . ' = ' . $v if defined $v;
+    push @info, $name . ' = ' . $v if defined $v;
   }
   return sprintf '{DBExecuted: %s}', join '; ', @info;
 } # debug_info

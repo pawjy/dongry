@@ -126,21 +126,21 @@ sub _debug_info_4 : Test(1) {
 sub _executed_debug_info : Test(1) {
   my $db = new_db;
   my $result = $db->execute ('show tables');
-  is $result->debug_info, '{DBExecuted: (no table)}';
+  is $result->debug_info, '{DBExecuted: }';
 } # _executed_debug_info
 
 sub _executed_debug_info_2 : Test(1) {
   my $db = new_db;
   $db->execute ('create table foo (id int)');
   my $result = $db->select ('foo', {id => 0});
-  is $result->debug_info, '{DBExecuted: foo}';
+  is $result->debug_info, '{DBExecuted: table_name = foo}';
 } # _executed_debug_info_2
 
 sub _executed_debug_info_3 : Test(1) {
   my $db = new_db;
   $db->execute ('create table foo (id int)');
   my $result = $db->insert ('foo', [{id => 0}]);
-  is $result->debug_info, '{DBExecuted: foo}';
+  is $result->debug_info, '{DBExecuted: table_name = foo}';
 } # _executed_debug_info_3
 
 sub _transaction_debug_info : Test(1) {
