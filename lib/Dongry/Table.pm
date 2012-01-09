@@ -1,7 +1,7 @@
 package Dongry::Table;
 use strict;
 use warnings;
-our $VERSION = '1.0';
+our $VERSION = '2.0';
 use Carp;
 
 push our @CARP_NOT, qw(Dongry::Database);
@@ -111,6 +111,18 @@ sub find ($$;%) {
   my ($self, $values, %args) = @_;
   my $schema = $self->table_schema
       or croak sprintf "No schema for table |%s|", $self->table_name;
+
+  my $return;
+  my $cb = $args{cb};
+  if ($cb) {
+    my $orig_cb = $cb;
+    $cb = sub {
+      $return = $_[1]->is_success ? $_[1]->first_as_row : undef;
+      local $_ = $return;
+      $orig_cb->(@_);
+    };
+  }
+  
   my $result = $self->{db}
       ->select ($self->table_name, $values,
                 fields => $args{fields},
@@ -122,14 +134,28 @@ sub find ($$;%) {
                 lock => $args{lock},
                 source_name => $args{source_name},
                 _table_schema => $schema,
-                cb => $args{cb});
-  return $result->first_as_row if defined wantarray;
+                cb => $cb);
+  return $cb
+      ? $result->row_count ? $return : $return ## Die if error (async)
+      : $result->first_as_row if defined wantarray;
 } # find
 
 sub find_all ($$;%) {
   my ($self, $values, %args) = @_;
   my $schema = $self->table_schema or
       croak sprintf "No schema for table |%s|", $self->table_name;
+
+  my $return;
+  my $cb = $args{cb};
+  if ($cb) {
+    my $orig_cb = $cb;
+    $cb = sub {
+      $return = $_[1]->is_success ? $_[1]->all_as_rows : undef;
+      local $_ = $return;
+      $orig_cb->(@_);
+    };
+  }
+
   my $result = $self->{db}
       ->select ($self->table_name, $values,
                 distinct => $args{distinct},
@@ -142,8 +168,8 @@ sub find_all ($$;%) {
                 lock => $args{lock},
                 source_name => $args{source_name},
                 _table_schema => $schema,
-                cb => $args{cb});
-  return $result->all_as_rows if defined wantarray;
+                cb => $cb);
+  return $return || $result->all_as_rows if defined wantarray;
 } # find_all
 
 our $MaxFillItems ||= 100;

@@ -164,7 +164,7 @@ sub _insert_cb_return : Test(7) {
        {id => 52, value => '1986-11-14 06:22:13'}];
 } # _insert_cb_return
 
-sub _find_cb : Test(8) {
+sub _find_cb : Test(11) {
   my $db = new_db schema => {
     foo => {
       type => {value => 'timestamp'},
@@ -178,11 +178,13 @@ sub _find_cb : Test(8) {
   my $cv = AnyEvent->condvar;
 
   my $result;
+  my $value;
   $db->table ('foo')->find ({id => {-gt => 4}},
                             order => [id => 1],
                             source_name => 'ae', cb => sub {
     is $_[0], $db;
     $result = $_[1];
+    $value = $_;
     $cv->send;
   });
 
@@ -194,10 +196,13 @@ sub _find_cb : Test(8) {
   ng $result->error_text;
   ng $result->error_sql;
   is $result->table_name, 'foo';
-  eq_or_diff $result->all->to_a, [{id => 12, value => '2012-01-01 00:12:12'}];
+  dies_here_ok { $result->all };
+  isa_ok $value, 'Dongry::Table::Row';
+  is $value->table_name, 'foo';
+  eq_or_diff $value->{data}, {id => 12, value => '2012-01-01 00:12:12'};
 } # _find_cb
 
-sub _find_all_cb : Test(8) {
+sub _find_cb_not_found : Test(9) {
   my $db = new_db schema => {
     foo => {
       type => {value => 'timestamp'},
@@ -211,11 +216,13 @@ sub _find_all_cb : Test(8) {
   my $cv = AnyEvent->condvar;
 
   my $result;
-  $db->table ('foo')->find_all ({id => {-gt => 4}},
-                                order => [id => 1],
-                                source_name => 'ae', cb => sub {
+  my $value;
+  $db->table ('foo')->find ({id => {-gt => 400}},
+                            order => [id => 1],
+                            source_name => 'ae', cb => sub {
     is $_[0], $db;
     $result = $_[1];
+    $value = $_;
     $cv->send;
   });
 
@@ -227,12 +234,53 @@ sub _find_all_cb : Test(8) {
   ng $result->error_text;
   ng $result->error_sql;
   is $result->table_name, 'foo';
-  eq_or_diff $result->all->to_a,
-      [{id => 12, value => '2012-01-01 00:12:12'},
-       {id => 21, value => '1991-02-12 12:12:01'}];
+  dies_here_ok { $result->all };
+  is $value, undef;
+} # _find_cb_not_found
+
+sub _find_all_cb : Test(15) {
+  my $db = new_db schema => {
+    foo => {
+      type => {value => 'timestamp'},
+      _create => 'create table foo (id int, value timestamp)',
+    },
+  }, ae => 1;
+  $db->execute ('insert into foo (id, value) values
+                     (12, "2012-01-01 00:12:12"),
+                     (21, "1991-02-12 12:12:01")');
+
+  my $cv = AnyEvent->condvar;
+
+  my $result;
+  my $value;
+  $db->table ('foo')->find_all ({id => {-gt => 4}},
+                                order => [id => 1],
+                                source_name => 'ae', cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+    $cv->send;
+  });
+
+  $cv->recv;
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  ng $result->error_sql;
+  is $result->table_name, 'foo';
+  dies_here_ok { $result->all };
+  isa_list_n_ok $value, 2;
+  isa_ok $value->[0], 'Dongry::Table::Row';
+  is $value->[0]->table_name, 'foo';
+  eq_or_diff $value->[0]->{data}, {id => 12, value => '2012-01-01 00:12:12'};
+  isa_ok $value->[1], 'Dongry::Table::Row';
+  is $value->[1]->table_name, 'foo';
+  eq_or_diff $value->[1]->{data}, {id => 21, value => '1991-02-12 12:12:01'};
 } # _find_all_cb
 
-sub _find_cb_return : Test(4) {
+sub _find_cb_return : Test(5) {
   my $db = new_db schema => {
     foo => {
       type => {value => 'timestamp'},
@@ -247,11 +295,13 @@ sub _find_cb_return : Test(4) {
 
   my $invoked;
   my $result;
+  my $value;
   dies_here_ok {
     my $return = $db->table ('foo')->find ({id => {-gt => 4}},
                                            order => [id => 1],
                                            source_name => 'ae', cb => sub {
       $result = $_[1];
+      $value = $_;
       $invoked++;
       $cv->send;
     });
@@ -260,11 +310,11 @@ sub _find_cb_return : Test(4) {
   $cv->recv;
   is $invoked, 1;
   is $result->row_count, 1;
-  eq_or_diff $result->all->to_a, 
-      [{id => 12, value => '2012-01-01 00:12:12'}];
+  dies_here_ok { $result->all };
+  isa_ok $value, 'Dongry::Table::Row';
 } # _find_cb_return
 
-sub _find_all_cb_return : Test(4) {
+sub _find_cb_return_not_found : Test(5) {
   my $db = new_db schema => {
     foo => {
       type => {value => 'timestamp'},
@@ -279,11 +329,47 @@ sub _find_all_cb_return : Test(4) {
 
   my $invoked;
   my $result;
+  my $value;
+  dies_here_ok {
+    my $return = $db->table ('foo')->find ({id => {-gt => 400}},
+                                           order => [id => 1],
+                                           source_name => 'ae', cb => sub {
+      $result = $_[1];
+      $value = $_;
+      $invoked++;
+      $cv->send;
+    });
+  };
+
+  $cv->recv;
+  is $invoked, 1;
+  is $result->row_count, 0;
+  dies_here_ok { $result->all };
+  is $value, undef;
+} # _find_cb_return_not_found
+
+sub _find_all_cb_return : Test(7) {
+  my $db = new_db schema => {
+    foo => {
+      type => {value => 'timestamp'},
+      _create => 'create table foo (id int, value timestamp)',
+    },
+  }, ae => 1;
+  $db->execute ('insert into foo (id, value) values
+                     (12, "2012-01-01 00:12:12"),
+                     (21, "1991-02-12 12:12:01")');
+
+  my $cv = AnyEvent->condvar;
+
+  my $invoked;
+  my $result;
+  my $value;
   dies_here_ok {
     my $return = $db->table ('foo')->find_all ({id => {-gt => 4}},
                                                order => [id => 1],
                                                source_name => 'ae', cb => sub {
       $result = $_[1];
+      $value = $_;
       $invoked++;
       $cv->send;
     });
@@ -292,10 +378,77 @@ sub _find_all_cb_return : Test(4) {
   $cv->recv;
   is $invoked, 1;
   is $result->row_count, 2;
-  eq_or_diff $result->all->to_a, 
-      [{id => 12, value => '2012-01-01 00:12:12'},
-       {id => 21, value => '1991-02-12 12:12:01'}];
+  dies_here_ok { $result->all };
+  isa_list_n_ok $value, 2;
+  isa_ok $value->[0], 'Dongry::Table::Row';
+  isa_ok $value->[1], 'Dongry::Table::Row';
 } # _find_all_cb_return
+
+sub _find_cb_error : Test(9) {
+  my $db = new_db schema => {
+    foo => {
+      type => {value => 'timestamp'},
+      _create => 'create table foo (id int, value timestamp)',
+    },
+  }, ae => 1;
+
+  my $cv = AnyEvent->condvar;
+
+  my $result;
+  my $value;
+  $db->table ('foo')->find ({id2 => 4},
+                            order => [id => 1],
+                            source_name => 'ae', cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+    $cv->send;
+  });
+
+  $cv->recv;
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ng $result->is_success;
+  ok $result->is_error;
+  like $result->error_text, qr{id2};
+  like $result->error_sql, qr{id2};
+  ng $result->table_name;
+  dies_here_ok { $result->all };
+  is $value, undef;
+} # _find_cb_error
+
+sub _find_all_cb_error : Test(9) {
+  my $db = new_db schema => {
+    foo => {
+      type => {value => 'timestamp'},
+      _create => 'create table foo (id int, value timestamp)',
+    },
+  }, ae => 1;
+
+  my $cv = AnyEvent->condvar;
+
+  my $result;
+  my $value;
+  $db->table ('foo')->find_all ({id2 => 4},
+                                order => [id => 1],
+                                source_name => 'ae', cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+    $cv->send;
+  });
+
+  $cv->recv;
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ng $result->is_success;
+  ok $result->is_error;
+  like $result->error_text, qr{id2};
+  like $result->error_sql, qr{id2};
+  ng $result->table_name;
+  dies_here_ok { $result->all };
+  is $value, undef;
+} # _find_all_cb_error
 
 sub _fill_related_rows_cb : Test(5) {
   my $schema = {
