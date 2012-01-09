@@ -55,7 +55,7 @@ shorthand for the other method:
 
 =over 4
 
-=item $result = $table->insert ([$values1, $values2, ...], %args)
+=item $result = $table->insert ([$values1, $values2, ...], %opts)
 
 Insert one or more rows specified in the first argument to the table.
 Unlike the C<insert> method of the I<database> object, the C<insert>
@@ -69,11 +69,16 @@ information.  In addition, when a I<values> hash reference is
 specified as the C<duplicate> option, the I<values> is serialized as
 per the table schema as well.
 
+The C<cb> (callback) function, if specified, is invoked after the
+execution of the SQL statement.  See the C<execute> method of the
+database object for more information.
+
 The rows objects accessible from the result object returned by this
 method would hold both I<parsed> and I<serialized> values - the
 I<parsed> values are the values specified as the argument to this
 method, while the I<serialized> values are stringified representation
-of them.  Both set of values would contain any default values.
+of them.  Both set of values would contain any default values.  The
+method does not return a value in asynchronous mode.
 
 See the following section on the serialization for more information on
 how values are converted into SQL statements.
@@ -99,7 +104,7 @@ Example:
     print $row->get ('id'), "\t", $row->get ('date'), "\n";
   });
 
-=item $row = $table->create ($values, %args)
+=item $row = $table->create ($values, %opts)
 
 Insert a row specified as the first argument.  This is just a
 shorthand for the most common use of the C<insert> method and
@@ -143,7 +148,7 @@ column in the "where" argument of those methods.
 
 =over 4
 
-=item $row = $table->find ($where, %args)
+=item $row = $table->find ($where, %opts)
 
 Retrieve a row from the table and return it as a table row object.
 
@@ -152,18 +157,36 @@ argument.  It must be a I<schema-aware> C<where> structure as
 described in L<Dongry::SQL>.
 
 If there is a row, a table row object representing the row is
-returned.  Otherwise, the C<undef> value is returned.
+returned.  Otherwise, the C<undef> value is returned.  However, the
+method does not return a value in asynchronous mode.
 
 Following options for the C<select> method of the database object also
 apply to this method: C<fields>, C<group>, C<order>, C<offset>,
 C<source_name>, and C<lock>.
+
+The C<cb> (callback) function, if specified, is invoked after the
+execution of the SQL statement.  See the C<execute> method of the
+database object for more information.  The return object only contains
+whether there is an error or not, possibly with error descriptions.
+The C<$_> variable contains the value that would returned by the
+method in synchronous mode.
 
 Example:
 
   $date = DateTime->now->subtract (days => 2);
   my $row = $db->table ('entry')->find ({date => {-lt => $date}});
 
-=item $list = $table->find_all ($where, %args)
+  ## Async
+  $db->table ('entry')->find ({date => {-lt => $date}}, cb => sub {
+    if ($_[1]->is_success) {
+      warn $_->get ('date')->ymd ('/'), "\n";
+    } else {
+      warn $_[1]->error_text;
+    }
+    $cv->send;
+  }, source_name => 'async');
+
+=item $list = $table->find_all ($where, %opts)
 
 Retrieve the rows from the table and return it as a list of table row
 objects.
@@ -173,11 +196,19 @@ argument.  It must be a schema-aware C<where> structure as described
 in L<Dongry::SQL>.
 
 The method returns a (possibly empty) list object containing table row
-objects representing the selected rows.
+objects representing the selected rows.  However, the method does not
+return a value in asynchronous mode.
 
 Following options for the C<select> method of the database object also
 apply to this method: C<distinct>, C<fields>, C<group>, C<order>,
 C<offset>, C<limit>, C<source_name>, and C<lock>.
+
+The C<cb> (callback) function, if specified, is invoked after the
+execution of the SQL statement.  See the C<execute> method of the
+database object for more information.  The return object only contains
+whether there is an error or not, possibly with error descriptions.
+The C<$_> variable contains the value that would returned by the
+method in synchronous mode.
 
 Example:
 
@@ -192,7 +223,7 @@ resolution of so-called "has-a" or "has-many" relationships:
 
 =over 4
 
-=item $table->fill_related_rows ($list, {$get_method => $column, ...} => $set_method, %args)
+=item $table->fill_related_rows ($list, {$get_method => $column, ...} => $set_method, %opts)
 
 Retrieve a set of rows related to each object in the specified list,
 associated by a set of (foreign) keys.  This method could be useful
@@ -221,6 +252,11 @@ specified as the argument to the method.
 
 Following options for the C<select> method of the database object also
 apply to this method: C<fields>, C<source_name>, and C<lock>.
+
+The C<cb> (callback) function, if specified, is invoked after the
+execution of the SQL statement.  See the C<execute> method of the
+database object for more information.  The return object only contains
+whether there is an error or not, possibly with error descriptions.
 
 Example:
 
@@ -360,7 +396,7 @@ If no primary keys are specified in the table schema, the method would
 raise an error.  If the serialized value for a column in the primary
 key is missing or is C<undef>, the method would raise an error.
 
-=item $row = $row->reload (%args)
+=item $row = $row->reload (%opts)
 
 Retrieve the current row from the database using primary key values of
 the row (i.e. the values returned by the C<primary_key_bare_values>
@@ -373,13 +409,18 @@ the primary key values or there are multiple rows for the values.
 Following options for the C<select> method of the database object also
 apply to this method: C<source_name>, C<fields>, and C<lock>.
 
+The C<cb> (callback) function, if specified, is invoked after the
+execution of the SQL statement.  See the C<execute> method of the
+database object for more information.  The return object only contains
+whether there is an error or not, possibly with error descriptions.
+
 =back
 
 =head2 Modifying values
 
 =over 4
 
-=item $row->update ($values, %args)
+=item $row->update ($values, %opts)
 
 Set the values of columns specified to the first argument as a hash
 reference of column name/value pairs.  The values are serialized
@@ -390,6 +431,11 @@ database object) can be specified if desired.
 
 The C<source_name> option for the C<update> method of the database
 object also applies to this method.
+
+The C<cb> (callback) function, if specified, is invoked after the
+execution of the SQL statement.  See the C<execute> method of the
+database object for more information.  The return object only contains
+whether there is an error or not, possibly with error descriptions.
 
 The serialized and parsed values of the specified columns hold by the
 table row object are updated to the new value.  If the bare SQL
@@ -470,7 +516,7 @@ Wakaba <w@suika.fam.cx>.
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

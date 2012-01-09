@@ -39,6 +39,12 @@ Dongry.  All of the features in Dongry can be directly or indirectly
 accessible from the database object, as described in the following
 sections.
 
+In addition to the synchronous processing model, Dongry also supports
+the asynchronous event-based model by using the L<AnyEvent::DBI>
+module as its backend.  Since both modes can be switched or combined
+easily, you can transit one from the other, or you can partially
+change the processing mode, in very low cost.
+
  + - - - - - - - - - - - - - - - - - - - - - +
  :                                           :
  : Application                               :
@@ -55,7 +61,9 @@ sections.
  |   | Bare SQL ops.                         |
  |   +---------------------------------------+
  |   | Connection management                 |
- +---+---------------------------------------+
+ +---+------------------+--------------------+
+ |                      | AnyEvent::DBI      |
+ |                      +--------------------+
  | DBI                                       |
  | DBD                                       |
  +-------------------------------------------+
@@ -165,7 +173,8 @@ by default.  Operations in a transaction are always executed with the
 C<master> data source.  These two data sources would be useful for
 accessing databases operated in popular master-slave configuration.
 In addition, you can define your custom data sources such as C<heavy>
-or C<batch> to send some of queries to alternative slaves.
+or C<batch> to send some of queries to alternative slaves.  It might
+also be useful to define synchronous and asyncrhonous data sources.
 
 =over 4
 
@@ -201,6 +210,11 @@ Whether the database is writable or not.  If not writable, the
 database module refuse to issue write operations as far as possible.
 Default is false (i.e. not writable).
 
+=item anyevent => boolean
+
+Whether the asynchronous mode using L<AnyEvent::DBI> should be enabled
+or not.
+
 =item label => string
 
 Informative name of the data source.  It is not used to connect to the
@@ -208,6 +222,13 @@ data source.  This value might or might not be useful for debugging.
 Default is same as C<dsn>.
 
 =back
+
+Although it is in theory possible to modify the hash reference after
+it is set to the database object, such modifications might not be
+reflected to the actual connection, depending on the exact timing of
+the modification and establishment of the connection.  Therefore, you
+should not try to modify these values once it is set to the database
+object.
 
 =item $db->onconnect ($code)
 
@@ -237,6 +258,15 @@ safe to execute an SQL statement using the same data source name as
 given by the C<source_name> option.  It might be an interesting use
 case of this handler to execute some configuration statements
 (e.g. C<SET time_zone> statement) for the connection in the handler.
+
+Strictly speaking, there might not be a physical connection to the
+database server when the C<onconnect> handler is invoked.  In
+particular, if the C<anyevent> option of the data source is set, the
+C<onconnect> handler is invoked after the L<AnyEvent::DBI> object is
+instantiated, but the actual connection might not been established at
+that time.  You can assume that the C<onconnect> handler is invoked
+before any SQL statements or start of transactions are queued to
+execute with the connection, even when the C<anyevent> option is true.
 
 Example:
 
@@ -279,6 +309,15 @@ driver modules.
 
 The SQL statement being executed, if any.
 
+=item file_name => string
+
+=item line => number
+
+The location of the error.  These values are only available in
+asynchronous mode.  In synchronous mode, the L<Carp> module is useful
+to detect the error location.  In asynchronous mode, however, the
+module only denotes somewhere in the implementation of the event loop.
+
 =back
 
 The default C<onerror> handler prints the error message to the
@@ -290,9 +329,37 @@ SQL statement in the error handler, as it would likely result in
 another SQL execution error, which would recursively invoke the same
 error handler.
 
-You can throw an exception (or simply C<die>) in the error handler.
-In anyway, an exception is thrown just after the error handler
-returns.
+Error handling in synchronous (standard) and asynchronous
+(L<AnyEvent::DBI>) modes different in several ways.
+
+In the synchronous mode, errors are also handled in synchronously.  If
+the connection or an SQL statement causes an error because of a method
+invocation, any C<onerror> handler is invoked and then an exception is
+thrown within the method.  If you specify an error handler, you can
+throw an exception (or simply C<die>) within the handler.  Please note
+that the C<cb> (callback) function given to the method to access the
+database, if any, is not invoked for the error in synchronous mode.
+You can continue to use the connection to execute subsequent SQL
+statements, if desired.  (Please note that if the error is fatal and
+permanent, the subsequent executions would also result in error.  In
+such situation, you might want to invoke the C<disconnect> method
+explicitly to reestablish the connection.)
+
+In the asynchronous mode of L<AnyEvent::DBI>, as SQL statements are
+executed asynchronously, errors are also reported asynchronously.  If
+the method to access to the database accepts the C<cb> (callback)
+option, the callback function is invoked even if there is an error,
+but with the argument describing the error (See the documentation of
+the C<execute> method for details).  Then, the C<onerror> handler of
+the database object is invoked for the error.  No exception is thrown
+by Dongry, as it could terminate the AnyEvent event loop.  For this
+reason, the C<onerror> handler and C<cb> functions should not throw
+any exception in asynchronous mode.  Once an error is detected,
+whether fatal or not, the L<AnyEvent::DBI> connection is disabled and
+any subsequent requests would result in error.  There might be
+subsequent SQL requests already queued but not executed yet, and it is
+unclear whether they should be executed after the occurence of an
+error.
 
 =item $db->connect ($source_name)
 
@@ -305,6 +372,12 @@ handler is invoked.
 You don't have to invoke this method explicitly in general.  This
 method is automatically invoked at the first time an operation that
 requires the connection is enforced.
+
+Returning from the method does not necessarily mean the physical
+connection to the database has been established.  In particular, if
+L<AnyEvent::DBI> is used for the connection, the method only does
+instantiate the L<AnyEvent::DBI> method and the actual connection is
+established asynchronously.
 
 =item $db->disconnect ($source_name)
 
@@ -319,6 +392,9 @@ will be rollbacked by the invocation of this method.
 You don't have to invoke this method explicitly in general, as the
 C<DESTROY> method for the database object will invoke this method
 automatically.
+
+If the connection is in the asynchronous mode, any queued SQL
+statements might still be executed after the method is invoked.
 
 =back
 
@@ -337,7 +413,7 @@ as long as the object is live.
 =back
 
 Once you get a transaction object, you can invoke SQL operations as
-usualm through various methods of Dongry.  In addition, the C<lock>
+usual, through various methods of Dongry.  In addition, the C<lock>
 option for C<select> and other retrieval methods will take effect in
 transaction.  After execution of zero or more SQL statements, you have
 to commit or rollback the transaction to save or discard the
@@ -345,13 +421,23 @@ modifications, using a method of the transaction object:
 
 =over 4
 
-=item $transaction->commit
+=item $transaction->commit (%opts)
 
 Commit the transaction.  Changes will be persisted by the database.
 
-=item $transaction->rollback
+The C<cb> option is available.  See C<execute> method for more
+information.  The result object for the C<commit> method only contains
+whether there is an error or not and description for the error, if
+any.
+
+=item $transaction->rollback (%opts)
 
 Rollback the transaction.  Changes will be discarded by the database.
+
+The C<cb> option is available.  See C<execute> method for more
+information.  The result object for the C<rollback> method only
+contains whether there is an error or not and description for the
+error, if any.
 
 =item $string = $transaction->debug_info
 
@@ -379,6 +465,29 @@ method.
 Within a transaction you can only use the C<master> data source.  The
 default data source is C<master>, not C<default>, within a
 transaction.
+
+It is also possible to use transactions in asynchronous (or
+L<AnyEvent::DBI>) mode, but controlling how queued SQL statements are
+executed and how errors are handled might be difficult than in
+synchronous mode.  Since L<AnyEvent::DBI> preserves the order of SQL
+statements and transaction start/end methods, you can write
+transaction and SQL methods sequentially.  However, you have to use
+the C<cb> (callback) function to observe whether the execution has
+been succeeded or not.  It means that you should invoke the C<commit>
+or C<rollback> method in a C<cb> function.  Please note that SQL
+execution error in asynchronous mode invalidates the connection (see
+C<onerror> description), so the following C<rollback> method
+invocation would also result in error.
+
+The scope of the transaction object affects the queueing, not the
+actual execution in asynchronous mode.  That is,
+
+  $transaction->commit (...);
+  $db->execute (...);
+
+... does not execute the second method within the transaction, even
+though the commit of the transaction is not executed at the time of
+the invocation of the second method.
 
 When you just want to use a particular data source for some
 operations, you can use the "force source" feature:
@@ -422,6 +531,9 @@ the exact timing for the destruction of an object.
 Return a short string that might or might not be useful for debugging.
 
 =back
+
+The scope of the forcing object affects the queueing, not the actual
+execution in asynchronous mode, as for the transaction object.
 
 =head2 Bare SQL operations
 
@@ -494,13 +606,32 @@ even to a read-only data source.
 You should not specify both C<must_be_writable> and
 C<even_if_read_only> options at the same time.
 
+=item cb => code-reference
+
+The callback function invoked when the SQL has been executed.
+
+In synchronous mode, the code reference is synchronously invoked when
+the SQL has successfully been executed.
+
+In asynchronos (or L<AnyEvent::DBI>) mode, the code reference is
+asynchronously invoked when the SQL has been executed, successfully or
+erroneously.
+
+The code reference receives two arguments: the database object and the
+result object that would be returned by the method in synchronous
+mode.  In asynchronous mode, the result object describes the error.
+
+The code reference should not throw any exception in asynchronous
+mode.  See the C<onerror> method for rationale.
+
 =back
 
 The method would return a result object which is I<not> bound to any
 table.  The number of affected rows (or the rows to be fetched) can be
 retrieved from the C<row_count> method of the result object.  If the
 SQL statement returns rows (e.g. C<SELECT> or C<SHOW>), they are
-accessible from various methods of the result object.
+accessible from various methods of the result object.  The method does
+not return a value in asynchronous mode.
 
 =back
 
@@ -553,6 +684,11 @@ If this option is not specified, then a normal C<INSERT> statement is
 issued such that any duplication would be reported as an SQL execution
 error through the C<onerror> handler.
 
+=item cb => code-reference
+
+The callback function invoked after the execution of the SQL
+statement.  See the C<execute> method for more information.
+
 =back
 
 This method returns a result object bound to the table specified as
@@ -567,7 +703,8 @@ on.  If you really like to know what is inserted (or not inserted) to
 the database, you have to select the inserted row(s) by yourself.  In
 the case you have explicitly specified the primary key values in the
 argument, the C<reload> method of table row objects obtained from the
-result object might be useful for this purpose.
+result object might be useful for this purpose.  The method does not
+return a value in asynchronous mode.
 
 Example:
 
@@ -657,6 +794,11 @@ C<FOR UPDATE> option is included in the C<SELECT> statement.  If the
 value is C<share>, C<LOCK IN SHARE MODE> option is included in the
 C<SELECT> statement.
 
+=item cb => code-reference
+
+The callback function invoked after the execution of the SQL
+statement.  See the C<execute> method for more information.
+
 =back
 
 This method returns a result object bound to the table specified as
@@ -664,7 +806,8 @@ the first argument.  The number of available rows can be retrieved
 from the C<row_count> method of the result object.  The selected rows
 can be accessible from one of C<all>, C<each>, and C<first> methods,
 or their C<_as_row(s)> variants C<all_as_rows>, C<each_as_row>, and
-C<first_as_row>.
+C<first_as_row>.  The method does not return a value in asynchronous
+mode.
 
 Examples:
 
@@ -694,6 +837,17 @@ Examples:
     warn $row->get ('col1'), ",", $row->get ('col2');
     warn $row->get ('count');
   });
+
+  ## Async
+  $db->source (ae => {dsn => $dsn, anyevent => 1});
+  my $cv = AnyEvent->condvar;
+  $db->select ('foo', {user_id => $uid}, cb => sub {
+    if ($_[1]->is_success) {
+      print $_[1]->all->map (sub { $_->get ('name') })->join ("\t");
+    }
+    $cv->send;
+  }, source_name => 'ae');
+  $cv->recv;
 
 =item $result = $db->update ($table_name, $values, where => $where, %opts)
 
@@ -744,13 +898,19 @@ integer.  If the option is not specified, all the matching rows will
 be updated.  Unlike the C<select> method, the C<offset> option is not
 available for this method.
 
+=item cb => code-reference
+
+The callback function invoked after the execution of the SQL
+statement.  See the C<execute> method for more information.
+
 =back
 
 This method returns a result object bound to the table specified as
 the first argument.  The number of affected rows can be retrieved from
 the C<row_count> method of the result object.  Methods such as C<all>,
 C<each>, and C<first> are not available for the result object
-generated by this method.
+generated by this method.  The method does not return a value in
+asynchronous mode.
 
 Example:
 
@@ -815,13 +975,19 @@ integer.  If the option is not specified, all the matching rows will
 be deleted.  Unlike the C<select> method, the C<offset> option is not
 available for this method.
 
+=item cb => code-reference
+
+The callback function invoked after the execution of the SQL
+statement.  See the C<execute> method for more information.
+
 =back
 
 This method returns a result object bound to the table specified as
 the first argument.  The number of affected rows can be retrieved from
 the C<row_count> method of the result object.  Methods such as C<all>,
 C<each>, and C<first> are not available for the result object
-generated by this method.
+generated by this method.  The method does not return a value in
+asynchronous mode.
 
 Example:
 
@@ -829,13 +995,17 @@ Example:
       ('table1', {created => {'<=', '2012-01-01 00:00:00'}});
   # DELETE FROM `table1` WHERE `created` <= '2012-01-01 00:00:00'
 
-=item $db->set_tz ($tz_offset, source_name => $source_name)
+=item $db->set_tz ($tz_offset, source_name => $source_name, cb => $cb)
 
 Set the time zone for the database connection, using C<SET time_zone>
 statement.  The time zone offset argument, which is default to UTC,
 must be in the format understood by the database, i.e. C<+01:00>.  The
 C<source_name> option, defaulted to the C<master>, specifies the data
 source for which the time zone is set.
+
+The C<cb> (callback) function, if specified, is invoked after the
+execution of the SQL statement.  See the C<execute> method for more
+information.
 
 The default time zone used by the database when this statement is not
 issued depends on the configuration and the implementation of the
@@ -960,8 +1130,18 @@ or might not be useful for debugging.
 
 You might want to dump the SQL statements issued by Dongry for the
 purpose of development.  Though Dongry itself does not have such
-debugging feature, Perl modules such as L<DBIx::ShowSQL>,
+debugging feature.  Perl modules such as L<DBIx::ShowSQL>,
 L<Devel::KYTProf>, and L<DBIx::QueryLog> would be useful.
+
+If the C<SQL_DEBUG> environmental variable has a true value, Dongry
+loads the C<DBIx::ShowSQL> module.
+
+If the C<SQL_DEBUG> environmental variable contains substring
+C<embed_caller>, or if the C<$Dongry::Database::EmbedCallerInSQL>
+variable has a true value, Dongry embeds the file name and the line
+number of the method invocations that request SQL executions into the
+SQL statement, as an SQL comment.  This would be useful in
+asynchronous mode, in particular.
 
 =head1 METHODS OF RESULT OBJECT
 
@@ -971,6 +1151,25 @@ object holds the execution result of the SQL statement, which can be
 accessible from following methods:
 
 =over 4
+
+=item $boolean = $result->is_success
+
+=item $boolean = $result->is_error
+
+Return whether the result is success or error.
+
+=item $string = $result->error_text
+
+If the result is error, return a short text that describes the error.
+If no more information is available, or if the result is not error,
+C<undef> is returned.
+
+=item $string = $result->error_sql
+
+If the result is error during the execution of an SQL statement,
+return the SQL statement that is being executed when the error is
+reported.  If it is not available, or if the result is not error,
+C<undef> is returned.
 
 =item $number = $result->row_count
 
@@ -1125,20 +1324,29 @@ variable.  You can use L<List::Rubyish> or L<DBIx::MoCo::List>
 instead, for example.  The L<List::Ish> module is available at
 <https://github.com/wakaba/perl-ooutils/blob/master/lib/List/Ish.pm>.
 
+If you use asynchronous mode, the L<AnyEvent::DBI> module is required.
+In addition, modules L<AnyEvent::DBI::Hashref> and
+L<AnyEvent::DBI::Carp> available from
+<https://github.com/wakaba/perl-rdb-utils/> is required.
+
 Additional modules might be used by L<Dongry::Type> modules, but they
 are not required as long as you don't use such modules specificalliy.
 
-The GitHub repository of Dongry contains submodules.  The
-C<modules/perl-json-functions-xs> submodule is required by
-L<Dongry::Type::JSON>.  Submodules C<modules/perl-rdb-utils> and
-C<modules/perl-test-moremore> are added for debugging and testing
-purposes and not essential part of Dongry.
+The GitHub repository of Dongry contains submodules.  Submodule
+C<modules/perl-ooutils> contains the L<List::Ish> module.  Submodule
+C<modules/perl-rb-utils> is required for asynchronous mode as
+mentioned above.  Submodules C<modules/perl-json-functions-xs> is
+required by L<Dongry::Type::JSON>.  Submodules
+C<modules/perl-rdb-utils> and C<modules/perl-test-moremore> are added
+for debugging and testing purposes.
 
 =head1 SEE ALSO
 
 L<DBI>.
 
 L<DBD::mysql>.
+
+L<AnyEvent::DBI>, L<AnyEvent::DBI::Carp>.
 
 MySQL Reference Manuals <http://dev.mysql.com/doc/index.html>.
 
@@ -1148,9 +1356,10 @@ L<DBIx::ShowSQL>
 =head1 ACKNOWLEDGEMENTS
 
 Design and interfaces of various features in Dongry is largely
-inspired by L<DBI>, L<DBIx::MoCo>, L<DBIx::MoCo::Query>,
-L<DBIx::MoCo::ColumnMethods>, L<DBIx::MoCo::TableExtras>,
-L<SQL::Abstract>, L<SQL::NamedPlaceholder>, and L<List::Rubyish>.
+inspired by L<DBI>, L<AnyEvent::DBI>, L<DBIx::MoCo>,
+L<DBIx::MoCo::Query>, L<DBIx::MoCo::ColumnMethods>,
+L<DBIx::MoCo::TableExtras>, L<SQL::Abstract>,
+L<SQL::NamedPlaceholder>, and L<List::Rubyish>.
 
 =head1 AUTHOR
 
@@ -1158,7 +1367,7 @@ Wakaba <w@suika.fam.cx>.
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

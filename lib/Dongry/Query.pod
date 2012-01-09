@@ -181,6 +181,10 @@ another tables corresponding the retrieved rows at a time, using the
 C<fill_related_rows> method of the table object; Removing unused rows
 from the result using application-specific (non-SQL) rules.
 
+Please note that the C<item_list_filter> function acts synchronously,
+even when the SQL execution before the filtering is enforced
+asynchronously.
+
 =back
 
 =head2 Retrieval
@@ -190,11 +194,12 @@ the results:
 
 =over 4
 
-=item $object = $q->find (%args)
+=item $object = $q->find (%opts)
 
 Execute the query represented by the object and return the first row,
 if any, or C<undef> otherwise.  By default the table row object is
-returned, but this could be modified by C<item_list_filter>.
+returned, but this could be modified by C<item_list_filter>.  However,
+the method does not return a value in asynchronous mode.
 
 Following options is available: C<source_name>, and C<lock>.  If they
 are specified, methods with same names are ignored.
@@ -206,12 +211,20 @@ conditions represented by the struct is concatenated to the conditions
 of the "where" struct specified as C<< $q->where >> for the purpose of
 SQL execution in this method.
 
-=item $list = $q->find_all (%args)
+The C<cb> (callback) function, if specified, is invoked after the
+execution of the SQL statement.  See the C<execute> method of the
+database object for more information.  The return object only contains
+whether there is an error or not, possibly with error descriptions.
+The C<$_> variable contains the value that would returned by the
+method in synchronous mode.
+
+=item $list = $q->find_all (%opts)
 
 Execute the query represented by the object and return a list object
 containing the rows.  The list could be empty.  By default the table
 row objects are contained in the list, but this could be modified by
-C<item_list_filter>.
+C<item_list_filter>.  However, the method does not return a value in
+asynchronous mode.
 
 Following options is available: C<offset>, C<limit>, C<source_name>,
 and C<lock>.  If they are specified, methods with same names are
@@ -226,10 +239,18 @@ conditions represented by the struct is concatenated to the conditions
 of the "where" struct specified as C<< $q->where >> for the purpose of
 SQL execution in this method.
 
-=item $count = $q->count
+The C<cb> (callback) function, if specified, is invoked after the
+execution of the SQL statement.  See the C<execute> method of the
+database object for more information.  The return object only contains
+whether there is an error or not, possibly with error descriptions.
+The C<$_> variable contains the value that would returned by the
+method in synchronous mode.
+
+=item $count = $q->count (%opts)
 
 Execute the query represeted by the the object and return the number
-of rows matched.
+of rows matched.  However, the method does not return a value in
+asynchronous mode.
 
 This method is not affected by C<item_list_filter>.
 
@@ -242,6 +263,13 @@ the L<Dongry::SQL>.  It is interpreted in the schema-aware way.  The
 conditions represented by the struct is concatenated to the conditions
 of the "where" struct specified as C<< $q->where >> for the purpose of
 SQL execution in this method.
+
+The C<cb> (callback) function, if specified, is invoked after the
+execution of the SQL statement.  See the C<execute> method of the
+database object for more information.  The return object only contains
+whether there is an error or not, possibly with error descriptions.
+The C<$_> variable contains the value that would returned by the
+method in synchronous mode.
 
 =back
 
