@@ -1,7 +1,7 @@
 package Dongry::Database;
 use strict;
 use warnings;
-our $VERSION = '1.0';
+our $VERSION = '2.0';
 use DBI;
 use Carp;
 use Scalar::Util qw(weaken);
@@ -608,7 +608,7 @@ sub debug_info ($) {
 # ------ Operation results ------
 
 package Dongry::Database::Executed;
-our $VERSION = '1.0';
+our $VERSION = '2.0';
 use Carp;
 
 push our @CARP_NOT, qw(Dongry::Database);
