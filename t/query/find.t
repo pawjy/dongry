@@ -477,13 +477,715 @@ sub _find_filtered : Test(8) {
   is $q->count, 3;
 } # _find_filtered
 
+sub _find_null_cb : Test(6) {
+  my $db = Dongry::Database->new;
+  my $q = $db->query;
+
+  my $invoked;
+  my $result;
+  my $value;
+  $q->find (cb => sub {
+    $invoked++;
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+  });
+  
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  is $value, undef;
+} # _find_null_cb
+
+sub _find_all_null_cb : Test(6) {
+  my $db = Dongry::Database->new;
+  my $q = $db->query;
+
+  my $invoked;
+  my $result;
+  my $value;
+  $q->find_all (cb => sub {
+    $invoked++;
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+  });
+  
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  isa_list_n_ok $value, 0;
+} # _find_all_null_cb
+
+sub _count_null_cb : Test(6) {
+  my $db = Dongry::Database->new;
+  my $q = $db->query;
+
+  my $invoked;
+  my $result;
+  my $value;
+  $q->count (cb => sub {
+    $invoked++;
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+  });
+  
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  is $value, 0;
+} # _count_null_cb
+
+sub _find_null_cb_return : Test(7) {
+  my $db = Dongry::Database->new;
+  my $q = $db->query;
+
+  my $invoked;
+  my $result;
+  my $value;
+  my $return = $q->find (cb => sub {
+    $invoked++;
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+  });
+  
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  is $value, undef;
+  is $return, $value;
+} # _find_cb_return
+
+sub _find_all_null_cb_return : Test(7) {
+  my $db = Dongry::Database->new;
+  my $q = $db->query;
+
+  my $invoked;
+  my $result;
+  my $value;
+  my $return = $q->find_all (cb => sub {
+    $invoked++;
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+  });
+  
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  isa_list_n_ok $value, 0;
+  is $return, $value;
+} # _find_all_cb_return
+
+sub _count_null_cb_return : Test(7) {
+  my $db = Dongry::Database->new;
+  my $q = $db->query;
+
+  my $invoked;
+  my $result;
+  my $value;
+  my $return = $q->count (cb => sub {
+    $invoked++;
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+  });
+  
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  is $value, 0;
+  is $return, $value;
+} # _count_cb_return
+
+sub _find_null_cb_exception : Test(1) {
+  my $db = Dongry::Database->new;
+  my $q = $db->query;
+
+  eval {
+    $q->find (cb => sub {
+      die "abc";
+    });
+    ng 1;
+  };
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 4) . ".\n";
+} # _find_null_cb_exception
+
+sub _find_all_null_cb_exception : Test(1) {
+  my $db = Dongry::Database->new;
+  my $q = $db->query;
+
+  eval {
+    $q->find_all (cb => sub {
+      die "abc";
+    });
+    ng 1;
+  };
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 4) . ".\n";
+} # _find_all_null_cb_exception
+
+sub _count_null_cb_exception : Test(1) {
+  my $db = Dongry::Database->new;
+  my $q = $db->query;
+
+  eval {
+    $q->count (cb => sub {
+      die "abc";
+    });
+    ng 1;
+  };
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 4) . ".\n";
+} # _count_null_cb_exception
+
+sub _find_null_cb_exception_carp : Test(1) {
+  my $db = Dongry::Database->new;
+  my $q = $db->query;
+
+  eval {
+    $q->find (cb => sub {
+      Carp::croak "abc";
+    });
+    ng 1;
+  };
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 3) . "\n";
+} # _find_null_cb_exception_carp
+
+sub _find_all_null_cb_exception_carp : Test(1) {
+  my $db = Dongry::Database->new;
+  my $q = $db->query;
+
+  eval {
+    $q->find_all (cb => sub {
+      Carp::croak "abc";
+    });
+    ng 1;
+  };
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 3) . "\n";
+} # _find_all_null_cb_exception_carp
+
+sub _count_null_cb_exception_carp : Test(1) {
+  my $db = Dongry::Database->new;
+  my $q = $db->query;
+
+  eval {
+    $q->count (cb => sub {
+      Carp::croak "abc";
+    });
+    ng 1;
+  };
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 3) . "\n";
+} # _count_null_cb_exception_carp
+
+sub _find_filtered_cb : Test(7) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  my $result;
+  my $value;
+  my $invoked;
+  $q->find (cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+    $invoked++;
+  });
+
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  eq_or_diff $value, [2];
+} # _find_filtered_cb
+
+sub _find_all_filtered_cb : Test(8) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  my $result;
+  my $value;
+  my $invoked;
+  $q->find_all (cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+    $invoked++;
+  });
+
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  isa_list_n_ok $value, 3;
+  eq_or_diff $value->to_a, [[2], [3], [4]];
+} # _find_all_filtered_cb
+
+sub _count_filtered_cb : Test(7) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  my $result;
+  my $value;
+  my $invoked;
+  $q->count (cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+    $invoked++;
+  });
+
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  eq_or_diff $value, 3;
+} # _count_filtered_cb
+
+sub _count_filtered_cb_zero : Test(7) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  my $result;
+  my $value;
+  my $invoked;
+  $q->count (cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+    $invoked++;
+  });
+
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  eq_or_diff $value, 0;
+} # _count_filtered_cb
+
+sub _find_filtered_cb_return : Test(9) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  my $result;
+  my $value;
+  my $invoked;
+  my $return = $q->find (cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+    $invoked++;
+  });
+
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  eq_or_diff $value, [2];
+  is $return, $value;
+} # _find_filtered_cb_return
+
+sub _find_all_filtered_cb_return : Test(9) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  my $result;
+  my $value;
+  my $invoked;
+  my $return = $q->find_all (cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+    $invoked++;
+  });
+
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  isa_list_n_ok $value, 3;
+  eq_or_diff $value->to_a, [[2], [3], [4]];
+  is $return, $value;
+} # _find_all_filtered_cb_return
+
+sub _count_filtered_cb_return : Test(9) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  my $result;
+  my $value;
+  my $invoked;
+  my $return = $q->count (cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+    $invoked++;
+  });
+
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  eq_or_diff $value, 3;
+  is $return, $value;
+} # _count_filtered_cb_return
+
+sub _count_filtered_cb_return_zero : Test(9) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  my $result;
+  my $value;
+  my $invoked;
+  my $return = $q->count (cb => sub {
+    is $_[0], $db;
+    $result = $_[1];
+    $value = $_;
+    $invoked++;
+  });
+
+  is $invoked, 1;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  eq_or_diff $value, 0;
+  is $return, $value;
+} # _count_filtered_cb_return_zero
+
+sub _find_filtered_cb_error : Test(2) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id2 => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  my $invoked;
+  dies_here_ok {
+    $q->find (cb => sub {
+      $invoked++;
+    });
+  };
+  ng $invoked;
+} # _find_filtered_cb_error
+
+sub _find_all_filtered_cb_error : Test(2) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id2 => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  my $invoked;
+  dies_here_ok {
+    $q->find_all (cb => sub {
+      $invoked++;
+    });
+  };
+  ng $invoked;
+} # _find_all_filtered_cb_error
+
+sub _count_filtered_cb_error : Test(2) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id2 => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  my $invoked;
+  dies_here_ok {
+    $q->count (cb => sub {
+      $invoked++;
+    });
+  };
+  ng $invoked;
+} # _count_filtered_cb_error
+
+sub _find_filtered_cb_exception : Test(1) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  eval {
+    $q->find (cb => sub {
+      die "abc";
+    });
+    ng 1;
+  };
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 4) . ".\n";
+} # _find_filtered_cb_exception
+
+sub _find_all_filtered_cb_exception : Test(1) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  eval {
+    $q->find_all (cb => sub {
+      die "abc";
+    });
+    ng 1;
+  };
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 4) . ".\n";
+} # _find_all_filtered_cb_exception
+
+sub _count_filtered_cb_exception : Test(1) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  eval {
+    $q->count (cb => sub {
+      die "abc";
+    });
+    ng 1;
+  };
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 4) . ".\n";
+} # _count_filtered_cb_exception
+
+sub _find_filtered_cb_exception_carp : Test(1) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  eval {
+    $q->find (cb => sub {
+      Carp::croak "abc";
+    });
+    ng 1;
+  };
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 3) . "\n";
+} # _find_filtered_cb_exception_carp
+
+sub _find_all_filtered_cb_exception_carp : Test(1) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  eval {
+    $q->find_all (cb => sub {
+      Carp::croak "abc";
+    });
+    ng 1;
+  };
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 3) . "\n";
+} # _find_all_filtered_cb_exception_carp
+
+sub _count_filtered_cb_exception_carp : Test(1) {
+  my $db = new_db schema => {
+    table1 => {
+      _create => 'CREATE TABLE table1 (id INT)',
+    },
+  };
+  $db->table ('table1')->insert ([{id => 1}, {id => 2}, {id => 3}]);
+
+  my $q = $db->query
+      (table_name => 'table1',
+       where => {id => {-gt => 0}},
+       order => [id => 1],
+       item_list_filter => sub {
+         return $_[1]->map (sub { [$_->get ('id') + 1] });
+       });
+
+  eval {
+    $q->count (cb => sub {
+      Carp::croak "abc";
+    });
+    ng 1;
+  };
+  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 3) . "\n";
+} # _count_filtered_cb_exception_carp
+
 __PACKAGE__->runtests;
+
+$Dongry::LeakTest = 1;
 
 1;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

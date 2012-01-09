@@ -1,7 +1,7 @@
 package Dongry::Query;
 use strict;
 use warnings;
-our $VERSION = '1.0';
+our $VERSION = '2.0';
 
 push our @CARP_NOT, qw(Dongry::Database);
 
@@ -72,42 +72,123 @@ sub item_list_filter {
 
 sub find_all {
   my ($self, %args) = @_;
-  return $self->{db}->_list if $self->is_null;
-  return $self->item_list_filter
-      ($self->table->find_all
-           ($self->where,
-            distinct => $self->distinct,
-            fields => $self->fields,
-            and_where => $args{and_where},
-            group => $self->group,
-            order => $self->order,
-            offset => $args{offset},
-            limit => $args{limit},
-            source_name => $args{source_name} || $self->source_name,
-            lock => $args{lock} || $self->lock));
+
+  if ($self->is_null) {
+    if ($args{cb}) {
+      local $_ = $self->{db}->_list;
+      require Dongry::Database;
+      my $result = bless {}, 'Dongry::Database::Executed';
+      local $Carp::CarpLevel = $Carp::CarpLevel + 1;
+      $args{cb}->($self->{db}, $result);
+      return $_;
+    } else {
+      return $self->{db}->_list;
+    }
+  }
+
+  my %param = (distinct => $self->distinct,
+               fields => $self->fields,
+               and_where => $args{and_where},
+               group => $self->group,
+               order => $self->order,
+               offset => $args{offset},
+               limit => $args{limit},
+               source_name => $args{source_name} || $self->source_name,
+               lock => $args{lock} || $self->lock);
+
+  if (my $cb = $args{cb}) {
+    my $return;
+    $param{cb} = sub {
+      if ($_[1]->is_success) {
+        local $_ = $return = $self->item_list_filter ($_);
+        $cb->(@_);
+      } else {
+        local $_ = $return = undef;
+        $cb->(@_);
+      }
+    };
+    if (defined wantarray) {
+      my $dummy = $self->table->find_all ($self->where, %param);
+      return $return;
+    } else {
+      $self->table->find_all ($self->where, %param);
+    }
+  } else {
+    return $self->item_list_filter
+        ($self->table->find_all ($self->where, %param));
+  }
 } # find_all
 
 sub find {
   my ($self, %args) = @_;
-  return undef if $self->is_null;
-  return $self->item_list_filter
-      ($self->table->find_all
-           ($self->where,
-            fields => $self->fields,
-            and_where => $args{and_where},
-            group => $self->group,
-            order => $self->order,
-            offset => 0,
-            limit => 1,
-            source_name => $args{source_name} || $self->source_name,
-            lock => $args{lock} || $self->lock))->[0]; # or undef
+
+  if ($self->is_null) {
+    if ($args{cb}) {
+      local $_ = undef;
+      require Dongry::Database;
+      my $result = bless {}, 'Dongry::Database::Executed';
+      local $Carp::CarpLevel = $Carp::CarpLevel + 1;
+      $args{cb}->($self->{db}, $result);
+      return $_;
+    } else {
+      return undef;
+    }
+  }
+
+  my %param = (fields => $self->fields,
+               and_where => $args{and_where},
+               group => $self->group,
+               order => $self->order,
+               offset => 0,
+               limit => 1,
+               source_name => $args{source_name} || $self->source_name,
+               lock => $args{lock} || $self->lock);
+
+  if (my $cb = $args{cb}) {
+    my $return;
+    $param{cb} = sub {
+      if ($_[1]->is_success) {
+        local $_ = $return = $self->item_list_filter ($_)->[0]; # or undef
+        $cb->(@_);
+      } else {
+        local $_ = $return = undef;
+        $cb->(@_);
+      }
+    };
+    if (defined wantarray) {
+      my $dummy = $self->table->find_all ($self->where, %param);
+      return $return;
+    } else {
+      $self->table->find_all ($self->where, %param);
+    }
+  } else {
+    return $self->item_list_filter
+        ($self->table->find_all ($self->where, %param))->[0]; # undef
+  }
 } # find
 
 sub count {
   my ($self, %args) = @_;
-  return 0 if $self->is_null;
 
-  my %param;
+  if ($self->is_null) {
+    if ($args{cb}) {
+      local $_ = 0;
+      require Dongry::Database;
+      my $result = bless {}, 'Dongry::Database::Executed';
+      local $Carp::CarpLevel = $Carp::CarpLevel + 1;
+      $args{cb}->($self->{db}, $result);
+      return $_;
+    } else {
+      return 0;
+    }
+  }
+
+  my %param = (
+    and_where => $args{and_where},
+    source_name => $args{source_name} || $self->source_name,
+    lock => $args{lock} || $self->lock,
+  );
+
   my $group = $self->group;
   if ($group) {
     ## How |$self->group| and |$self->distinct| should interact is
@@ -121,13 +202,19 @@ sub count {
     }
   }
 
-  my $row = $self->table->find
-      ($self->where,
-       %param,
-       and_where => $args{and_where},
-       source_name => $args{source_name} || $self->source_name,
-       lock => $args{lock} || $self->lock);
-  return $row ? $row->get ('count') : 0;
+  if (my $cb = $args{cb}) {
+    $param{cb} = sub {
+      local $_ = $_[1]->is_success ? ($_ ? $_->get ('count') : 0) : undef;
+      $cb->(@_);
+    };
+  }
+
+  if (defined wantarray) {
+    my $row = $self->table->find ($self->where, %param);
+    return $row ? $row->get ('count') : 0;
+  } else {
+    $self->table->find ($self->where, %param);
+  }
 } # count
 
 sub debug_info ($) {
@@ -136,11 +223,17 @@ sub debug_info ($) {
       $self->is_null ? '(null)' : $self->table_name;
 } # debug_info
 
+sub DESTROY {
+  if ($Dongry::LeakTest) {
+    warn "Possible memory leak by object " . ref $_[0];
+  }
+} # DESTROY
+
 1;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
