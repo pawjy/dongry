@@ -119,6 +119,8 @@ specify a hash reference as the value of the C<flags> option to the
 method, you can access them via the C<flags> method of the table row
 object returned by the C<create> method.
 
+The method does not support the C<cb> option and asynchronous mode.
+
 Example:
 
   $db->schema ({
