@@ -129,6 +129,9 @@ for (
   ['modules/perl-test-moremore/lib', 'Test/MoreMore/Mock.pm'],
   ['modules/perl-rdb-utils/lib', 'DBIx/ShowSQL.pm'],
   ['modules/perl-rdb-utils/lib', 'Test/MySQL/CreateDatabase.pm'],
+  ['modules/perl-rdb-utils/lib', 'AnyEvent/DBI/Hashref.pm'],
+  ['modules/perl-rdb-utils/lib', 'AnyEvent/DBI/Carp.pm'],
+  ['modules/perl-json-functions-xs/lib', 'JSON/Functions/XS.pm'],
 ) {
   my $f = $root_d->subdir ($_->[0])->file ($_->[1]);
   my $dest_f = $dest_d->subdir ('t', 'dongry', 'lib')->file ($_->[1]);
@@ -175,7 +178,7 @@ Wakaba <w@suika.fam.cx>.
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
