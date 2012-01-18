@@ -4,6 +4,7 @@ use warnings;
 our $VERSION = '2.0';
 use DBI;
 use Carp;
+use Carp::Heavy;
 use Scalar::Util qw(weaken);
 
 use Dongry::SQL ();
