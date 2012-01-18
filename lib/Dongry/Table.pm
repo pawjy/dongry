@@ -319,6 +319,10 @@ sub get_bare ($$) {
   return $_[0]->{data}->{$_[1]};
 } # get_bare
 
+sub values_as_hashref {
+    return $_[0]->{data};
+}
+
 sub primary_key_bare_values ($) {
   my $self = shift;
   my $schema = $self->table_schema || {};

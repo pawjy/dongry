@@ -398,6 +398,14 @@ If no primary keys are specified in the table schema, the method would
 raise an error.  If the serialized value for a column in the primary
 key is missing or is C<undef>, the method would raise an error.
 
+=item $values = $row->values_as_hashref
+
+Return the name/value pairs for the columns hold by the row object, as
+a hash reference.  Serialized values are returned by this method.  You
+should not modify the returned hash reference and its values, since
+the return value is in fact the internal data hold by the table row
+object.
+
 =item $row = $row->reload (%opts)
 
 Retrieve the current row from the database using primary key values of
