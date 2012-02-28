@@ -42,6 +42,22 @@ sub _schema_found : Test(1) {
   eq_or_diff $table->table_schema, {a => 2};
 } # _schema_found
 
+sub _schema_found_by_normalizer : Test(1) {
+  my $db = Dongry::Database->new
+      (schema => {bar => {a => 2}, bar_2 => {b => 3}},
+       table_name_normalizer => sub { $_[0] . '_2' });
+  my $table = Dongry::Table->new (db => $db, table_name => 'bar');
+  eq_or_diff $table->table_schema, {b => 3};
+} # _schema_found_by_normalizer
+
+sub _schema_not_found_by_normalizer : Test(1) {
+  my $db = Dongry::Database->new
+      (schema => {bar => {a => 2}, bar_2 => {b => 3}},
+       table_name_normalizer => sub { $_[0] . '_3' });
+  my $table = Dongry::Table->new (db => $db, table_name => 'bar');
+  eq_or_diff $table->table_schema, undef;
+} # _schema_not_found_by_normalizer
+
 sub _debug_info : Test(1) {
   my $db = Dongry::Database->new;
   my $table = $db->table ('hoge');

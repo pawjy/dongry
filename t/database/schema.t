@@ -25,6 +25,17 @@ sub _schema_non_null : Test(3) {
   eq_or_diff $db->schema, undef;
 } # _schema_non_null
 
+sub _table_name_normalizer_default : Test(1) {
+  my $db = Dongry::Database->new;
+  is $db->table_name_normalizer->('abc def'), 'abc def';
+} # _table_name_normalizer_default
+
+sub _table_name_normalizer_custom : Test(1) {
+  my $db = Dongry::Database->new;
+  $db->table_name_normalizer (sub { 'xyz ' . $_[0] });
+  is $db->table_name_normalizer->('abc def'), 'xyz abc def';
+} # _table_name_normalizer_custom
+
 sub _table_no_name : Test(1) {
   my $db = Dongry::Database->new;
   dies_here_ok {

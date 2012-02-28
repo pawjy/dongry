@@ -21,7 +21,8 @@ sub table_name ($) {
 
 sub table_schema ($) {
   my $schema = $_[0]->{db}->schema or return undef;
-  return $schema->{$_[0]->{table_name}}; # or undef
+  my $tn = $_[0]->{db}->table_name_normalizer->($_[0]->{table_name});
+  return $schema->{$tn}; # or undef
 } # table_schema
 
 # ------ Insertion ------

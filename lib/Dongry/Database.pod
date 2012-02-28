@@ -95,9 +95,9 @@ database object from the registry by the short name for the object.
 Create and return a new instance of the L<Dongry::Database> database
 object.
 
-Options C<sources>, C<onconnect>, C<onerror>, and C<schema> can be
-specified as key/value pairs.  See following subsections for their
-semantics and acceptable values.
+Options C<sources>, C<onconnect>, C<onerror>, C<schema>, and
+C<table_name_normalizer> can be specified as key/value pairs.  See
+following subsections for their semantics and acceptable values.
 
 Example:
 
@@ -124,7 +124,8 @@ C<%$Dongry::Database::Registry> hash.
 The hash key is the short database name and the hash value is the hash
 reference containing options used to instantiate the database object.
 Following options allowed for the C<new> method is also applicable
-here: C<sources>, C<onconnect>, C<onerror>, and C<schema>.
+here: C<sources>, C<onconnect>, C<onerror>, C<schema>, and
+C<table_name_normalizer>.
 
 Alteranatively, these values can be specified as code reference which
 is invoked to get the actual value when an object is initialized, by
@@ -1097,6 +1098,35 @@ method such as the C<create> method of the table object.
 Even though all of these keys in the table schema is optional, the
 table schema it self must be specified in the schema to enable
 schema-aware APIs for the table.
+
+=item $db->table_name_normalizer ($code)
+
+=item $code = $db->table_name_normalizer
+
+=item $db = Dongry::Database->new (table_name_normalizer => $code)
+
+Get or set the code to normalize table names for the purpose of table
+schema lookup.
+
+Sometimes a number of tables in the database share the same table
+structure.  For example, consider a database where C<hoge_1>,
+C<hoge_2>, C<hoge_3>, and other tables share the common definition.
+Rather than repeating the table schema definitions for all tables, you
+have to register just a table definition by setting the following
+table name normalizer code:
+
+  $db->table_name_normalizer (sub {
+    my $name = shift;
+    $name =~ s/_[0-9]+$/_n/;
+    return $name;
+  });
+  $db->schema ({
+    foo_n => { ... },
+    bar_n => { ... },
+  });
+  
+  $db->table ('foo_2')   # -> foo_n
+  $db->table ('bar_130') # -> bar_n
 
 =item $table = $db->table ($table_name)
 
