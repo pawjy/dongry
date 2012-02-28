@@ -1,0 +1,15 @@
+AnyEvent::DBI
+Carp
+Data::Dumper
+DateTime
+DBI
+Encode
+Exporter::Lite
+List::Rubyish
+Path::Class
+Scalar::Util
+Test::Class
+Test::Differences
+Test::More
+Test::mysqld
+Time::Local
