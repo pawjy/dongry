@@ -1074,7 +1074,7 @@ sub _create_duplicate_error : Test(2) {
      [{col1 => '', col2 => 11}];
 } # _create_duplicate_error
 
-sub _create_duplicate_ignore : Test(6) {
+sub _create_duplicate_ignore : Test(2) {
   my $schema = {
     table1 => {
       type => {col1 => 'as_ref'},
@@ -1089,12 +1089,8 @@ sub _create_duplicate_ignore : Test(6) {
   my $col1 = \'2001-12-02 15:00:00';
   my $row = $table->create ({col1 => $col1, col2 => 11},
                             duplicate => 'ignore');
-  isa_ok $row, 'Dongry::Table::Row';
-  is $row->table_name, 'table1';
-  is $row->{db}, $db;
-  eq_or_diff $row->{data}, {col1 => '2001-12-02 15:00:00', col2 => 11};
-  eq_or_diff $row->{parsed_data}, {col1 => $col1, col2 => 11};
-
+  is $row, undef;
+  
   eq_or_diff $db->execute
      ('select * from table1 order by col2 desc')->all->to_a,
      [{col1 => '', col2 => 11}];
