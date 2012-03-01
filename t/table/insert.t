@@ -654,10 +654,16 @@ sub _insert_duplicate_error : Test(2) {
           {col2 => \4}]);
   };
 
-  eq_or_diff $db->execute
-     ('select * from table1 order by col2 desc')->all->to_a,
-     [{col1 => '2001-12-02 15:00:00', col2 => 11},
-      {col1 => 'orig', col2 => 4}];
+  my $list = $db->execute
+      ('select * from table1 order by col2 desc')->all;
+  if ($list->length == 2) {
+      eq_or_diff $list->to_a,
+          [{col1 => '2001-12-02 15:00:00', col2 => 11},
+           {col1 => 'orig', col2 => 4}];
+  } else {
+      eq_or_diff $list->to_a,
+          [{col1 => 'orig', col2 => 4}];
+  }
 } # _insert_duplicate_error
 
 sub _insert_duplicate_ignore : Test(2) {
