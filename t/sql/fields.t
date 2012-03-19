@@ -8,7 +8,7 @@ use base qw(Test::Class);
 use Dongry::SQL;
 
 sub bare_sql_fragment ($) {
-  return bless \($_[0]), 'Dongry::SQL::BareFragment';
+  return bless \('' . $_[0]), 'Dongry::SQL::BareFragment';
 } # bare_sql_fragment
 
 sub _fields_valid : Test(42) {

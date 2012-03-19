@@ -566,7 +566,7 @@ sub delete ($$$;%) {
 } # delete
 
 sub bare_sql_fragment ($$) {
-  return bless \($_[1]), 'Dongry::SQL::BareFragment';
+  return bless \('' . $_[1]), 'Dongry::SQL::BareFragment';
 } # bare_sql_fragment
 
 # ------ Schema-aware operations ------
