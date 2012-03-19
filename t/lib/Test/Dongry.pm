@@ -4,6 +4,7 @@ use warnings;
 use Path::Class;
 use lib file (__FILE__)->dir->parent->parent->parent->subdir ('lib')->stringify;
 use lib glob file (__FILE__)->dir->parent->parent->parent->subdir ('modules', '*', 'lib')->stringify;
+use lib file (__FILE__)->dir->parent->parent->subdir ('lib')->stringify;
 
 use Exporter::Lite;
 our @EXPORT;

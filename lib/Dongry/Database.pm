@@ -4,6 +4,7 @@ use warnings;
 our $VERSION = '2.0';
 use DBI;
 use Carp;
+use Carp::Heavy;
 use Scalar::Util qw(weaken);
 
 use Dongry::SQL ();
@@ -58,7 +59,9 @@ sub load ($$) {
        onconnect => $def->{onconnect} ||
            ($def->{get_onconnect} or sub { undef })->(),
        schema => $def->{schema} ||
-           ($def->{get_schema} or sub { undef })->());
+           ($def->{get_schema} or sub { undef })->(),
+       table_name_normalizer => $def->{table_name_normalizer} ||
+           ($def->{get_table_name_normalizer} or sub { undef })->());
 } # load
 
 # ------ Connection ------
@@ -579,6 +582,13 @@ sub schema ($) {
   }
   return $_[0]->{schema};
 } # schema
+
+sub table_name_normalizer ($) {
+  if (@_ > 1) {
+    $_[0]->{table_name_normalizer} = $_[1];
+  }
+  return $_[0]->{table_name_normalizer} || sub { $_[0] };
+} # table_name_normalizer
 
 sub table ($$) {
   croak 'No table name' unless defined $_[1];

@@ -63,39 +63,44 @@ sub _load_found : Test(6) {
   is $db3->source ('hoge')->{dsn}, 123;
 } # _load_found
 
-sub _load_empty_def : Test(4) {
+sub _load_empty_def : Test(5) {
   local $Dongry::Database::Registry->{test1} = {};
   my $db = Dongry::Database->load ('test1');
   ng $db->{sources};
   ng $db->{onerror};
   ng $db->{onconnect};
   ng $db->{schema};
+  ng $db->{table_name_normalizer};
 } # _load_empty_def
 
-sub _load_static_def : Test(4) {
+sub _load_static_def : Test(5) {
   local $Dongry::Database::Registry->{test2}
       = {sources => {foo => {dsn => 123}},
          onerror => 123,
          onconnect => 154,
-         schema => {hoge => {foo => 5}}};
+         schema => {hoge => {foo => 5}},
+         table_name_normalizer => sub { 12 }};
   my $db = Dongry::Database->load ('test2');
   eq_or_diff $db->{sources}, {foo => {dsn => 123}};
   is $db->{onerror}, 123;
   is $db->{onconnect}, 154;
   eq_or_diff $db->{schema}, {hoge => {foo => 5}};
+  is $db->{table_name_normalizer}->(), 12;
 } # _load_static_def
 
-sub _load_dynamic_def : Test(4) {
-  local $Dongry::Database::Registry->{test2}
+sub _load_dynamic_def : Test(5) {
+  local $Dongry::Database::Registry->{test3}
       = {get_sources => sub { +{foo => {dsn => 123}} },
          get_onerror => sub { 123 },
          get_onconnect => sub { 154 },
-         get_schema => sub { +{hoge => {foo => 5}}} };
-  my $db = Dongry::Database->load ('test2');
+         get_schema => sub { +{hoge => {foo => 5}}},
+         get_table_name_normalizer => sub { sub { 120 } }};
+  my $db = Dongry::Database->load ('test3');
   eq_or_diff $db->{sources}, {foo => {dsn => 123}};
   is $db->{onerror}, 123;
   is $db->{onconnect}, 154;
   eq_or_diff $db->{schema}, {hoge => {foo => 5}};
+  is $db->{table_name_normalizer}->(), 120;
 } # _load_dynamic_def
 
 sub _debug_info : Test(1) {

@@ -21,7 +21,8 @@ sub table_name ($) {
 
 sub table_schema ($) {
   my $schema = $_[0]->{db}->schema or return undef;
-  return $schema->{$_[0]->{table_name}}; # or undef
+  my $tn = $_[0]->{db}->table_name_normalizer->($_[0]->{table_name});
+  return $schema->{$tn}; # or undef
 } # table_schema
 
 # ------ Insertion ------
@@ -100,7 +101,9 @@ sub insert ($$;%) {
 sub create ($$;%) {
   my ($self, $values, %args) = @_;
   croak "Option |cb| is not supported" if $args{cb};
-  my $row = $self->insert ([$values], %args)->first_as_row;
+  my $return = $self->insert ([$values], %args);
+  return undef unless $return->row_count;
+  my $row = $return->first_as_row;
   $row->{flags} = $args{flags} if $args{flags};
   return $row;
 } # create
@@ -280,7 +283,8 @@ sub table_name ($) {
 
 sub table_schema ($) {
   my $schema = $_[0]->{db}->schema or return undef;
-  return $schema->{$_[0]->{table_name}}; # or undef
+  my $tn = $_[0]->{db}->table_name_normalizer->($_[0]->{table_name});
+  return $schema->{$tn}; # or undef
 } # table_schema
 
 sub flags ($) {
@@ -318,6 +322,10 @@ sub get_bare ($$) {
          ref $_[0]->{data}->{$_[1]} eq 'Dongry::SQL::BareFragment';
   return $_[0]->{data}->{$_[1]};
 } # get_bare
+
+sub values_as_hashref {
+    return $_[0]->{data};
+}
 
 sub primary_key_bare_values ($) {
   my $self = shift;

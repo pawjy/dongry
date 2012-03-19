@@ -455,6 +455,31 @@ sub _primary_key_bare_values_bare_sql_fragment : Test(1) {
   };
 } # _primary_key_bare_values_a_key
 
+# ------ |values_as_hashref| ------
+
+sub _values_as_hashref : Test(1) {
+  my $schema = {
+    table1 => {
+      primary_keys => [qw/col2/],
+      type => {col2 => 'timestamp_as_DateTime'},
+      _create => 'create table table1 (col3 blob, col2 blob, col4 text,
+                                       col1 int primary key auto_increment)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  my $row = $db->table ('table1')->create
+      ({col3 => 'a e aaaa', col2 => DateTime->new(year => 2001, month => 12, day => 30)});
+  $row->reload;
+
+  eq_or_diff $row->values_as_hashref, {
+      col1 => $row->get('col1'),
+      col2 => '2001-12-30 00:00:00',
+      col3 => 'a e aaaa',
+      col4 => undef,
+  };
+} # _values_as_hashref
+
 # ------ |reload| ------
 
 sub _reload_created_reloaded : Test(4) {
