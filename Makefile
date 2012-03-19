@@ -24,12 +24,14 @@ safetest: carton-install config/perl/libs.txt
 	        t/table/*.t t/query/*.t
 
 GENERATEPM = local/generatepm/bin/generate-pm-package
+GENERATEPM_ = $(GENERATEPM) --generate-json
 
 dist: generatepm
 	mkdir -p dist
-	$(GENERATEPM) config/dist/dongry.pi dist
-	$(GENERATEPM) config/dist/dongry-type-datetime.pi dist
-	$(GENERATEPM) config/dist/dongry-type-json.pi dist
+	$(GENERATEPM_) config/dist/dongry.pi dist
+	$(GENERATEPM_) config/dist/dongry-type-datetime.pi dist
+	$(GENERATEPM_) config/dist/dongry-type-json.pi dist
+	$(GENERATEPM_) config/dist/dongry-type-messagepack.pi dist
 
 dist-wakaba-packages: local/wakaba-packages dist
 	cp dist/*.json local/wakaba-packages/data/perl/
