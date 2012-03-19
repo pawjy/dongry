@@ -42,4 +42,10 @@ $root_d->recurse (callback => sub {
           'SQL::ShowSQL' => 0,
           'Dongry::Type::DateTime' => 0, # Oops...
       },
+      urls => {
+          git => {
+              GitHub => q<https://github.com/wakaba/dongry>,
+              Suika => q<http://suika.fam.cx/gate/git/wi/perl/dongry.git/tree>,
+          },
+      },
   };

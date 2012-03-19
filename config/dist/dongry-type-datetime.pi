@@ -19,4 +19,10 @@
           'Test::MySQL::CreateDatabase' => 0,
           'SQL::ShowSQL' => 0,
       },
+      urls => {
+          git => {
+              GitHub => q<https://github.com/wakaba/dongry>,
+              Suika => q<http://suika.fam.cx/gate/git/wi/perl/dongry.git/tree>,
+          },
+      },
   };

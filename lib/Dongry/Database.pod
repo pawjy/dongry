@@ -1342,8 +1342,8 @@ repositories: <https://github.com/wakaba/dongry>,
 
 If you are old school such that you like versioned packages rather
 than living Git repository, you can get tarballs from
-<http://wakaba.github.com/packages/#dongry>.  Please note that
-versioned packages are likely out-of-dated.
+<http://wakaba.github.com/packages/perl/#Dongry-Database>.  Please
+note that versioned packages are likely out-of-dated.
 
 =head1 DEPENDENCY
 
