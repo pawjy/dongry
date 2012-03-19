@@ -1,4 +1,6 @@
 Carp
+Carp::Heavy
+Data::MessagePack
 DateTime
 DBI
 Encode

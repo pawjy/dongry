@@ -1,0 +1,56 @@
+=head1 NAME
+
+Dongry::Type::MessagePack - Dongry data types for MessagePack
+
+=head1 DESCRIPTION
+
+The C<Dongry::Type::MessagePack> module defines data types for handing
+MessagePack-encoded data structure as column value in Dongry.
+
+=head1 DATA TYPES
+
+=over 4
+
+=item messagepack
+
+Perl -> SQL: The input must be a scalar value.  If it is not the
+C<undef> value, it is encoded by MessagePack.
+
+SQL -> Perl: The input must be a byte string or the C<undef> value.
+If it is not the C<undef> value, it is decoded as MessagePack.
+
+The Perl C<undef> value represents the C<NULL> value of SQL.
+
+Please note that any character strings are encoded in UTF-8 when
+encoded in MessagePack but they are not utf8-flagged when decoded, as
+MessagePack does not distinguish texts from bytes.  If you'd like to
+store structured text data into a column, consider use
+L<Dongry::Type::JSON>, which supports character strings.
+
+=back
+
+=head1 DEPENDENCY
+
+The module requires L<Data::MessagePack>.
+
+=head1 SEE ALSO
+
+Format specification - MessagePack
+<http://wiki.msgpack.org/display/MSGPACK/Format+specification>.
+
+L<Dongry::Type>.
+
+L<Dongry::Type::JSON>.
+
+=head1 AUTHOR
+
+Wakaba <w@suika.fam.cx>.
+
+=head1 LICENSE
+
+Copyright 2012 Wakaba <w@suika.fam.cx>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
