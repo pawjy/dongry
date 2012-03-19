@@ -101,7 +101,9 @@ sub insert ($$;%) {
 sub create ($$;%) {
   my ($self, $values, %args) = @_;
   croak "Option |cb| is not supported" if $args{cb};
-  my $row = $self->insert ([$values], %args)->first_as_row;
+  my $return = $self->insert ([$values], %args);
+  return undef unless $return->row_count;
+  my $row = $return->first_as_row;
   $row->{flags} = $args{flags} if $args{flags};
   return $row;
 } # create
