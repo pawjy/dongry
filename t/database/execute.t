@@ -956,7 +956,8 @@ sub _execute_update_return_multiple_rows_error : Test(2) {
       (sources => {default => {dsn => $dsn, writable => 0}});
   is $db2->execute
       ('select count(*) as count from table1 where id = 20')->first->{count},
-      1; # Oh!
+      0; # MySQL 5.5
+     #1; # MySQL 5.0
 } # _execute_update_return_multiple_rows_error
 
 sub _execute_delete_return_no_row_all : Test(10) {
