@@ -115,9 +115,19 @@ sub _get_caller () {
 sub connect ($$) {
   my $self = shift;
   my $name = shift or croak 'No data source name';
-  return if $self->{dbhs}->{$name};
   my $source = $self->{sources}->{$name}
       or croak "Data source |$name| is not defined";
+  if ($self->{dbhs}->{$name}) {
+      if ($source->{anyevent}) {
+          return;
+      } else {
+          if ($self->{dbhs}->{$name}->ping) {
+              return;
+          } else {
+              $self->disconnect($name);
+          }
+      }
+  }
 
   if ($source->{anyevent}) {
     require AnyEvent::DBI::Carp;
