@@ -1012,6 +1012,14 @@ The default time zone used by the database when this statement is not
 issued depends on the configuration and the implementation of the
 database in use.
 
+Example.  Setting the time zone used in the current connection to the
+database:
+
+  $db->onconnect (sub {
+    my ($self, %args) = @_;
+    $self->set_tz ('+00:00', source_name => $args{source_name});
+  });
+
 =back
 
 =head2 Schema-aware operations

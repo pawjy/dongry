@@ -9,6 +9,8 @@ List::Rubyish
 Scalar::Util
 Time::Local
 
+DBD::mysql
+
 Data::Dumper
 DateTime::Format::MySQL
 Path::Class
