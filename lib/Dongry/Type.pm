@@ -82,6 +82,16 @@ $Dongry::Types->{set} = {
   }, # serialize
 }; # set
 
+sub parse ($$$) {
+  #my ($class, $type, $value) = @_;
+  return $Dongry::Types->{$_[1]}->{parse}->($_[2])
+} # parse
+
+sub serialize ($$$) {
+  #my ($class, $type, $value) = @_;
+  return $Dongry::Types->{$_[1]}->{serialize}->($_[2])
+} # serialize
+
 1;
 
 =head1 LICENSE
