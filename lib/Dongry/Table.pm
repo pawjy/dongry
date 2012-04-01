@@ -254,6 +254,29 @@ sub fill_related_rows ($$$$;%) {
   });
 } # fill_related_rows
 
+# ------ Modifications ------
+
+sub update ($$;%) {
+  my ($self, $values, %args) = @_;
+
+  my $schema = $self->table_schema || {};
+  my $s_values = $self->_serialize_values ($values);
+
+  return $self->{db}->update
+      ($self->table_name, $s_values,
+       %args,
+       _table_schema => $schema);
+} # update
+
+sub delete ($$;%) {
+  my ($self, $where, %args) = @_;
+  my $schema = $self->table_schema || {};
+  return $self->{db}->delete
+      ($self->table_name, $where,
+       %args,
+       _table_schema => $schema);
+} # delete
+
 # ------ Development -------
 
 sub debug_info ($) {

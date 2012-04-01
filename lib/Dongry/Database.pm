@@ -521,7 +521,7 @@ sub update ($$$%) {
   my @col = keys %$value;
   croak 'No value to update' unless @col;
 
-  my ($where_sql, $where_bind) = _where ($args{where});
+  my ($where_sql, $where_bind) = _where ($args{where}, $args{_table_schema});
   croak 'No where' unless $where_sql;
 
   my $sql .= 'UPDATE';
@@ -555,7 +555,7 @@ sub update ($$$%) {
 sub delete ($$$;%) {
   my ($self, $table_name, $where, %args) = @_;
 
-  my ($where_sql, $where_bind) = _where ($where);
+  my ($where_sql, $where_bind) = _where ($where, $args{_table_schema});
   croak 'No where' unless $where_sql;
   
   my $sql = 'DELETE FROM ' . (_quote $table_name) . ' WHERE ' . $where_sql;
