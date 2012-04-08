@@ -112,6 +112,9 @@ sub _insert_source_not_specified : Test(3) {
 
   $db->insert ('foo', [{id => 3111}]);
   
+  $db1->disconnect;
+  $db2->disconnect;
+  $db3->disconnect;
   is $db1->execute ('select * from foo', [],
                     source_name => 'master')->row_count, 0;
   is $db2->execute ('select * from foo', [],
@@ -145,6 +148,9 @@ sub _insert_source_master : Test(3) {
 
   $db->insert ('foo', [{id => 3111}], source_name => 'master');
   
+  $db1->disconnect;
+  $db2->disconnect;
+  $db3->disconnect;
   is $db1->execute ('select * from foo', [],
                     source_name => 'master')->row_count, 0;
   is $db2->execute ('select * from foo', [],
@@ -178,6 +184,9 @@ sub _insert_source_default : Test(3) {
 
   $db->insert ('foo', [{id => 3111}], source_name => 'default');
   
+  $db1->disconnect;
+  $db2->disconnect;
+  $db3->disconnect;
   is $db1->execute ('select * from foo', [],
                     source_name => 'master')->row_count, 1;
   is $db2->execute ('select * from foo', [],
@@ -188,7 +197,6 @@ sub _insert_source_default : Test(3) {
 
 sub _insert_source_heavy : Test(3) {
   reset_db_set;
-  local $DBIx::ShowSQL::WARN = 1; # XXXDebug
 
   my $dsn1 = test_dsn 'test1';
   my $dsn2 = test_dsn 'test2';
@@ -212,6 +220,8 @@ sub _insert_source_heavy : Test(3) {
 
   $db->insert ('foo', [{id => 3111}], source_name => 'heavy');
   
+  $db1->disconnect;
+  $db2->disconnect;
   $db3->disconnect;
   is $db1->execute ('select * from foo', [],
                     source_name => 'master')->row_count, 0;
