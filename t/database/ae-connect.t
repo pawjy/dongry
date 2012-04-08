@@ -123,7 +123,7 @@ sub _connect_ae_dsn_error_with_onerror : Test(9) {
   is $error, 3;
 
   is scalar @onerror, 1;
-  like $onerror[0]->{text}, qr{Can't connect};
+  like $onerror[0]->{text}, qr{Can't connect|Unknown database};
   is $onerror[0]->{file_name}, __FILE__;
   is $onerror[0]->{line}, $error_line;
 } # _connect_ae_dsn_error_with_onerror
@@ -177,7 +177,7 @@ sub _connect_ae_dsn_error_with_onerror_implied_connect : Test(9) {
   is $error, 3;
 
   is scalar @onerror, 1;
-  like $onerror[0]->{text}, qr{Can't connect};
+  like $onerror[0]->{text}, qr{Can't connect|Unknown database};
   is $onerror[0]->{file_name}, __FILE__;
   is $onerror[0]->{line}, $error_line;
 } # _connect_ae_dsn_error_with_onerror_implied_connect
@@ -234,7 +234,7 @@ sub _connect_ae_dsn_error_with_onerror_die : Test(9) {
   is $error, 3;
 
   is scalar @onerror, 1;
-  like $onerror[0]->{text}, qr{Can't connect};
+  like $onerror[0]->{text}, qr{Can't connect|Unknown database};
   is $onerror[0]->{file_name}, __FILE__;
   is $onerror[0]->{line}, $error_line;
 } # _connect_ae_dsn_error_with_onerror_die

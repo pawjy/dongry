@@ -1405,6 +1405,7 @@ sub _execute_must_be_writable_5 : Test(1) {
 
 sub _execute_even_if_read_only_1 : Test(1) {
   reset_db_set;
+  local $DBIx::ShowSQL::WARN = 1; # XXX debug
   my $dsn = test_dsn 'hoge1';
   my $db = Dongry::Database->new
       (sources => {master => {dsn => $dsn},
