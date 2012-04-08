@@ -18,7 +18,9 @@ PERL_PATH = $(abspath local/perlbrew/perls/perl-$(PERL_VERSION)/bin)
 
 test: safetest
 
-safetest: carton-install config/perl/libs.txt
+test-deps: carton-install config/perl/libs.txt
+
+safetest: test-deps
 	PATH=$(PERL_PATH):$(PATH) PERL5LIB=$(shell cat config/perl/libs.txt) \
             $(PROVE) t/sql/*.t t/database/*.t t/type/*.t \
 	        t/table/*.t t/query/*.t
