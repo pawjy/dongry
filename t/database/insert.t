@@ -222,6 +222,9 @@ sub _insert_source_heavy : Test(3) {
 
   $db->insert ('foo', [{id => 3111}], source_name => 'heavy');
   
+  $db1->disconnect if $NEED_DISCONNECT;
+  $db2->disconnect if $NEED_DISCONNECT;
+  $db3->disconnect if $NEED_DISCONNECT;
   is $db1->execute ('select * from foo', [],
                     source_name => 'master')->row_count, 0;
   is $db2->execute ('select * from foo', [],
