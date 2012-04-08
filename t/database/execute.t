@@ -1405,7 +1405,6 @@ sub _execute_must_be_writable_5 : Test(1) {
 
 sub _execute_even_if_read_only_1 : Test(1) {
   reset_db_set;
-  local $DBIx::ShowSQL::WARN = 1; # XXX debug
   my $dsn = test_dsn 'hoge1';
   my $db = Dongry::Database->new
       (sources => {master => {dsn => $dsn},
@@ -1416,6 +1415,7 @@ sub _execute_even_if_read_only_1 : Test(1) {
                 source_name => 'master',
                 even_if_read_only => 1);
 
+  $db->disconnect (source_name => 'writable');
   is $db->execute ('select * from hoge1', [], source_name => 'writable')
       ->row_count, 1;
 } # _execute_even_if_read_only_1
@@ -1432,6 +1432,7 @@ sub _execute_even_if_read_only_2 : Test(1) {
   $db->execute ('insert into hoge1 (id) values (1)', [],
                 even_if_read_only => 1);
 
+  $db->disconnect (source_name => 'writable');
   is $db->execute ('select * from hoge1', [], source_name => 'writable')
       ->row_count, 1;
 } # _execute_even_if_read_only_2
@@ -1449,6 +1450,7 @@ sub _execute_even_if_read_only_3 : Test(1) {
                 even_if_read_only => 1,
                 source_name => 'fuga');
 
+  $db->disconnect (source_name => 'writable');
   is $db->execute ('select * from hoge1', [], source_name => 'writable')
       ->row_count, 1;
 } # _execute_even_if_read_only_3
@@ -1466,6 +1468,7 @@ sub _execute_even_if_read_only_4 : Test(1) {
                 even_if_read_only => 1,
                 source_name => 'fuga');
 
+  $db->disconnect (source_name => 'writable');
   is $db->execute ('select * from hoge1', [], source_name => 'writable')
       ->row_count, 1;
 } # _execute_even_if_read_only_4
