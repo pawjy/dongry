@@ -139,34 +139,35 @@ sub connect ($$) {
         ($source->{dsn}, $source->{username}, $source->{password},
          on_connect => sub {
            my $error_text = $@;
-           
-           ## Remove remaining pointer to the broken AnyEvent::DBI
-           ## object.
-           $onerror_args->{db}->{dbhs}->{$name} = bless {
-             error_text => $error_text,
-           }, 'Dongry::Database::BrokenConnection';
+           if ($error_text) {
+             ## Remove remaining pointer to the broken AnyEvent::DBI
+             ## object.
+             $onerror_args->{db}->{dbhs}->{$name} = bless {
+               error_text => $error_text,
+             }, 'Dongry::Database::BrokenConnection';
 
-           my $file_name = $onerror_args->{caller}->{file};
-           my $line = $onerror_args->{caller}->{line};
+             my $file_name = $onerror_args->{caller}->{file};
+             my $line = $onerror_args->{caller}->{line};
 
-           eval {
-             local $Carp::CarpLevel = $Carp::CarpLevel + 1; 
-             $onerror_args->{db}->onerror
-                 ->($onerror_args->{db},
-                    anyevent => 1,
-                    text => $error_text,
-                    file_name => $file_name,
-                    line => $line,
-                    source_name => $name,
-                    sql => $onerror_args->{db}->{last_sql});
-             1;
-           } or do {
-             warn "Died within the |onerror| handler: $@";
-           };
+             eval {
+               local $Carp::CarpLevel = $Carp::CarpLevel + 1; 
+               $onerror_args->{db}->onerror
+                   ->($onerror_args->{db},
+                      anyevent => 1,
+                      text => $error_text,
+                      file_name => $file_name,
+                      line => $line,
+                      source_name => $name,
+                      sql => $onerror_args->{db}->{last_sql});
+               1;
+             } or do {
+               warn "Died within the |onerror| handler: $@";
+             };
              
-           ## Don't |die| here.  |die| does not work well.  Just
-           ## continue and leave the error handling for the
-           ## application.
+             ## Don't |die| here.  |die| does not work well.  Just
+             ## continue and leave the error handling for the
+             ## application.
+           }
          }, # on_connect
          on_error => sub {
            #my ($dbh, $filename, $line, $fatal) = @_;
