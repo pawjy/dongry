@@ -138,6 +138,10 @@ sub connect ($$) {
     $self->{dbhs}->{$name} = AnyEvent::DBI::Carp->new
         ($source->{dsn}, $source->{username}, $source->{password},
          on_connect => sub {
+           # XXX Unfortunarely, this method would make the process
+           # halt in some cases...
+           return;
+
            my $error_text = $@;
            if ($error_text) {
              ## Remove remaining pointer to the broken AnyEvent::DBI
