@@ -428,6 +428,15 @@ sub set_tz ($;$%) {
   return undef;
 } # set_tz
 
+sub has_table ($$;%) {
+  my ($self, $name, %args) = @_;
+  # XXX $args{cb}
+  my $row = $self->execute('SHOW TABLES LIKE :table', {
+    table => Dongry::SQL::like ($name),
+  }, source_name => $args{source_name})->first;
+  return $row && [values %$row]->[0] eq $name;
+} # has_table
+
 sub insert ($$$;%) {
   my ($self, $table_name, $data, %args) = @_;
 
