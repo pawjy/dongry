@@ -109,7 +109,7 @@ sub onerror ($) {
 
 sub _get_caller () {
   return scalar Carp::caller_info
-      (Carp::short_error_loc || Carp::long_error_loc);
+      (Carp::short_error_loc() || Carp::long_error_loc());
 } # _get_caller
 
 sub connect ($$) {
@@ -898,7 +898,7 @@ sub DESTROY {
   if ($_[0]->{db}->{in_transaction}) {
     $_[0]->rollback;
     die "Transaction is rollbacked since it is not explicitly committed",
-        Carp::shortmess;
+        Carp::shortmess();
   }
   if ($Dongry::LeakTest) {
     warn "Possible memory leak by object " . ref $_[0];
