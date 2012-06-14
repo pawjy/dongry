@@ -173,7 +173,7 @@ sub _set_tz_cb_croak : Test(1) {
       Carp::croak 'hoge';
     });
   };
-  is $@, 'hoge at ' . __FILE__ . ' line ' . (__LINE__ - 2) . "\n";
+  like $@, qr/^hoge at \Q@{[__FILE__]} line @{[__LINE__ - 2]}\E\.?\n$/;
 } # _set_tz_cb_croak
 
 __PACKAGE__->runtests;
