@@ -616,7 +616,7 @@ sub _find_null_cb_exception : Test(1) {
     });
     ng 1;
   };
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 4) . ".\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 4]}\E\.?\n$};
 } # _find_null_cb_exception
 
 sub _find_all_null_cb_exception : Test(1) {
@@ -629,7 +629,7 @@ sub _find_all_null_cb_exception : Test(1) {
     });
     ng 1;
   };
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 4) . ".\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 4]}\E\.?\n$};
 } # _find_all_null_cb_exception
 
 sub _count_null_cb_exception : Test(1) {
@@ -642,7 +642,7 @@ sub _count_null_cb_exception : Test(1) {
     });
     ng 1;
   };
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 4) . ".\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 4]}\E\.?\n$};
 } # _count_null_cb_exception
 
 sub _find_null_cb_exception_carp : Test(1) {
@@ -655,7 +655,7 @@ sub _find_null_cb_exception_carp : Test(1) {
     });
     ng 1;
   };
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 3) . "\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 3]}\E\.?\n$};
 } # _find_null_cb_exception_carp
 
 sub _find_all_null_cb_exception_carp : Test(1) {
@@ -668,7 +668,7 @@ sub _find_all_null_cb_exception_carp : Test(1) {
     });
     ng 1;
   };
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 3) . "\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 3]}\E\.?\n$};
 } # _find_all_null_cb_exception_carp
 
 sub _count_null_cb_exception_carp : Test(1) {
@@ -681,7 +681,7 @@ sub _count_null_cb_exception_carp : Test(1) {
     });
     ng 1;
   };
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 3) . "\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 3]}\E\.?\n$};
 } # _count_null_cb_exception_carp
 
 sub _find_filtered_cb : Test(7) {
@@ -1049,7 +1049,7 @@ sub _find_filtered_cb_exception : Test(1) {
     });
     ng 1;
   };
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 4) . ".\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 4]}\E\.?\n$};
 } # _find_filtered_cb_exception
 
 sub _find_all_filtered_cb_exception : Test(1) {
@@ -1074,7 +1074,7 @@ sub _find_all_filtered_cb_exception : Test(1) {
     });
     ng 1;
   };
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 4) . ".\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 4]}\E\.?\n$};
 } # _find_all_filtered_cb_exception
 
 sub _count_filtered_cb_exception : Test(1) {
@@ -1099,7 +1099,7 @@ sub _count_filtered_cb_exception : Test(1) {
     });
     ng 1;
   };
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 4) . ".\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 4]}\E\.?\n$};
 } # _count_filtered_cb_exception
 
 sub _find_filtered_cb_exception_carp : Test(1) {
@@ -1124,7 +1124,7 @@ sub _find_filtered_cb_exception_carp : Test(1) {
     });
     ng 1;
   };
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 3) . "\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 3]}\E\.?\n$};
 } # _find_filtered_cb_exception_carp
 
 sub _find_all_filtered_cb_exception_carp : Test(1) {
@@ -1149,7 +1149,7 @@ sub _find_all_filtered_cb_exception_carp : Test(1) {
     });
     ng 1;
   };
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 3) . "\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 3]}\E\.?\n$};
 } # _find_all_filtered_cb_exception_carp
 
 sub _count_filtered_cb_exception_carp : Test(1) {
@@ -1174,7 +1174,7 @@ sub _count_filtered_cb_exception_carp : Test(1) {
     });
     ng 1;
   };
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 3) . "\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 3]}\E\.?\n$};
 } # _count_filtered_cb_exception_carp
 
 __PACKAGE__->runtests;
