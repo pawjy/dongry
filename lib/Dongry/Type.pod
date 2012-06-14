@@ -202,10 +202,43 @@ object.
 
 Data types for JSON data.
 
+=item L<Dongry::Type::MessagePack>
+
+Data types for MessagePack data.
+
+=item L<Dongry::Type::Geo>
+
+Data types for geometry data.
+
 =back
 
 As described in the previous section, you can define more additional
 data types.
+
+=head1 CONVERTER METHODS
+
+Although Dongry data types are intended to be invoked from Dongry
+modules, it is also possible for the application to access convertion
+methods for their own purposes, using the following methods:
+
+=over 4
+
+=item $parsed_value = Dongry::Type->parse ($type, $serialized_value)
+
+Parse the value specified as the second argument using the data type
+specified as the first argument.  The specified value must be a valid
+serialized representation in the data type.
+
+=item $serialized_value = Dongry::Type->serialize ($type, $parsed_value)
+
+Serialize the value specified as the second argument using the data
+type specified as the first argument.  The specified value must be a
+valid Perl representation in the data type.
+
+=back
+
+These methods will die if the specified data type is not defined or
+the specified value is invalid such that the convertion method dies.
 
 =head1 SEE ALSO
 
@@ -217,7 +250,7 @@ Wakaba <w@suika.fam.cx>.
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
