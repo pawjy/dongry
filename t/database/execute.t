@@ -1907,7 +1907,7 @@ sub _execute_callback_croak : Test(2) {
       Carp::croak "hoge";
     });
   };
-  is $@, 'hoge at ' . __FILE__ . ' line ' . (__LINE__ - 2) . "\n";
+  like $@, qr/^hoge at \Q@{[__FILE__]} line @{[__LINE__ - 2]}\E\.?\n$/;
 
   eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
       [{id => 31}, {id => 43}];
@@ -1922,7 +1922,7 @@ sub _execute_callback_die : Test(2) {
       die "hoge";
     });
   };
-  is $@, 'hoge at ' . __FILE__ . ' line ' . (__LINE__ - 3) . ".\n";
+  like $@, qr/^hoge at \Q@{[__FILE__]} line @{[__LINE__ - 3]}\E\.?\n$/;
 
   eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
       [{id => 31}, {id => 43}];

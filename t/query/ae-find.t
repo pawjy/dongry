@@ -593,7 +593,7 @@ sub _find_filtered_cb_exception : Test(1) {
     ng 1;
   };
 
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 8) . ".\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 8]}\E\.?\n$};
 } # _find_filtered_cb_exception
 
 sub _find_all_filtered_cb_exception : Test(1) {
@@ -623,7 +623,7 @@ sub _find_all_filtered_cb_exception : Test(1) {
     ng 1;
   };
 
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 8) . ".\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 8]}\E\.?\n$};
 } # _find_all_filtered_cb_exception
 
 sub _count_filtered_cb_exception : Test(1) {
@@ -653,7 +653,7 @@ sub _count_filtered_cb_exception : Test(1) {
     ng 1;
   };
 
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 8) . ".\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 8]}\E\.?\n$};
 } # _count_filtered_cb_exception
 
 sub _find_filtered_cb_exception_carp : Test(1) {
@@ -779,7 +779,7 @@ sub _find_filtered_cb_error_exception : Test(3) {
 
   ng $filtered;
   ok defined $@;
-  is $warn, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 9) . ".\n";
+  like $warn, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 9]}\E\.?\n$};
 } # _find_filtered_cb_error_exception
 
 sub _find_all_filtered_cb_error_exception : Test(3) {
@@ -815,7 +815,7 @@ sub _find_all_filtered_cb_error_exception : Test(3) {
 
   ng $filtered;
   ok defined $@;
-  is $warn, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 9) . ".\n";
+  like $warn, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 9]}\E\.?\n$};
 } # _find_all_filtered_cb_error_exception
 
 sub _count_filtered_cb_error_exception : Test(3) {
@@ -851,7 +851,7 @@ sub _count_filtered_cb_error_exception : Test(3) {
 
   ng $filtered;
   ok defined $@;
-  is $warn, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 9) . ".\n";
+  like $warn, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 9]}\E\.?\n$};
 } # _count_filtered_cb_error_exception
 
 sub _find_filtered_cb_error_exception_carp : Test(3) {

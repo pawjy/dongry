@@ -375,7 +375,7 @@ sub _execute_connection_error : Test(7) {
   isa_ok $result, 'Dongry::Database::Executed';
   ng $result->is_success;
   ok $result->is_error;
-  like $result->error_text, qr[Can't connect|Unknown database];
+  like $result->error_text, qr[Can't connect|Unknown database|Access denied];
   is $result->error_sql, 'create table foo (id int)';
 } # _execute_connection_error
 
@@ -405,7 +405,7 @@ sub _execute_connection_error_2 : Test(12) {
   isa_ok $result, 'Dongry::Database::Executed';
   ng $result->is_success;
   ok $result->is_error;
-  like $result->error_text, qr{Can't connect|Unknown database};
+  like $result->error_text, qr{Can't connect|Unknown database|Access denied};
   is $result->error_sql, 'create table foo (id int)';
 
   $result = undef;
@@ -418,7 +418,7 @@ sub _execute_connection_error_2 : Test(12) {
   }, source_name => 'ae');
   
   is $invoked, 2;
-  like $result->error_text, qr{Can't connect|Unknown database};
+  like $result->error_text, qr{Can't connect|Unknown database|Access denied};
   is $result->error_sql, 'hoge';
 } # _execute_connection_error_2
 

@@ -2334,7 +2334,7 @@ sub _select_cb_exception : Test(1) {
     ng 1;
   };
 
-  is $@, 'hoa fuga at ' . __FILE__ . ' line ' . (__LINE__ - 5) . ".\n";
+  like $@, qr/^hoa fuga at \Q@{[__FILE__]} line @{[__LINE__ - 5]}\E\.?\n$/;
 } # _select_cb_exception
 
 sub _select_cb_exception_carp : Test(1) {
@@ -2350,7 +2350,7 @@ sub _select_cb_exception_carp : Test(1) {
     ng 1;
   };
 
-  is $@, 'hoa fuga at ' . __FILE__ . ' line ' . (__LINE__ - 4) . "\n";
+  like $@, qr/^hoa fuga at \Q@{[__FILE__]} line @{[__LINE__ - 4]}\E\.?\n$/;
 } # _select_cb_exception_carp
 
 __PACKAGE__->runtests;

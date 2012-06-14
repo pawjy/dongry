@@ -680,8 +680,19 @@ sub each_as_row ($$) {
 
 sub all ($) {
   my $sth = delete $_[0]->{sth} or croak 'This method is no longer available';
-  my $list = $_[0]->{db}->_list ($sth->fetchall_arrayref ({}));
-  $sth->finish;
+  my $list;
+  my $err;
+  {
+    local $@;
+    eval {
+      $list = $_[0]->{db}->_list ($sth->fetchall_arrayref ({}));
+      $sth->finish;
+      1;
+    } or do {
+      $err = $@;
+    };
+  }
+  warn $err, croak 'This method is not available' if $err;
   return $list;
 } # all
 

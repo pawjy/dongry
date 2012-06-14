@@ -6,7 +6,7 @@ use lib file (__FILE__)->dir->parent->subdir ('lib')->stringify;
 use Test::Dongry;
 use base qw(Test::Class);
 use Test::MoreMore::Mock;
-BEGIN { $DBIx::ShowSQL::WARN //= 0 };
+BEGIN { $DBIx::ShowSQL::WARN = 0 if not defined $DBIx::ShowSQL::WARN };
 use DBIx::ShowSQL;
 use Dongry::Database;
 use Dongry::Type::DateTime;
@@ -629,7 +629,7 @@ sub _fill_related_rows_cb_exception : Test(1) {
     ng 1;
   };
 
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 5) . ".\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 5]}\E\.?\n$};
 } # _fill_related_rows_cb_exception
 
 sub _fill_related_rows_cb_exception_carp : Test(1) {
@@ -654,7 +654,7 @@ sub _fill_related_rows_cb_exception_carp : Test(1) {
     ng 1;
   };
 
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 4) . "\n";
+  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 4]}\E\.?\n$};
 } # _fill_related_rows_cb_exception_carp
 
 __PACKAGE__->runtests;

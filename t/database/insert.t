@@ -934,7 +934,7 @@ sub _insert_duplicate_error : Test(8) {
   #is $onerror_args{text}, q{DBD::mysql::st execute failed: Duplicate entry '2' for key 1}; # MySQL 5.0
   is $onerror_args{text}, q{DBD::mysql::st execute failed: Duplicate entry '2' for key 'id'}; # MySQL 5.5
   is $invoked, 1;
-  is $shortmess, ' at ' . __FILE__ . ' line ' . $messline . "\n";
+  like $shortmess, qr/^ at \Q@{[__FILE__]} line $messline\E\.?\n$/;
   
   is $db->execute ('select * from foo', undef, source_name => 'master')
       ->row_count, 1;
@@ -1016,7 +1016,7 @@ sub _insert_column_error : Test(8) {
   is $onerror_args{sql}, 'insert into foo (id2) values (2)';
   ok $onerror_args{text};
   is $invoked, 1;
-  is $shortmess, ' at ' . __FILE__ . ' line ' . $messline . "\n";
+  like $shortmess, qr/^ at \Q@{[__FILE__]} line $messline\E\.?\n$/;
   
   is $db->execute ('select * from foo', undef, source_name => 'master')
       ->row_count, 0;
@@ -1415,7 +1415,7 @@ sub _insert_cb_exception : Test(1) {
       die 'abbc ';
     });
   };
-  is $@, 'abbc  at ' . __FILE__ . ' line ' . (__LINE__ - 3) . ".\n";
+  like $@, qr/^abbc  at \Q@{[__FILE__]} line @{[__LINE__ - 3]}\E\.?\n$/;
 } # _insert_cb_exception
 
 sub _insert_cb_exception_croak : Test(1) {
@@ -1427,7 +1427,7 @@ sub _insert_cb_exception_croak : Test(1) {
       Carp::croak 'abbc ';
     });
   };
-  is $@, 'abbc  at ' . __FILE__ . ' line ' . (__LINE__ - 2) . "\n";
+  like $@, qr/^abbc  at \Q@{[__FILE__]} line @{[__LINE__ - 2]}\E\.?\n$/;
 } # _insert_cb_exception_croak
 
 sub _insert_cb_onerror : Test(2) {

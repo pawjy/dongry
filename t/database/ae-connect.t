@@ -33,7 +33,7 @@ sub _connect_ae_dsn_error : Test(5) {
   my $cv = AnyEvent->condvar;
 
   my $db = Dongry::Database->new
-      (sources => {hoge => {dsn => 'dbi:mysql:notfound', anyevent => 1}});
+      (sources => {hoge => {dsn => 'dbi:mysql:host=notfound', anyevent => 1}});
   $db->connect ('hoge');
   isa_ok $db->{dbhs}->{hoge}, 'AnyEvent::DBI';
 
