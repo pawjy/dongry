@@ -7,7 +7,7 @@ use Test::Dongry;
 use base qw(Test::Class);
 use Dongry::Database;
 
-sub _version : Test(7) {
+sub _version : Test(8) {
   ok $Dongry::Database::VERSION;
   ok $Dongry::Database::Executed::VERSION;
   ok $Dongry::Database::Executed::Inserted::VERSION;
@@ -15,6 +15,7 @@ sub _version : Test(7) {
   ok $Dongry::Database::Transaction::AnyEvent::VERSION;
   ok $Dongry::Database::ForceSource::VERSION;
   ok $Dongry::Database::BrokenConnection::VERSION;
+  ok $Dongry::Database::Registry::VERSION;
 } # _version
 
 sub _inheritance : Test(1) {
@@ -102,6 +103,71 @@ sub _load_dynamic_def : Test(5) {
   eq_or_diff $db->{schema}, {hoge => {foo => 5}};
   is $db->{table_name_normalizer}->(), 120;
 } # _load_dynamic_def
+
+sub _create_registry : Test(3) {
+  my $reg = Dongry::Database->create_registry;
+  isa_ok $reg, 'Dongry::Database::Registry';
+
+  my $reg2 = Dongry::Database->create_registry;
+  isa_ok $reg2, 'Dongry::Database::Registry';
+
+  isnt $reg2, $reg;
+} # _create_registry
+
+sub _create_registry_load_none : Test(3) {
+  my $reg = Dongry::Database->create_registry;
+
+  dies_here_ok {
+      $reg->load;
+  };
+  dies_here_ok {
+      $reg->load(0);
+  };
+  dies_here_ok {
+      $reg->load('hoge');
+  };
+} # _create_registry_load_none
+
+sub _create_registry_load_found : Test(4) {
+  my $reg = Dongry::Database->create_registry;
+  $reg->{Registry}->{hoge} = {
+    sources => {master => {dsn => 'hoge'}},
+  };
+
+  my $db = $reg->load ('hoge');
+  eq_or_diff $db->source('master'), {dsn => 'hoge'};
+
+  my $db2 = $reg->load ('hoge');
+  is $db2, $db;
+
+  dies_here_ok {
+      $reg->load ('HOGE');
+  };
+
+  dies_here_ok {
+      Dongry::Database->load ('hoge');
+  };
+} # _create_registry_load_found
+
+sub _create_registry_load_found_2 : Test(4) {
+  local $Dongry::Database::Registry->{hoge} = {
+    sources => {master => {dsn => 'fuga'}},
+  };
+
+  my $reg = Dongry::Database->create_registry;
+  $reg->{Registry}->{hoge} = {
+    sources => {master => {dsn => 'hoge'}},
+  };
+
+  my $db = $reg->load ('hoge');
+  eq_or_diff $db->source('master'), {dsn => 'hoge'};
+
+  my $db2 = $reg->load ('hoge');
+  is $db2, $db;
+
+  my $db3 = Dongry::Database->load ('hoge');
+  eq_or_diff $db3->source('master'), {dsn => 'fuga'};
+} # _create_registry_load_found_2
 
 sub _debug_info : Test(1) {
   my $db = Dongry::Database->new;

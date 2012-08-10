@@ -111,15 +111,26 @@ Example:
 
 =item $Dongry::Database::Registry->{$db_name} = {...}
 
+=item $reg = Dongry::Database->create_registry
+
+There is the database definition registry, which can be accessed by
+the hash reference C<$Dongry::Database::Registry>.  In addition, an
+application can create a local registry object by invoking the
+C<create_registry> class method.  Registries are used with the C<load>
+method, as described in the next subsection.
+
 =item $db = Dongry::Database->load ($db_name)
 
-Instead of creating a new instance each time, a named database object
-instance can be retrieved by this method.
+=item $db = $reg->load ($db_name)
 
-Before the first invocation with the name the application has to
-register a short name for the database object instance with its
-initializing options as a key/value pair of
-C<%$Dongry::Database::Registry> hash.
+Instead of creating a new instance each time, a named database object
+instance can be retrieved by the C<load> method.
+
+Before the first invocation with the database name, the application
+has to register a short name for the database object with its
+initialization options, as a key/value pair of
+C<%$Dongry::Database::Registry> hash (for the global registry) or the
+C<< %{$reg->{Registry}} >> hash (for a local registry).
 
 The hash key is the short database name and the hash value is the hash
 reference containing options used to instantiate the database object.
@@ -135,12 +146,15 @@ reference must return a value that is allowed for the option
 (e.g. C<get_onconnect> code reference must return an C<onconnect>
 handler code reference).
 
-Then, you can use the short database name to get the instance
-initialized with the specified options.  The instantiation happens
-only once.  Invocations of the method with the same database name
-always return the same database object instance.  You can control the
-lifetime of the instances by accessing (e.g. clearing or
-C<local>izing) the C<$Dongry::Database::Instances> hash reference.
+Then, you can use the short database name as the argument to the
+C<load> method to get the instance initialized with the specified
+options.  The instantiation happens only once (per registry).
+Invocations of the method with the same database name always return
+the same database object instance.  You can control the lifetime of
+the instances by accessing (e.g. clearing or C<local>izing) the
+C<$Dongry::Database::Instances> hash reference (for the global
+registry) or the C<< $reg->{Instances} >> hash reference (for a local
+registry).
 
 Example:
 
