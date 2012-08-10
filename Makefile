@@ -17,7 +17,7 @@ Makefile.setupenv:
 	wget -O $@ https://raw.github.com/wakaba/perl-setupenv/master/Makefile.setupenv
 
 local-perl perl-version perl-exec \
-pmb-update pmb-install \
+lperl pmb-update pmb-install \
 generatepm: %: Makefile-setupenv
 	$(MAKE) --makefile Makefile.setupenv $@
 
@@ -27,7 +27,12 @@ PERL_PATH = $(abspath local/perlbrew/perls/perl-$(PERL_VERSION)/bin)
 
 test: safetest
 
-test-deps: pmb-install
+test-deps: git-submodules pmb-install
+
+GIT = git
+
+git-submodules:
+	$(GIT) submodule update --init
 
 safetest: test-deps
 	PATH=$(PERL_PATH):$(PATH) PERL5LIB=$(shell cat config/perl/libs.txt) \
