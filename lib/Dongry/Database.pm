@@ -64,6 +64,14 @@ sub load ($$) {
            ($def->{get_table_name_normalizer} or sub { undef })->());
 } # load
 
+sub create_registry ($;%) {
+  shift;
+  return bless {
+    Registry => {@_},
+    Instances => {},
+  }, 'Dongry::Database::Registry';
+} # new
+
 # ------ Connection ------
 
 sub source ($;$$) {
@@ -975,6 +983,19 @@ sub exec_or_fatal_as_hashref {
   local $@ = $_[0]->{error_text};
   $cb->($_[0]);
 } # exec_as_hashref
+
+# ------ Loader ------
+
+package Dongry::Database::Registry;
+our $VERSION = '1.0';
+
+push our @CARP_NOT, qw(Dongry::Database);
+
+sub load ($$) {
+  local $Dongry::Database::Registry = $_[0]->{Registry};
+  local $Dongry::Database::Instances = $_[0]->{Instances};
+  return Dongry::Database->load($_[1]);
+} # load
 
 1;
 
