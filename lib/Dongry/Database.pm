@@ -243,7 +243,8 @@ sub connect ($$) {
             }
             croak $_[0];
             #return 0;
-          }, AutoCommit => 1, ReadOnly => !$source->{writable}});
+          }, AutoCommit => 1, ReadOnly => !$source->{writable},
+          AutoInactiveDestroy => 1});
   }
   $self->onconnect->($self, source_name => $name);
 } # connect
