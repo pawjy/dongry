@@ -93,7 +93,7 @@ sub _where_exp ($$$$$) {
     -like => 'LIKE',
     -prefix => 'LIKE', -infix => 'LIKE', -suffix => 'LIKE',
     -regexp => 'REGEXP',
-    -in => '-in',
+    -in => '-in', -not_in => '-not_in',
   }->{$_[1] || ''}
       or croak "Unknown operation |$_[1]| is specified for column |$_[0]|";
 
@@ -147,10 +147,11 @@ sub where ($;$) {
         croak "No operation is specified for column |$key|" unless @type;
         @type = sort { $a cmp $b } @type if $SortKeys;
         for my $type (@type) {
-          if ($type eq '-in') {
+          if ($type eq '-in' or $type eq '-not_in') {
             my $list = $values->{$key}->{$type};
             croak "List for |-in| is empty" unless @{$list or []};
             push @and, (quote $key) .
+                ($type eq '-not_in' ? ' NOT' : '') .
                 ' IN (' . (join ', ', ('?') x @$list) . ')';
             my $coltype = $table_schema->{type}->{$key};
             my $handler;

@@ -12,7 +12,7 @@ use Data::Dumper;
 
 $Dongry::SQL::SortKeys = 1;
 
-sub _where_valid_hashref : Test(51) {
+sub _where_valid_hashref : Test(58) {
   for (
       [{foo => undef} => ['`foo` IS NULL', []]],
       [{foo => ''} => ['`foo` = ?', ['']]],
@@ -61,6 +61,16 @@ sub _where_valid_hashref : Test(51) {
            => ['`foo` IN (?, ?, ?)', ['1', 'a', 33]]],
       [{foo => {-in => bless [1, 'a', 33], 'DBIx::MoCo::List'}}
            => ['`foo` IN (?, ?, ?)', ['1', 'a', 33]]],
+      [{foo => {-not_in => ['']}} => ['`foo` NOT IN (?)', ['']]],
+      [{foo => {-not_in => ['0']}} => ['`foo` NOT IN (?)', ['0']]],
+      [{foo => {-not_in => ['a']}} => ['`foo` NOT IN (?)', ['a']]],
+      [{foo => {-not_in => [1, 'a']}} => ['`foo` NOT IN (?, ?)', ['1', 'a']]],
+      [{foo => {-not_in => [1, 'a', 33]}}
+           => ['`foo` NOT IN (?, ?, ?)', ['1', 'a', 33]]],
+      [{foo => {-not_in => bless [1, 'a', 33], 'List::Rubyish'}}
+           => ['`foo` NOT IN (?, ?, ?)', ['1', 'a', 33]]],
+      [{foo => {-not_in => bless [1, 'a', 33], 'DBIx::MoCo::List'}}
+           => ['`foo` NOT IN (?, ?, ?)', ['1', 'a', 33]]],
       [{foo => 'bar', 'baz' => 'hoge'}
            => ['`baz` = ? AND `foo` = ?', ['hoge', 'bar']]],
       [{foo => 'bar', 'baz' => undef}

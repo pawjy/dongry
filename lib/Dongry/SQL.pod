@@ -273,6 +273,14 @@ The entire key/value pair represents the SQL expression C<column IN
 an array reference or a blessed array reference containing the column
 values for the C<(?, ?, ..., ?)> portion.  It must not be empty.
 
+=item C<-not_in>
+
+The entire key/value pair represents the SQL expression C<column NOT
+IN (?, ?, ..., ?)> where I<column> is the column name.  The value must
+be an array reference or a blessed array reference containing the
+column values for the C<(?, ?, ..., ?)> portion.  It must not be
+empty.
+
 =back
 
 If more than one keys from the list above is specified, they are
