@@ -746,7 +746,10 @@ sub all ($) {
       $err = $@;
     };
   }
-  warn $err, croak 'This method is not available' if $err;
+  if ($err) {
+      warn $err;
+      croak 'This method is not available';
+  }
   return $list;
 } # all
 
