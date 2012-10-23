@@ -9,3 +9,5 @@ pod2htmd.tmp
 /local/
 /perl
 /prove
+/plackup
+/cin
