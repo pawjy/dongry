@@ -9,35 +9,41 @@
 
 all:
 
+PROVE = ./prove
+GIT = git
+
+## ------ Setup ------
+
+deps: git-submodules pmbp-install
+
 Makefile-setupenv: Makefile.setupenv
 	$(MAKE) --makefile Makefile.setupenv setupenv-update \
-            SETUPENV_MIN_REVISION=20120318
+            SETUPENV_MIN_REVISION=20120930
 
 Makefile.setupenv:
 	wget -O $@ https://raw.github.com/wakaba/perl-setupenv/master/Makefile.setupenv
 
-local-perl perl-version perl-exec \
-lperl pmb-update pmb-install \
-generatepm: %: Makefile-setupenv
+pmb-update: pmbp-update
+pmb-install: pmbp-install
+local-perl: pmbp-install
+lperl: pmbp-install
+
+pmbp-update pmbp-install generatepm: %: Makefile-setupenv
 	$(MAKE) --makefile Makefile.setupenv $@
-
-PROVE = prove
-PERL_VERSION = latest
-PERL_PATH = $(abspath local/perlbrew/perls/perl-$(PERL_VERSION)/bin)
-
-test: safetest
-
-test-deps: git-submodules pmb-install
-
-GIT = git
 
 git-submodules:
 	$(GIT) submodule update --init
 
+## ------ Tests ------
+
+test: safetest
+
+test-deps: deps
+
 safetest: test-deps
-	PATH=$(PERL_PATH):$(PATH) PERL5LIB=$(shell cat config/perl/libs.txt) \
-            $(PROVE) t/sql/*.t t/database/*.t t/type/*.t \
-	        t/table/*.t t/query/*.t
+	$(PROVE) t/sql/*.t t/database/*.t t/type/*.t t/table/*.t t/query/*.t
+
+## ------ Packaging ------
 
 GENERATEPM = local/generatepm/bin/generate-pm-package
 GENERATEPM_ = $(GENERATEPM) --generate-json

@@ -382,7 +382,8 @@ sub execute ($$;$%) {
              if ($args{cb}) {
                my $result = bless {db => $self,
                                    data => $_[1],
-                                   row_count => $_[2]},
+                                   row_count => $_[2],
+                                   table_name => $args{table_name}},
                    'Dongry::Database::Executed::Inserted';
                $args{cb}->($self, $result);
              }
@@ -415,7 +416,8 @@ sub execute ($$;$%) {
     my $rows = $sth->execute (@{$values or []});
     return if not defined wantarray and not $args{cb};
 
-    my $result = bless {db => $self, sth => $sth, row_count => $rows},
+    my $result = bless {db => $self, sth => $sth, row_count => $rows,
+                        table_name => $args{table_name}},
         'Dongry::Database::Executed';
     if ($args{cb}) {
       local $Carp::CarpLevel = $Carp::CarpLevel + 1;
