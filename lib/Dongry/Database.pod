@@ -621,6 +621,14 @@ even to a read-only data source.
 You should not specify both C<must_be_writable> and
 C<even_if_read_only> options at the same time.
 
+=item table_name => table-name
+
+If this option is set to a value, it is used as the value of the
+result object's C<table_name> property, if the SQL execution has been
+succeeded.  Otherwise, the result object returned by the C<execute>
+method has the C<table_name> value of C<undef>, which means that
+C<*_as_row> methods cannot be used on the result object.
+
 =item cb => code-reference
 
 The callback function invoked when the SQL has been executed.

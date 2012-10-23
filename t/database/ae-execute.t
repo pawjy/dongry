@@ -571,6 +571,19 @@ sub _execute_cb_onerror_order : Test(1) {
   eq_or_diff \@error, ['cb', 'onerror'];
 } # _execute_cb_onerror_order
 
+sub _execute_cb_result_table_name : Test(1) {
+  my $db = new_db;
+  my $cv = AE::cv;
+  $db->execute
+      ('create table foo (id int)', undef, table_name => 'hoge',
+       cb => sub {
+         my (undef, $result) = @_;
+         is $result->table_name, 'hoge';
+         $cv->send;
+       });
+  $cv->recv;
+} # _execute_cb_result_table_name
+
 __PACKAGE__->runtests;
 
 $Dongry::LeakTest = 1;

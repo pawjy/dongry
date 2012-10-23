@@ -9,8 +9,6 @@ use base qw(Test::Class);
 use Dongry::Database;
 use Encode;
 
-our $NEED_DISCONNECT = $ENV{TRAVIS};
-
 sub _execute_create_table_no_return : Test(1) {
   reset_db_set;
   my $dsn = test_dsn 'createtable';
@@ -1105,7 +1103,7 @@ sub _execute_select_source : Test(4) {
                    source_name => 'heavy')->row_count, 1;
 } # _execute_select_source
 
-sub _execute_insert_source : Test(3) {
+sub _execute_insert_source : Test(4) {
   reset_db_set;
   my $dsn1 = test_dsn 'testdb1';
   my $dsn2 = test_dsn 'testdb2';
@@ -1129,10 +1127,9 @@ sub _execute_insert_source : Test(3) {
                    default => {dsn => $dsn2, writable => 1},
                    heavy => {dsn => $dsn3, writable => 1}});
   $db->execute ('insert into foo (id) values (400)');
-  
-  $db1->disconnect if $NEED_DISCONNECT;
-  $db2->disconnect if $NEED_DISCONNECT;
-  $db3->disconnect if $NEED_DISCONNECT;
+
+  is $db->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 1;
   is $db1->execute ('select * from foo where id = 400', [],
                     source_name => 'master')->row_count, 1;
   is $db2->execute ('select * from foo where id = 400', [],
@@ -1141,7 +1138,7 @@ sub _execute_insert_source : Test(3) {
                     source_name => 'master')->row_count, 0;
 } # _execute_insert_source
 
-sub _execute_insert_source_default : Test(3) {
+sub _execute_insert_source_default : Test(4) {
   reset_db_set;
   my $dsn1 = test_dsn 'testdb1';
   my $dsn2 = test_dsn 'testdb2';
@@ -1167,9 +1164,8 @@ sub _execute_insert_source_default : Test(3) {
   $db->execute ('insert into foo (id) values (400)', [],
                 source_name => 'default');
   
-  $db1->disconnect if $NEED_DISCONNECT;
-  $db2->disconnect if $NEED_DISCONNECT;
-  $db3->disconnect if $NEED_DISCONNECT;
+  is $db->execute ('select * from foo where id = 400', [],
+                   source_name => 'default')->row_count, 1;
   is $db1->execute ('select * from foo where id = 400', [],
                     source_name => 'master')->row_count, 0;
   is $db2->execute ('select * from foo where id = 400', [],
@@ -1178,7 +1174,7 @@ sub _execute_insert_source_default : Test(3) {
                     source_name => 'master')->row_count, 0;
 } # _execute_insert_source_default
 
-sub _execute_insert_source_master : Test(3) {
+sub _execute_insert_source_master : Test(4) {
   reset_db_set;
   my $dsn1 = test_dsn 'testdb1';
   my $dsn2 = test_dsn 'testdb2';
@@ -1204,9 +1200,8 @@ sub _execute_insert_source_master : Test(3) {
   $db->execute ('insert into foo (id) values (400)', [],
                 source_name => 'master');
   
-  $db1->disconnect if $NEED_DISCONNECT;
-  $db2->disconnect if $NEED_DISCONNECT;
-  $db3->disconnect if $NEED_DISCONNECT;
+  is $db->execute ('select * from foo where id = 400', [],
+                    source_name => 'master')->row_count, 1;
   is $db1->execute ('select * from foo where id = 400', [],
                     source_name => 'master')->row_count, 1;
   is $db2->execute ('select * from foo where id = 400', [],
@@ -1215,7 +1210,7 @@ sub _execute_insert_source_master : Test(3) {
                     source_name => 'master')->row_count, 0;
 } # _execute_insert_source_master
 
-sub _execute_insert_source_heavy : Test(3) {
+sub _execute_insert_source_heavy : Test(4) {
   reset_db_set;
   my $dsn1 = test_dsn 'testdb1';
   my $dsn2 = test_dsn 'testdb2';
@@ -1241,9 +1236,8 @@ sub _execute_insert_source_heavy : Test(3) {
   $db->execute ('insert into foo (id) values (400)', [],
                 source_name => 'heavy');
   
-  $db1->disconnect if $NEED_DISCONNECT;
-  $db2->disconnect if $NEED_DISCONNECT;
-  $db3->disconnect if $NEED_DISCONNECT;
+  is $db->execute ('select * from foo where id = 400', [],
+                    source_name => 'heavy')->row_count, 1;
   is $db1->execute ('select * from foo where id = 400', [],
                     source_name => 'master')->row_count, 0;
   is $db2->execute ('select * from foo where id = 400', [],
@@ -1429,8 +1423,8 @@ sub _execute_even_if_read_only_1 : Test(1) {
   $db->execute ('insert into hoge1 (id) values (1)', [],
                 source_name => 'master',
                 even_if_read_only => 1);
+  $db->execute ('select * from hoge1', [], source_name => 'master');
 
-  $db->disconnect if $NEED_DISCONNECT;
   is $db->execute ('select * from hoge1', [], source_name => 'writable')
       ->row_count, 1;
 } # _execute_even_if_read_only_1
@@ -1447,7 +1441,7 @@ sub _execute_even_if_read_only_2 : Test(1) {
   $db->execute ('insert into hoge1 (id) values (1)', [],
                 even_if_read_only => 1);
 
-  $db->disconnect if $NEED_DISCONNECT;
+  $db->execute ('select * from hoge1', [], source_name => 'default');
   is $db->execute ('select * from hoge1', [], source_name => 'writable')
       ->row_count, 1;
 } # _execute_even_if_read_only_2
@@ -1465,7 +1459,7 @@ sub _execute_even_if_read_only_3 : Test(1) {
                 even_if_read_only => 1,
                 source_name => 'fuga');
 
-  $db->disconnect if $NEED_DISCONNECT;
+  $db->execute ('select * from hoge1', [], source_name => 'fuga');
   is $db->execute ('select * from hoge1', [], source_name => 'writable')
       ->row_count, 1;
 } # _execute_even_if_read_only_3
@@ -1483,7 +1477,7 @@ sub _execute_even_if_read_only_4 : Test(1) {
                 even_if_read_only => 1,
                 source_name => 'fuga');
 
-  $db->disconnect if $NEED_DISCONNECT;
+  $db->execute ('select * from hoge1', [], source_name => 'fuga');
   is $db->execute ('select * from hoge1', [], source_name => 'writable')
       ->row_count, 1;
 } # _execute_even_if_read_only_4
@@ -1497,7 +1491,7 @@ sub _execute_even_if_read_only_5 : Test(1) {
                    writable => {dsn => $dsn, writable => 1}});
   $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
 
-  $db->disconnect if $NEED_DISCONNECT;
+  $db->execute ('select * from hoge1', [], source_name => 'fuga');
   is $db->execute ('select * from hoge1', [],
                    even_if_read_only => 1,
                    source_name => 'fuga')->row_count, 0;
@@ -1512,7 +1506,6 @@ sub _execute_even_if_read_only_default_source : Test(1) {
                    writable => {dsn => $dsn, writable => 1}});
   $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
 
-  $db->disconnect if $NEED_DISCONNECT;
   dies_here_ok {
     $db->execute ('select * from hoge1', [],
                   even_if_read_only => 1);
@@ -1528,7 +1521,6 @@ sub _execute_even_if_read_only_default_source_2 : Test(1) {
                    writable => {dsn => $dsn, writable => 1}});
   $db->execute ('create table hoge1 (id int)', [], source_name => 'writable');
 
-  $db->disconnect if $NEED_DISCONNECT;
   dies_here_ok {
     $db->execute ('insert into hoge1 (id) values (0)', [],
                   even_if_read_only => 1);
@@ -1958,6 +1950,23 @@ sub _result_all_as_rows_custom_list : Test(2) {
   isa_ok $list, 'MyListClass';
   eq_or_diff [map { $_->{data} } @$list], [{id => 1}, {id => 2}];
 } # _result_all_as_rows_custom_list
+
+sub _execute_result_table_name : Test(1) {
+  my $db = new_db;
+  my $result = $db->execute
+      ('create table foo (id int)', undef, table_name => 'hoge');
+  is $result->table_name, 'hoge';
+} # _execute_result_table_name
+
+sub _execute_cb_result_table_name : Test(1) {
+  my $db = new_db;
+  $db->execute
+      ('create table foo (id int)', undef, table_name => 'hoge',
+       cb => sub {
+         my (undef, $result) = @_;
+         is $result->table_name, 'hoge';
+       });
+} # _execute_cb_result_table_name
 
 __PACKAGE__->runtests;
 
