@@ -1,0 +1,49 @@
+=head1 NAME
+
+Dongry::Type::Storable - Dongry data types for Storable
+
+=head1 DESCRIPTION
+
+The C<Dongry::Type::Storable> module defines data types for handing
+Storable-encoded data structure as column value in Dongry.
+
+=head1 DATA TYPES
+
+=over 4
+
+=item storable_nfreeze
+
+Perl -> SQL: The input must be a reference or the C<undef> value.  If
+it is not the C<undef> value, it is encoded by C<Storable>'s
+C<nfreeze>.
+
+SQL -> Perl: The input must be a byte string or the C<undef> value.
+If it is not the C<undef> value, it is decoded by C<Storable>'s
+C<thaw>.
+
+The Perl C<undef> value represents the C<NULL> value of SQL.
+
+=back
+
+=head1 DEPENDENCY
+
+The module requires L<Storable>.
+
+=head1 SEE ALSO
+
+L<Dongry::Type>.
+
+L<Dongry::Type::JSON>.
+
+=head1 AUTHOR
+
+Wakaba <wakabatan@hatena.ne.jp>.
+
+=head1 LICENSE
+
+Copyright 2012 Hatena <http://www.hatena.ne.jp/>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
