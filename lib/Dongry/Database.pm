@@ -431,6 +431,7 @@ sub execute ($$;$%) {
           $redo = 1;
           return;
         }
+        $_[0] = "[retry=$retry] $_[0]" if $retry;
         $orig_onerror->(@_);
         die $_[0];
       };
