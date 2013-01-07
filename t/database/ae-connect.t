@@ -247,11 +247,12 @@ sub _connect_onconnect : Test(2) {
   
   my $db = Dongry::Database->new
       (sources => {hoge => {dsn => $dsn, anyevent => 1}});
+  my $db2;
 
   my @connected;
   $db->onconnect (sub {
     my ($self, %args) = @_;
-    is $self, $db;
+    $db2 = ''.$self;
     push @connected, $args{source_name};
   });
 
@@ -259,6 +260,7 @@ sub _connect_onconnect : Test(2) {
   $db->connect ('hoge');
 
   eq_or_diff \@connected, ['hoge'];
+  is $db2, ''.$db;
 } # _connect_onconnect
 
 sub _connect_onconnect_timing : Test(2) {
@@ -395,8 +397,6 @@ sub _destroy_executed_ae : Test(1) {
 } # _destroy_executed_ae
 
 __PACKAGE__->runtests;
-
-undef $@;
 
 1;
 
