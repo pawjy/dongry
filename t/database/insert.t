@@ -9,8 +9,6 @@ use Dongry::Database;
 use Encode;
 use List::Rubyish;
 
-our $NEED_DISCONNECT = $ENV{TRAVIS};
-
 sub _insert_a_row : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
@@ -114,9 +112,9 @@ sub _insert_source_not_specified : Test(3) {
 
   $db->insert ('foo', [{id => 3111}]);
   
-  $db1->disconnect if $NEED_DISCONNECT;
-  $db2->disconnect if $NEED_DISCONNECT;
-  $db3->disconnect if $NEED_DISCONNECT;
+  $db1->disconnect;
+  $db2->disconnect;
+  $db3->disconnect;
   is $db1->execute ('select * from foo', [],
                     source_name => 'master')->row_count, 0;
   is $db2->execute ('select * from foo', [],
@@ -150,9 +148,9 @@ sub _insert_source_master : Test(3) {
 
   $db->insert ('foo', [{id => 3111}], source_name => 'master');
   
-  $db1->disconnect if $NEED_DISCONNECT;
-  $db2->disconnect if $NEED_DISCONNECT;
-  $db3->disconnect if $NEED_DISCONNECT;
+  $db1->disconnect;
+  $db2->disconnect;
+  $db3->disconnect;
   is $db1->execute ('select * from foo', [],
                     source_name => 'master')->row_count, 0;
   is $db2->execute ('select * from foo', [],
@@ -186,9 +184,9 @@ sub _insert_source_default : Test(3) {
 
   $db->insert ('foo', [{id => 3111}], source_name => 'default');
   
-  $db1->disconnect if $NEED_DISCONNECT;
-  $db2->disconnect if $NEED_DISCONNECT;
-  $db3->disconnect if $NEED_DISCONNECT;
+  $db1->disconnect;
+  $db2->disconnect;
+  $db3->disconnect;
   is $db1->execute ('select * from foo', [],
                     source_name => 'master')->row_count, 1;
   is $db2->execute ('select * from foo', [],
@@ -222,9 +220,9 @@ sub _insert_source_heavy : Test(3) {
 
   $db->insert ('foo', [{id => 3111}], source_name => 'heavy');
   
-  $db1->disconnect if $NEED_DISCONNECT;
-  $db2->disconnect if $NEED_DISCONNECT;
-  $db3->disconnect if $NEED_DISCONNECT;
+  $db1->disconnect;
+  $db2->disconnect;
+  $db3->disconnect;
   is $db1->execute ('select * from foo', [],
                     source_name => 'master')->row_count, 0;
   is $db2->execute ('select * from foo', [],
