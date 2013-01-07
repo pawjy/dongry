@@ -333,6 +333,9 @@ if ($ENV{SQL_DEBUG} && $ENV{SQL_DEBUG} =~ /embed_caller/) {
   $EmbedCallerInSQL ||= 1;
 }
 
+our $RetryIfDeadlock;
+our $MaxRetryCount = 2;
+
 sub execute ($$;$%) {
   my ($self, $sql, $values, %args) = @_;
 
@@ -415,15 +418,28 @@ sub execute ($$;$%) {
     my $dbh = $self->{dbhs}->{$name};
     my $sth;
     my $rows;
+    my $retry = 0;
     {
+      my $redo = 0;
       local $dbh->{RaiseError} = 0;
       my $orig_onerror = $dbh->{HandleError};
       local $dbh->{HandleError} = sub {
+        my $error_type = $_[0];
+        if ($RetryIfDeadlock and
+            $retry <= $MaxRetryCount and
+            $error_type =~ /^DBD::mysql::st execute failed: (?:Deadlock found when trying to get lock|Lock wait timeout exceeded); try restarting transaction/) {
+          $redo = 1;
+          return;
+        }
         $orig_onerror->(@_);
         die $_[0];
       };
       $sth = $dbh->prepare ($self->{last_sql} = $sql);
       $rows = $sth->execute (@{$values or []});
+      if ($redo) {
+        $retry++;
+        redo;
+      }
     };
     return if not defined wantarray and not $args{cb};
 
