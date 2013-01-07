@@ -1215,7 +1215,7 @@ sub _insert_duplicate_update_found : Test(2) {
 
   my $result = $db->insert
       ('hoge', [{v1 => 1}], duplicate => {v3 => 'updated'});
-  is $result->row_count, 3; # 2 in MySQL 5.0; 3 in MySQL 5.5.
+  like $result->row_count, qr{^(?:2|3)$}; # 2 in MySQL 5.0; 3 in MySQL 5.5.
 
   eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
                            source_name => 'master')->all->to_a,
@@ -1255,7 +1255,7 @@ sub _insert_duplicate_update_found_not_sql : Test(2) {
   my $v = \'values(v2)+3';
   my $result = $db->insert
       ('hoge', [{v1 => 1, v2 => 321}], duplicate => {v3 => $v});
-  is $result->row_count, 3; # 2 in MySQL 5.0; 3 in MySQL 5.5.
+  like $result->row_count, qr{^(?:2|3)$}; # 2 in MySQL 5.0; 3 in MySQL 5.5.
 
   eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
                            source_name => 'master')->all->to_a,
@@ -1275,7 +1275,7 @@ sub _insert_duplicate_update_found_sql : Test(2) {
   my $result = $db->insert
       ('hoge', [{v1 => 1, v2 => 321}],
        duplicate => {v3 => $db->bare_sql_fragment ('values(v2)+3')});
-  is $result->row_count, 3; # 2 in MySQL 5.0; 3 in MySQL 5.5.
+  like $result->row_count, qr{^(?:2|3)$}; # 2 in MySQL 5.0; 3 in MySQL 5.5.
 
   eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
                            source_name => 'master')->all->to_a,
@@ -1296,7 +1296,7 @@ sub _insert_duplicate_update_found_sql_2 : Test(2) {
       ('hoge', [{v1 => 1, v2 => 321}],
        duplicate => {v2 => $db->bare_sql_fragment ('v2 + 2'),
                      v3 => $db->bare_sql_fragment ('values(v2)+3')});
-  is $result->row_count, 3; # 2 in MySQL 5.0; 3 in MySQL 5.5.
+  like $result->row_count, qr{^(?:2|3)$}; # 2 in MySQL 5.0; 3 in MySQL 5.5.
 
   eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
                            source_name => 'master')->all->to_a,
@@ -1315,7 +1315,7 @@ sub _insert_duplicate_update_found_stupid_column : Test(2) {
 
   my $result = $db->insert
       ('hoge', [{v1 => 1}], duplicate => {'22`' => 1, v3 => 'updated'});
-  is $result->row_count, 3; # 2 in MySQL 5.0; 3 in MySQL 5.5.
+  like $result->row_count, qr{^(?:2|3)$}; # 2 in MySQL 5.0; 3 in MySQL 5.5.
 
   eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
                            source_name => 'master')->all->to_a,
@@ -1334,7 +1334,7 @@ sub _insert_duplicate_update_found_utf8_flagged_value : Test(2) {
 
   my $result = $db->insert
       ('hoge', [{v1 => 1}], duplicate => {v3 => "\x{5000}"});
-  is $result->row_count, 3; # 2 in MySQL 5.0; 3 in MySQL 5.5.
+  like $result->row_count, qr{^(?:2|3)$}; # 2 in MySQL 5.0; 3 in MySQL 5.5.
 
   eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
                            source_name => 'master')->all->to_a,
