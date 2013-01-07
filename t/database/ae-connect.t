@@ -396,6 +396,8 @@ sub _destroy_executed_ae : Test(1) {
 
 __PACKAGE__->runtests;
 
+undef $@;
+
 1;
 
 =head1 LICENSE
