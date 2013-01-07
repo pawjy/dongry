@@ -412,8 +412,19 @@ sub execute ($$;$%) {
     return bless {}, 'Dongry::Database::Executed::NotAvailable'
         if defined wantarray;
   } else {
-    my $sth = $self->{dbhs}->{$name}->prepare ($self->{last_sql} = $sql);
-    my $rows = $sth->execute (@{$values or []});
+    my $dbh = $self->{dbhs}->{$name};
+    my $sth;
+    my $rows;
+    {
+      local $dbh->{RaiseError} = 0;
+      my $orig_onerror = $dbh->{HandleError};
+      local $dbh->{HandleError} = sub {
+        $orig_onerror->(@_);
+        die $_[0];
+      };
+      $sth = $dbh->prepare ($self->{last_sql} = $sql);
+      $rows = $sth->execute (@{$values or []});
+    };
     return if not defined wantarray and not $args{cb};
 
     my $result = bless {db => $self, sth => $sth, row_count => $rows,
