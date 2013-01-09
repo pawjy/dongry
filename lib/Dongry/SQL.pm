@@ -228,6 +228,14 @@ sub where ($;$) {
         croak "Value for |$key| is not defined" if not defined $bind{$key};
         croak "A reference is specified for |$key|" if $type;
         quote $bind{$key};
+      } elsif ($instruction eq 'keyword') {
+        croak "Value for |$key| is not defined" if not defined $bind{$key};
+        croak "A reference is specified for |$key|" if $type;
+        ## <http://dev.mysql.com/doc/refman/5.5/en/reserved-words.html>
+        unless ($bind{$key} =~ /\A[A-Za-z][A-Za-z0-9_]*\z/) {
+          croak "|$bind{$key}| is not a valid word";
+        }
+        $bind{$key};
       } elsif (length $instruction) {
         croak "Instruction |$instruction| is unknown";
       } elsif ($type eq 'ARRAY') {

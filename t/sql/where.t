@@ -259,7 +259,7 @@ sub _where_named_not_specified : Test(2) {
   dies_here_ok { where [''] };
 } # _where_named_not_specified
 
-sub _where_named_not_defined : Test(8) {
+sub _where_named_not_defined : Test(10) {
   dies_here_ok { where [':hoge'] };
   dies_here_ok { where [':hoge', fuga => 1] };
   dies_here_ok { where ['hoge fuga = ?', fuga => undef] };
@@ -268,9 +268,11 @@ sub _where_named_not_defined : Test(8) {
   dies_here_ok { where [':hoge and :foo', foo => (), hoge => 124] };
   dies_here_ok { where [':hoge:id', hoge => undef] };
   dies_here_ok { where [':hoge:id', 'hoge:id' => 333] };
+  dies_here_ok { where [':hoge:keyword', hoge => undef] };
+  dies_here_ok { where [':hoge:keyword', 'hoge:keyword' => 333] };
 } # _where_named_not_defined
 
-sub _where_named_ref : Test(10) {
+sub _where_named_ref : Test(11) {
   for (
     [':hoge', hoge => \undef],
     [':hoge', hoge => \'abc'],
@@ -282,6 +284,7 @@ sub _where_named_ref : Test(10) {
     ['(:hoge)', hoge => [12, 44, {foo => 52}]],
     ['(:hoge)', hoge => [12, 44, bless {}, 'test::hogexs']],
     [':hoge:id', hoge => \undef],
+    [':hoge:keyword', hoge => \undef],
   ) {
     dies_here_ok {
       where $_;
@@ -312,6 +315,32 @@ sub _where_named_id : Test(7) {
     eq_or_diff [where $_->[0]], $_->[1];
   }
 } # _where_named_id
+
+sub _where_named_keyword : Test(3) {
+  for (
+    [[':foo:keyword = 124', foo => 'abc'] => ['abc = 124', []]],
+    [[':foo:keyword = 124', foo => 'AbC'] => ['AbC = 124', []]],
+    [[':foo:keyword = 124', foo => 'A12b_C'] => ['A12b_C = 124', []]],
+  ) {
+    eq_or_diff [where $_->[0]], $_->[1];
+  }
+} # _where_named_keyword
+
+sub _where_named_keyword_bad : Test(7) {
+  for (
+    [':hoge:keyword', hoge => ''],
+    [':hoge:keyword', hoge => '120'],
+    [':hoge:keyword', hoge => '_hoge'],
+    [':hoge:keyword', hoge => 'a-bc'],
+    [':hoge:keyword', hoge => "\x{65000}"],
+    [':hoge:keyword', hoge => 'abc def'],
+    [':hoge:keyword', hoge => '  aAD'],
+  ) {
+    dies_here_ok {
+      where $_;
+    };
+  }
+} # _where_named_keyword_bad
 
 sub _where_named_unknown_instruction : Test(1) {
   dies_here_ok {
