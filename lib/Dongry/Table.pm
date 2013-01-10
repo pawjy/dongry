@@ -441,6 +441,26 @@ sub update ($$;%) {
   });
 } # update
 
+sub delete ($$;%) {
+  my ($self, %args) = @_;
+  $self->{db}->delete
+      ($self->table_name,
+       $self->primary_key_bare_values,
+       source_name => $args{source_name},
+       cb => sub {
+    if ($_[1]->is_error) {
+      goto &{$args{cb}} if $args{cb};
+      return:
+    }
+
+    local $Carp::CarpLevel = $Carp::CarpLevel - 1;
+    croak "@{[$_[1]->{row_count}]} rows are modified by a delete"
+        unless $_[1]->{row_count} == 1;
+
+    goto &{$args{cb}} if $args{cb};
+  });
+} # delete
+
 sub debug_info ($) {
   my $self = shift;
   local $@;
