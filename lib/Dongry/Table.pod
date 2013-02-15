@@ -466,6 +466,29 @@ Example:
   # UPDATE `table1` SET `value` = 120, `date` = '2011-12-12 00:12:34'
   #     WHERE `id` = 12345
 
+=item $row->delete (%opts)
+
+Delete the row, using the primary key columns and their values.  The
+primary key for the row is determined using the table schema
+associated to the row.
+
+The C<source_name> option for the C<delete> method of the database
+object also applies to this method.
+
+The C<cb> (callback) function, if specified, is invoked after the
+execution of the SQL statement.  See the C<execute> method of the
+database object for more information.  The return object only contains
+whether there is an error or not, possibly with error descriptions.
+
+Example:
+
+  $db->schema ({table1 => {
+    primary_keys => ['id'],
+  }});
+  ...
+  $row->delete;
+  # DELETE FROM `table1` WHERE `id` = 12345
+
 =back
 
 =head2 Development

@@ -346,6 +346,13 @@ I<key>.  It is interpreted as an SQL identifier.
 Since Dongry does not support non-ASCII identifiers, the value must be
 an unflagged ASCII-only string.
 
+=item :I<key>:keyword
+
+Replaced by the value of the key/value pair whoes key is equal to
+I<key>.  It is interpreted as an SQL reserved word.  The value must be
+a string that only contains ASCII latin letters, digits, and C<_> and
+it must start with an ASCII latin letters.
+
 =item :I<key>:sub
 
 Replaced by the value of the key/value pair whoes key is equal to
