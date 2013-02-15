@@ -334,7 +334,7 @@ if ($ENV{SQL_DEBUG} && $ENV{SQL_DEBUG} =~ /embed_caller/) {
 }
 
 our $RetryIfDeadlock;
-our $MaxRetryCount = 2;
+our $MaxRetryCount ||= 2;
 
 sub execute ($$;$%) {
   my ($self, $sql, $values, %args) = @_;
