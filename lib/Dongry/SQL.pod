@@ -122,7 +122,7 @@ specified.
 
 =item -column => column-name
 
-The column whoes name is specified as the value.  Option C<as> applies
+The column whose name is specified as the value.  Option C<as> applies
 to this function.  Without the C<as> option, this is equivalent to
 just specifying the colum name as a string (not within a hash
 reference).
@@ -195,7 +195,7 @@ If a hash reference is specified, it must contain a key/value pair.
 The key is interpreted as the column name.
 
 If the value is not a hash reference, it is equivalent to specifying a
-hash reference whoes key is C<-eq> and whoes value is the specified
+hash reference whose key is C<-eq> and whose value is the specified
 value.
 
 If the value is a hash reference, it must contain one or more
@@ -301,7 +301,7 @@ Examples:
 
 If an array reference is specified, it must be a fragment of the SQL
 statement with named placeholders followed by zero or more key/value
-pairs.  It represents the SQL statement whoes placeholders are
+pairs.  It represents the SQL statement whose placeholders are
 replaced by the key/value pairs.
 
 The SQL statement with I<named placeholders> is a string that can
@@ -311,14 +311,14 @@ contain the following syntax:
 
 =item :I<key>
 
-Replaced by the value of the key/value pair whoes key is equal to
+Replaced by the value of the key/value pair whose key is equal to
 I<key>.  It is interpreted as an SQL quoted string.
 
 If the value is an array reference, it is expanded as comma-separated
 values.
 
 If the table schema is available, the value is interpreted as the
-value for the column whoes name is equal to I<key>.
+value for the column whose name is equal to I<key>.
 
 =item I<column> I<operator> ?
 
@@ -329,18 +329,18 @@ The I<operator> must be one of the following SQL operators: C<=>, C<<
 
 =item :I<key>::I<column>
 
-Replaced by the value of the key/value pair whoes key is equal to
+Replaced by the value of the key/value pair whose key is equal to
 I<key>.  It is interpreted as an SQL quoted string.
 
 If the value is an array reference, it is expanded as comma-separated
 values.
 
 If the table schema is available, the value is interpreted as the
-value for the column whoes name is equal to I<column>.
+value for the column whose name is equal to I<column>.
 
 =item :I<key>:id
 
-Replaced by the value of the key/value pair whoes key is equal to
+Replaced by the value of the key/value pair whose key is equal to
 I<key>.  It is interpreted as an SQL identifier.
 
 Since Dongry does not support non-ASCII identifiers, the value must be
@@ -348,20 +348,20 @@ an unflagged ASCII-only string.
 
 =item :I<key>:keyword
 
-Replaced by the value of the key/value pair whoes key is equal to
+Replaced by the value of the key/value pair whose key is equal to
 I<key>.  It is interpreted as an SQL reserved word.  The value must be
 a string that only contains ASCII latin letters, digits, and C<_> and
 it must start with an ASCII latin letters.
 
 =item :I<key>:sub
 
-Replaced by the value of the key/value pair whoes key is equal to
+Replaced by the value of the key/value pair whose key is equal to
 I<key>.  It is interpreted as an SQL expression.  The value must be a
 "where" construct.
 
 =item :I<key>:optsub
 
-Replaced by the value of the key/value pair whoes key is equal to
+Replaced by the value of the key/value pair whose key is equal to
 I<key>.  It is interpreted as an SQL expression.  The value must be a
 "where" construct or an C<undef> value.  If the value is C<undef>, SQL
 expression C<1 = 1>, which is always true, is inserted instead.
@@ -462,11 +462,11 @@ L<SQL::NamedPlaceholder>, and L<DBIx::MoCo>.
 
 =head1 AUTHOR
 
-Wakaba <w@suika.fam.cx>.
+Wakaba <wakaba@suikawiki.org>.
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
