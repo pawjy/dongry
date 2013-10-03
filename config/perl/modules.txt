@@ -1,17 +1,9 @@
 Carp
 Carp::Heavy
-Data::MessagePack
-DateTime
 DBI
 Encode
 Exporter::Lite
-List::Rubyish
 Scalar::Util
 Time::Local
 
 DBD::mysql
-
-Data::Dumper
-DateTime::Format::MySQL
-Path::Class
-Test::Class
