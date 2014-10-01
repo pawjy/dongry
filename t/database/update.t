@@ -449,7 +449,7 @@ sub _update_values_by_sql : Test(2) {
 
   eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
                            source_name => 'master')->all->to_a,
-      [{id => 14, v1 => 24, v2 => undef},
+      [{id => 14, v1 => 28, v2 => undef},
        {id => 22, v1 => 2, v2 => undef},
        {id => 32, v1 => 3, v2 => undef}];
 } # _update_values_by_sql
