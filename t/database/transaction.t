@@ -191,7 +191,7 @@ sub _transaction_insert_blocked : Test(3) {
   $transaction->commit;
 
   my $time_diff = time - $time1;
-  ok $time_diff < 2 * 2, "(timeout) $time_diff < 2*2"; # 2s = Test::MySQL::CreateDatabase's default timeout
+  ok $time_diff < 2 * 3, "(timeout) $time_diff < 2*3"; # 2s = Test::MySQL::CreateDatabase's default timeout
 
   my $result = $db->execute
       ('select * from foo order by id asc', undef, source_name => 'default');
