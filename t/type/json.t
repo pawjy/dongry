@@ -6,6 +6,7 @@ use Path::Class;
 use lib file (__FILE__)->dir->parent->subdir ('lib')->stringify;
 use Test::Dongry;
 use base qw(Test::Class);
+use Encode;
 use DateTime;
 use Dongry::Database;
 use Dongry::Type::JSON;
@@ -37,7 +38,7 @@ sub _json_valid : Test(2) {
   $row->update ({value => {abc => ["\x{5000}"], xyz => "\xA1\xFE\x89"}});
   $row->reload;
   my $value2 = $row->get ('value');
-  eq_or_diff $value2, {abc => ["\x{5000}"], xyz => "\xA1\xFE\x89"};
+  eq_or_diff $value2, {abc => ["\x{5000}"], xyz => decode 'utf-8', encode 'utf-8', "\xA1\xFE\x89"};
 } # _json_valid
 
 sub _json_primitive : Test(2) {
