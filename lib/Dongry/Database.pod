@@ -1377,6 +1377,9 @@ note that versioned packages are likely out-of-dated.
 
 =head1 DEPENDENCY
 
+Perl 5.10 or later is required.  (Though the module can be used in
+Perl 5.8, some tests fail due to bugs of perl.)
+
 Dongry requires the L<DBI> module as underlying database API.  Dongry
 uses the L<List::Ish> module as list object implementation by default,
 but this can be configured by the C<$Dongry::Database::ListClass>
@@ -1423,11 +1426,11 @@ L<SQL::NamedPlaceholder>, and L<List::Rubyish>.
 
 =head1 AUTHOR
 
-Wakaba <w@suika.fam.cx>.
+Wakaba <wakaba@suikawiki.org>.
 
 =head1 LICENSE
 
-Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2014 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

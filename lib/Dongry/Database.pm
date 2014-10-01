@@ -485,7 +485,7 @@ sub insert ($$$;%) {
     $col{$_} = 1 for keys %$_;
   }
 
-  my @col = keys %col;
+  my @col = sort { $a cmp $b } keys %col;
   my @values;
   my @placeholders;
   for my $data (@$data) {
@@ -517,7 +517,7 @@ sub insert ($$$;%) {
       ' VALUES ' . (join ', ', @placeholders);
   if ($args{duplicate} and ref $args{duplicate} eq 'HASH') {
     my $value = $args{duplicate};
-    my @col = keys %$value;
+    my @col = sort { $a cmp $b } keys %$value;
     croak 'Duplicate hash is empty' unless @col;
     my @sql_value;
     for (@col) {
@@ -612,7 +612,7 @@ sub select ($$$;%) {
 sub update ($$$%) {
   my ($self, $table_name, $value, %args) = @_;
   
-  my @col = keys %$value;
+  my @col = sort { $a cmp $b } keys %$value;
   croak 'No value to update' unless @col;
 
   my ($where_sql, $where_bind) = _where ($args{where}, $args{_table_schema});

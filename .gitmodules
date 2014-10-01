@@ -1,12 +1,16 @@
 [submodule "modules/perl-rdb-utils"]
 	path = modules/perl-rdb-utils
 	url = git://github.com/wakaba/perl-rdb-utils.git
+	track = master
 [submodule "modules/perl-json-functions-xs"]
 	path = modules/perl-json-functions-xs
 	url = git://github.com/wakaba/perl-json-functions-xs.git
+	track = master
 [submodule "modules/perl-test-moremore"]
 	path = modules/perl-test-moremore
 	url = git://github.com/wakaba/perl-test-moremore.git
+	track = master
 [submodule "modules/perl-ooutils"]
 	path = modules/perl-ooutils
 	url = git://github.com/wakaba/perl-ooutils.git
+	track = master
