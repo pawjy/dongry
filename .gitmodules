@@ -14,3 +14,6 @@
 	path = modules/perl-ooutils
 	url = git://github.com/wakaba/perl-ooutils.git
 	track = master
+[submodule "t_deps/modules/AnyEvent-MySQL"]
+	path = t_deps/modules/AnyEvent-MySQL
+	url = git://github.com/wakaba/Perl-AnyEvent-MySQL

@@ -32,12 +32,15 @@ $cv->begin;
   $dbh->do ('insert into hoge (id) values (1), (3), (10)', sub { 
     $cv->begin;
     warn "select..";
-    $dbh->selectall_hashref ("select * from hoge where id = ?", {}, 10, sub {
-
-      use Data::Dumper;
-      warn Dumper \@_;
+    my $sth = $dbh->prepare ("select * from hoge where id = ?");
+    warn "sth";
+    $sth->execute (10, sub {
+        my $fth = shift;
+        
+        use Data::Dumper;
+        warn Dumper $fth;
       
-      $cv->end;
+        $cv->end;
     });
 
     $cv->end;
@@ -47,3 +50,14 @@ $cv->begin;
 $cv->recv;
 
 warn "Ended";
+
+__END__
+
+
+    $dbh->selectall_hashref ("select * from hoge where id = ?", {}, 10, sub {
+
+      use Data::Dumper;
+      warn Dumper \@_;
+      
+      $cv->end;
+    });
