@@ -15,19 +15,51 @@ sub _connect_ae_created : Test(2) {
   my $dsn = test_dsn 'hoge1';
 
   my $cv = AnyEvent->condvar;
+  $cv->begin;
 
   my $db = Dongry::Database->new
       (sources => {hoge => {dsn => $dsn, anyevent => 1}});
   $db->connect ('hoge');
-  isa_ok $db->{dbhs}->{hoge}, 'AnyEvent::MySQL::db';
+  isa_ok $db->{dbhs}->{hoge}, 'AnyEvent::MySQL::Client';
 
+  $cv->begin;
   $db->execute ('show tables', undef, source_name => 'hoge', cb => sub {
-    $cv->send;
+    $_[0]->disconnect (undef, cb => sub {
+      $cv->end;
+    });
   });
-  
+
+  $cv->end;
   $cv->recv;
   ok 1;
 } # _connect_ae_created
+
+sub _connect_ae_created_d : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge1';
+
+  my $cv = AnyEvent->condvar;
+  $cv->begin;
+
+  my $db = Dongry::Database->new
+      (sources => {hoge => {dsn => $dsn, anyevent => 1}});
+  $db->connect ('hoge');
+  isa_ok $db->{dbhs}->{hoge}, 'AnyEvent::MySQL::Client';
+
+  $cv->begin;
+  $db->execute ('show tables', undef, source_name => 'hoge', cb => sub {
+    $cv->end;
+  });
+
+  $cv->begin;
+  $db->disconnect (undef, cb => sub {
+    $cv->end;
+  });
+
+  $cv->end;
+  $cv->recv;
+  ok 1;
+} # _connect_ae_created_d
 
 sub _connect_ae_created_cb : Test(2) {
   reset_db_set;
@@ -38,7 +70,7 @@ sub _connect_ae_created_cb : Test(2) {
   my $db = Dongry::Database->new
       (sources => {hoge => {dsn => $dsn, anyevent => 1}});
   $db->onconnect (sub {
-    isa_ok $db->{dbhs}->{hoge}, 'AnyEvent::MySQL::db';
+    isa_ok $db->{dbhs}->{hoge}, 'AnyEvent::MySQL::Client';
 
     $db->execute ('show tables', undef, source_name => 'hoge', cb => sub {
       $cv->send;
@@ -47,17 +79,19 @@ sub _connect_ae_created_cb : Test(2) {
   $db->connect ('hoge');
   
   $cv->recv;
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
   ok 1;
 } # _connect_ae_created_cb
 
 sub _connect_ae_dsn_error : Test(5) {
-return;# XXX
   my $cv = AnyEvent->condvar;
 
   my $db = Dongry::Database->new
       (sources => {hoge => {dsn => 'dbi:mysql:host=notfound', anyevent => 1}});
   $db->connect ('hoge');
-  isa_ok $db->{dbhs}->{hoge}, 'AnyEvent::MySQL::db';
+  isa_ok $db->{dbhs}->{hoge}, 'AnyEvent::MySQL::Client';
 
   my $success;
   my $error;
@@ -89,13 +123,15 @@ return;# XXX
     $cv->send;
   });
 
+  $cv->recv;
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
   $cv->recv;
   ng $success;
   is $error, 3;
 } # _connect_ae_dsn_error
 
 sub _connect_ae_dsn_error_with_onerror : Test(9) {
-return; # XXX
   my $cv = AnyEvent->condvar;
 
   my $db = Dongry::Database->new
@@ -109,7 +145,7 @@ return; # XXX
 
   $db->connect ('hoge');
   my $error_line = __LINE__ - 1;
-  isa_ok $db->{dbhs}->{hoge}, 'Dongry::Database::BrokenConnection';
+  ok $db->{dbhs}->{hoge};
 
   my $success;
   my $error;
@@ -148,16 +184,19 @@ return; # XXX
   $cv = AE::cv;
   AE::postpone {
     is scalar @onerror, 1;
-    like $onerror[0]->{text}, qr{Can't connect|Unknown database|Access denied for user|invalid dsn format};
+    #like $onerror[0]->{text}, qr{Can't connect|Unknown database|Access denied for user|invalid dsn format};
+    ok $onerror[0]->{text};
     is $onerror[0]->{file_name}, __FILE__;
     is $onerror[0]->{line}, $error_line;
     $cv->send;
   };
   $cv->recv;
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _connect_ae_dsn_error_with_onerror
 
 sub _connect_ae_dsn_error_with_onerror_implied_connect : Test(9) {
-return; # XXX
   my $cv = AnyEvent->condvar;
 
   my $db = Dongry::Database->new
@@ -179,7 +218,7 @@ return; # XXX
     $cv->end;
   });
   my $error_line = __LINE__ - 1;
-  isa_ok $db->{dbhs}->{hoge}, 'Dongry::Database::BrokenConnection';
+  ok $db->{dbhs}->{hoge};
 
   $cv->begin;
   $db->execute ('select * from foo', undef, source_name => 'hoge',
@@ -208,16 +247,19 @@ return; # XXX
   $cv = AE::cv;
   AE::postpone {
     is scalar @onerror, 1;
-    like $onerror[0]->{text}, qr{Can't connect|Unknown database|Access denied for user|invalid dsn format};
+    #like $onerror[0]->{text}, qr{Can't connect|Unknown database|Access denied for user|invalid dsn format};
+    ok $onerror[0]->{text};
     is $onerror[0]->{file_name}, __FILE__;
     is $onerror[0]->{line}, $error_line;
     $cv->send;
   };
   $cv->recv;
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _connect_ae_dsn_error_with_onerror_implied_connect
 
 sub _connect_ae_dsn_error_with_onerror_die : Test(9) {
-return; # XXX
   my $cv = AnyEvent->condvar;
 
   my $db = Dongry::Database->new
@@ -232,7 +274,7 @@ return; # XXX
 
   $db->connect ('hoge');
   my $error_line = __LINE__ - 1;
-  isa_ok $db->{dbhs}->{hoge}, 'Dongry::Database::BrokenConnection';
+  ok $db->{dbhs}->{hoge};
 
   my $success;
   my $error;
@@ -271,11 +313,15 @@ return; # XXX
   $cv = AE::cv;
   AE::postpone {
     is scalar @onerror, 1;
-    like $onerror[0]->{text}, qr{Can't connect|Unknown database|Access denied for user|invalid dsn format};
+    #like $onerror[0]->{text}, qr{Can't connect|Unknown database|Access denied for user|invalid dsn format};
+    ok $onerror[0]->{text};
     is $onerror[0]->{file_name}, __FILE__;
     is $onerror[0]->{line}, $error_line;
     $cv->send;
   };
+  $cv->recv;
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
   $cv->recv;
 } # _connect_ae_dsn_error_with_onerror_die
 
@@ -305,6 +351,9 @@ sub _connect_onconnect : Test(2) {
     $cv->send;
     undef $timer;
   };
+  $cv->recv;
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
   $cv->recv;
 } # _connect_onconnect
 
@@ -343,7 +392,7 @@ sub _connect_onconnect_timing : Test(2) {
   });
 
   $db->execute ('update foo set value = "xyz" where id = 1', undef,
-                source_name => 'hoge', cb => sub { warn "update cb" });
+                source_name => 'hoge', cb => sub { });
   $cv2->recv;
   
   my $value2;
@@ -358,6 +407,9 @@ sub _connect_onconnect_timing : Test(2) {
   });
 
   $cv->end;
+  $cv->recv;
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
   $cv->recv;
 
   is $value1, 'abc';
@@ -391,8 +443,14 @@ sub _disconnect_used : Test(2) {
 
   $cv->recv;
 
-  lives_ok { $db->disconnect };
-  lives_ok { $db->disconnect };
+  $cv = AE::cv;
+  $cv->begin;
+  $cv->begin;
+  lives_ok { $db->disconnect (undef, cb => sub { $cv->end }) };
+  $cv->begin;
+  lives_ok { $db->disconnect (undef, cb => sub { $cv->end }) };
+  $cv->end;
+  $cv->recv;
 } # _disconnect_used
 
 # ------ destroy ------
@@ -413,8 +471,36 @@ sub _destroy_connected : Test(1) {
   $db->{dummy} = bless {}, 'test::destroy::1';
   $test::destroy::1::destroyed = 0;
   undef $db;
+  my $cv = AE::cv;
+  my $timer; $timer = AE::timer 0.5, 0, sub {
+    undef $timer;
+    $cv->send;
+  };
+  $cv->recv;
   is $test::destroy::1::destroyed, 1;
 } # _destroy_connected
+
+sub _destroy_connected_ae : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'hoge';
+  my $db = Dongry::Database->new;
+  $db->source (default => {dsn => $dsn, anyevent => 1});
+  my $cv = AE::cv;
+  $db->connect ('default', cb => sub {
+    $cv->send;
+  });
+  $db->{dummy} = bless {}, 'test::destroy::1';
+  $cv->recv;
+  $test::destroy::1::destroyed = 0;
+  undef $db;
+  $cv = AE::cv;
+  my $timer; $timer = AE::timer 0.5, 0, sub {
+    undef $timer;
+    $cv->send;
+  };
+  $cv->recv;
+  is $test::destroy::1::destroyed, 1;
+} # _destroy_connected_ae
 
 sub _destroy_executed : Test(1) {
   reset_db_set;
@@ -425,6 +511,12 @@ sub _destroy_executed : Test(1) {
   $db->{dummy} = bless {}, 'test::destroy::1';
   $test::destroy::1::destroyed = 0;
   undef $db;
+  my $cv = AE::cv;
+  my $timer; $timer = AE::timer 0.5, 0, sub {
+    undef $timer;
+    $cv->send;
+  };
+  $cv->recv;
   is $test::destroy::1::destroyed, 1;
 } # _destroy_executed
 
@@ -446,6 +538,12 @@ sub _destroy_executed_ae : Test(1) {
   $cv->recv;
 
   undef $db;
+  $cv = AE::cv;
+  my $timer; $timer = AE::timer 0.5, 0, sub {
+    undef $timer;
+    $cv->send;
+  };
+  $cv->recv;
   is $test::destroy::1::destroyed, 1;
 } # _destroy_executed_ae
 
