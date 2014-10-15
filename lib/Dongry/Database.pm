@@ -129,15 +129,14 @@ sub connect ($$;%) {
   my %args = @_;
   if ($self->{dbhs}->{$name}) {
     if ($source->{anyevent}) {
-# XXX
-      $args{cb}->($self, 1) if $args{cb};
-      return;
+      ## checked later
+      #
     } else {
       if ($self->{dbhs}->{$name}->ping) {
         $args{cb}->($self, 1) if $args{cb};
         return;
       } else {
-        $self->disconnect($name);
+        $self->disconnect ($name);
       }
     }
   }
@@ -173,40 +172,54 @@ sub connect ($$;%) {
     my $onerror_args = {db => $self, caller => _get_caller};
     weaken $onerror_args->{db};
 
-    my $timer; $timer = AE::timer (3, 0, sub {
-      undef $timer;
-      $onerror_args->{db}->{dbhs}->{$name} = bless {
-        error_text => "Connect timeout - |$dsn|",
-      }, 'Dongry::Database::BrokenConnection';
-      $args{cb}->($onerror_args->{db}, 0) if $args{cb};
-    });
+    my $connect = sub {
+      my $timer; $timer = AE::timer (3, 0, sub {
+        undef $timer;
+        $onerror_args->{db}->{dbhs}->{$name} = bless {
+          error_text => "Connect timeout - |$dsn|",
+        }, 'Dongry::Database::BrokenConnection';
+        $args{cb}->($onerror_args->{db}, 0) if $args{cb};
+      });
 
-    $self->{dbhs}->{$name} = AnyEvent::MySQL::Client->new;
-    $self->{dbhs}->{$name}->connect (%connect)->then (sub {
-      undef $timer;
-      if ($onerror_args->{db}) {
-        $onerror_args->{db}->onconnect->($onerror_args->{db}, source_name => $name);
-        $args{cb}->($onerror_args->{db}, 1) if $args{cb};
-      }
-    }, sub {
-      my $error_text = ''.$_[0];
-      $onerror_args->{db}->{dbhs}->{$name} = bless {
-        error_text => $error_text,
-      }, 'Dongry::Database::BrokenConnection';
-      my $file_name = $onerror_args->{caller}->{file};
-      my $line = $onerror_args->{caller}->{line};
-      $onerror_args->{db}->onerror->($onerror_args->{db},
-                                     anyevent => 1,
-                                     text => $error_text,
-                                     file_name => $file_name,
-                                     line => $line,
-                                     source_name => $name,
-                                     sql => $onerror_args->{db}->{last_sql});
-      $args{cb}->($onerror_args->{db}, 0) if $args{cb};
-    })->catch (sub {
-      warn "Died within the handler: $_[0]";
-    });
-  } else {
+      $self->{dbhs}->{$name} = AnyEvent::MySQL::Client->new;
+      $self->{dbhs}->{$name}->connect (%connect)->then (sub {
+        undef $timer;
+        if ($onerror_args->{db}) {
+          $onerror_args->{db}->onconnect->($onerror_args->{db}, source_name => $name);
+          $args{cb}->($onerror_args->{db}, 1) if $args{cb};
+        }
+      }, sub {
+        my $error_text = ''.$_[0];
+        $onerror_args->{db}->{dbhs}->{$name} = bless {
+          error_text => $error_text,
+        }, 'Dongry::Database::BrokenConnection';
+        my $file_name = $onerror_args->{caller}->{file};
+        my $line = $onerror_args->{caller}->{line};
+        $onerror_args->{db}->onerror->($onerror_args->{db},
+                                       anyevent => 1,
+                                       text => $error_text,
+                                       file_name => $file_name,
+                                       line => $line,
+                                       source_name => $name,
+                                       sql => $onerror_args->{db}->{last_sql});
+        $args{cb}->($onerror_args->{db}, 0) if $args{cb};
+      })->catch (sub {
+        warn "Died within handler: $_[0]";
+      });
+    }; # $connect
+
+    if (my $client = $self->{dbhs}->{$name}) {
+      $client->ping->then (sub {
+        if ($_[0]) {
+          $args{cb}->($self, 1) if $args{cb};
+        } else {
+          $connect->();
+        }
+      });
+    } else {
+      $connect->();
+    }
+  } else { # DBI
     my $onerror_args = {db => $self};
     weaken $onerror_args->{db};
     $self->{dbhs}->{$name} = DBI->connect
@@ -375,60 +388,56 @@ sub execute ($$;$%) {
     # XXX retry
     # XXX transaction
 
+    if ($args{each_as_row_cb}) {
+      require Dongry::Table;
+      croak 'Table name is not known' if not defined $args{table_name};
+    }
+
+    my $onerror_args = {caller => _get_caller};
     $self->connect ($name, cb => sub {
       my ($self, $ok) = @_;
-      weaken ($self = $self);
       if ($ok) {
         my $client = $self->{dbhs}->{$name};
         $client->statement_prepare ($self->{last_sql} = $sql)->then (sub {
           my $x = $_[0];
           die $x unless $x->is_success;
-          my $cb_invoked;
-          my $row_cb;
-          my $end_cb;
+          my @row;
           return $client->statement_execute ($x->packet->{statement_id}, [map { {type => 'BLOB', value => $_}; } @{$values or []}], sub {
             my $cols = $_[0]->column_packets;
             my $data = $_[0]->packet->{data};
             my $row = {map { $cols->[$_]->{name} => $data->[$_]->{value} } 0..$#$data};
-            unless ($cb_invoked) {
-              my $result = bless {db => $self,
-                                  table_name => $args{table_name},
-                                  # XXX row_count
-                                  first_row => $row},
-                                      'Dongry::Database::Executed::AEMC';
-              $cb_invoked = 1;
-              require AnyEvent::MySQL::Client::Promise;
-              return AnyEvent::MySQL::Client::Promise->resolve->then (sub {
-                return $args{cb}->($self, $result) if $args{cb};
-              })->then (sub {
-                $row_cb = $result->{row_cb};
-                $end_cb = $result->{end_cb};
-                %$result = ();
-              }, sub {
-                warn "Died in handler: |$_[0]|";
-                %$result = ();
-              });
+            if ($args{each_as_row_cb}) {
+              $args{each_as_row_cb}->($self, bless {
+                db => $self,
+                table_name => $args{table_name},
+                data => $row,
+              }, 'Dongry::Table::Row');
+            } elsif ($args{each_cb}) {
+              $args{each_cb}->($self, $row);
             } else {
-              return $row_cb->($row) if $row_cb;
+              push @row, $row;
             }
           })->then (sub {
             my $y = $_[0];
-            if ($cb_invoked) {
-              $end_cb->() if $end_cb;
-            } else {
-              my $result;
-              if ($y->is_success) {
-                $result = bless {db => $self,
-                                 #data => $_[1], # XXX
-                                 row_count => $y->packet->{affected_rows},
-                                 table_name => $args{table_name}},
-                                     'Dongry::Database::Executed::Inserted';
-              } else { # error
-                $result = bless {error_text => ''.$y, error_sql => $sql},
-                    'Dongry::Database::Executed::NotAvailable';
+            my $result;
+            if ($y->is_success) {
+              $result = bless {db => $self,
+                               table_name => $args{table_name}},
+                                   'Dongry::Database::Executed::Inserted';
+              if ($y->packet->{header} == 0) { # OK_Packet
+                $result->{row_count} = $y->packet->{affected_rows};
+              } else {
+                $result->{row_count} = @row;
               }
-              return $args{cb}->($self, $result) if $args{cb};
+              unless ($args{each_as_row_cb} or $args{each_cb}) {
+                $result->{data} = \@row;
+              }
+              $result->{no_each} = 1;
+            } else { # error
+              $result = bless {error_text => ''.$y, error_sql => $sql},
+                  'Dongry::Database::Executed::NotAvailable';
             }
+            return $args{cb}->($self, $result) if $args{cb};
           })->then (sub {
             return $client->statement_close ($x->packet->{statement_id});
           }, sub {
@@ -439,8 +448,17 @@ sub execute ($$;$%) {
           my $x = $_[0];
           my $result = bless {error_text => ''.$x, error_sql => $sql},
               'Dongry::Database::Executed::NotAvailable';
+          my $file_name = $onerror_args->{caller}->{file};
+          my $line = $onerror_args->{caller}->{line};
           $args{cb}->($self, $result) if $args{cb};
-        })->then (sub { undef $client });
+          $self->onerror->($self,
+                           anyevent => 1,
+                           text => $result->{error_text},
+                           file_name => $file_name,
+                           line => $line,
+                           source_name => $name,
+                           sql => $sql);
+        })->then (sub { undef $client; undef $self; %args = () });
       } else { # not $ok
         my $result = bless {error_text => '|connect| failed', error_sql => $sql},
             'Dongry::Database::Executed::NotAvailable';
@@ -776,7 +794,6 @@ sub table_name ($) {
 
 sub each ($$) {
   my ($self, $code) = @_;
-  # XXX cb
   my $sth = delete $self->{sth} or croak 'This method is no longer available';
   while (my $hashref = $sth->fetchrow_hashref) {
     local $_ = $hashref; ## Sigh, consistency with List::Rubyish...
@@ -799,7 +816,6 @@ sub each_as_row ($$) {
 } # each_as_row
 
 sub all ($) {
-  # XXX cb
   my $sth = delete $_[0]->{sth} or croak 'This method is no longer available';
   my $list;
   my $err;
@@ -863,49 +879,6 @@ sub DESTROY {
   $_[0]->{sth}->finish if $_[0]->{sth};
 } # DESTROY
 
-package Dongry::Database::Executed::AEMC;
-our $VERSION = '1.0';
-push our @ISA, 'Dongry::Database::Executed';
-use Carp;
-
-sub each ($$;%) {
-  my ($self, $code, %args) = @_;
-  croak 'This method is no longer available' if $self->{done};
-  $self->{done} = 1;
-  {
-    local $_ = $self->{first_row};
-    $code->();
-  }
-  $self->{row_cb} = sub {
-    local $_ = $_[0];
-    $code->();
-  };
-  $self->{end_cb} = $args{cb}; # or undef
-} # each
-
-sub all ($;%) {
-  my ($self, %args) = @_;
-  croak 'This method is no longer available' if $self->{done};
-  my $list = $self->{db}->_list ([$self->{first_row}]);
-  $self->{row_cb} = sub { $list->push ($_[0]) };
-  $self->{end_cb} = sub { $args{cb}->($self, $list) } if $args{cb};
-  $self->{done} = 1;
-  return $list;
-} # all
-
-sub first ($) {
-  croak 'This method is no longer available' if $_[0]->{done};
-  $_[0]->{done} = 1;
-  return $_[0]->{first_row}; # or undef
-} # first
-
-sub DESTROY {
-  if ($_[0]->{next}) {
-    $_[0]->{done} = 1;
-    (delete $_[0]->{next})->('discard');
-  }
-} # DESTROY
-
 package Dongry::Database::Executed::Inserted;
 our $VERSION = '1.0';
 push our @ISA, 'Dongry::Database::Executed';
@@ -915,6 +888,7 @@ sub each ($$) {
   my ($self, $code) = @_;
   my $data = delete $self->{data}
       or croak 'This method is no longer available';
+  croak 'This method is not available' if $self->{no_each};
   $code->() for @$data;
   delete $self->{data};
 } # each
@@ -925,6 +899,7 @@ sub each_as_row ($$) {
   croak 'Table name is not known' if not defined $tn;
   my $data = delete $self->{data}
       or croak 'This method is no longer available';
+  croak 'This method is not available' if $self->{no_each};
   my $db = $self->{db};
   require Dongry::Table;
   for (0..$#$data) {
@@ -1138,6 +1113,11 @@ sub DESTROY {
 
 package Dongry::Database::BrokenConnection;
 our $VERSION = '2.0';
+
+sub ping {
+  require AnyEvent::MySQL::Client::Promise;
+  return AnyEvent::MySQL::Client::Promise->resolve (0);
+}
 
 sub query {
   require AnyEvent::MySQL::Client::Promise;
