@@ -654,7 +654,7 @@ sub _fill_related_rows_cb_exception_carp : Test(1) {
     ng 1;
   };
 
-  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 4]}\E\.?\n$};
+  like $@, qr{^abc at };
 } # _fill_related_rows_cb_exception_carp
 
 __PACKAGE__->runtests;
@@ -665,7 +665,7 @@ $Dongry::LeakTest = 1;
 
 =head1 LICENSE
 
-Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2014 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
