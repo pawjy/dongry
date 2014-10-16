@@ -181,10 +181,11 @@ sub connect ($$;%) {
       $self->{dbhs}->{$name}->connect (%connect)->then (sub {
         undef $timer;
         if ($onerror_args->{db}) {
-          {
+          eval {
             local $onerror_args->{db}->{reconnect_disabled}->{$name} = 1;
             $onerror_args->{db}->onconnect->($onerror_args->{db}, source_name => $name);
-          }
+          };
+          warn "Died within handler: $@" if $@;
           $return->_ok ($onerror_args->{db}, bless {}, 'Dongry::Database::Executed::NoResult');
         }
       }, sub {
@@ -195,13 +196,16 @@ sub connect ($$;%) {
         }, 'Dongry::Database::BrokenConnection';
         my $file_name = $onerror_args->{caller}->{file};
         my $line = $onerror_args->{caller}->{line};
-        $onerror_args->{db}->onerror->($onerror_args->{db},
-                                       anyevent => 1,
-                                       text => "$dsn: $error_text",
-                                       file_name => $file_name,
-                                       line => $line,
-                                       source_name => $name,
-                                       sql => $onerror_args->{db}->{last_sql});
+        eval {
+          $onerror_args->{db}->onerror->($onerror_args->{db},
+                                         anyevent => 1,
+                                         text => "$dsn: $error_text",
+                                         file_name => $file_name,
+                                         line => $line,
+                                         source_name => $name,
+                                         sql => $onerror_args->{db}->{last_sql});
+        };
+        warn "Died within handler: $@" if $@;
         $return->_ng ($onerror_args->{db}, bless {
           error_text => "$dsn: $error_text",
         }, 'Dongry::Database::Executed::NotAvailable');

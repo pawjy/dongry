@@ -70,9 +70,9 @@ sub _connect_ae_created_cb : Test(2) {
   my $db = Dongry::Database->new
       (sources => {hoge => {dsn => $dsn, anyevent => 1}});
   $db->onconnect (sub {
-    isa_ok $db->{dbhs}->{hoge}, 'AnyEvent::MySQL::Client';
+    isa_ok $_[0]->{dbhs}->{hoge}, 'AnyEvent::MySQL::Client';
 
-    $db->execute ('show tables', undef, source_name => 'hoge', cb => sub {
+    $_[0]->execute ('show tables', undef, source_name => 'hoge', cb => sub {
       $cv->send;
     });
   });
