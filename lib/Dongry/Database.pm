@@ -32,11 +32,8 @@ sub _list {
 } # _list
 
 our $SQLDebugClass ||= 'DBIx::ShowSQL';
-
-if ($ENV{SQL_DEBUG}) {
-  eval qq{ require $SQLDebugClass } or die $@;
-  # XXX AE
-}
+our $AESQLDebugClass ||= 'AnyEvent::MySQL::Client::ShowLog';
+our $SQL_DEBUG ||= $ENV{SQL_DEBUG};
 
 # ------ Construction ------
 
@@ -141,6 +138,10 @@ sub connect ($$;%) {
   }
 
   if ($source->{anyevent}) {
+    if ($SQL_DEBUG) {
+      eval qq{ require $AESQLDebugClass } or die $@;
+    }
+
     require AnyEvent::MySQL::Client;
 
     my %connect;
@@ -232,6 +233,10 @@ sub connect ($$;%) {
       $connect->();
     }
   } else { # DBI
+    if ($SQL_DEBUG) {
+      eval qq{ require $SQLDebugClass } or die $@;
+    }
+
     require DBI;
     my $onerror_args = {db => $self};
     weaken $onerror_args->{db};

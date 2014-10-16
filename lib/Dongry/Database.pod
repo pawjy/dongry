@@ -1267,10 +1267,13 @@ or might not be useful for debugging.
 You might want to dump the SQL statements issued by Dongry for the
 purpose of development.  Though Dongry itself does not have such
 debugging feature.  Perl modules such as L<DBIx::ShowSQL>,
-L<Devel::KYTProf>, and L<DBIx::QueryLog> would be useful.
+L<Devel::KYTProf>, and L<DBIx::QueryLog> for synchronous mode, or
+L<AnyEvent::MySQL::Client::ShowLog> for asynchronous mode, would be
+useful.
 
 If the C<SQL_DEBUG> environmental variable has a true value, Dongry
-loads the C<DBIx::ShowSQL> module.
+loads the C<DBIx::ShowSQL> or L<AnyEvent::MySQL::Client::ShowLog>
+module.
 
 If the C<SQL_DEBUG> environmental variable contains substring
 C<embed_caller>, or if the C<$Dongry::Database::EmbedCallerInSQL>
