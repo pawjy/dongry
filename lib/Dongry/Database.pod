@@ -677,7 +677,25 @@ If this option is set to a value, it is used as the value of the
 result object's C<table_name> property, if the SQL execution has been
 succeeded.  Otherwise, the result object returned by the C<execute>
 method has the C<table_name> value of C<undef>, which means that
-C<*_as_row> methods cannot be used on the result object.
+C<*_as_row> methods on the result object and the C<each_as_row_cb>
+option of this method cannot be used.
+
+=item each_cb => code-reference
+
+=item each_as_row_cb => code-reference
+
+The callback functions that is invoked whenever rows are received from
+the server.
+
+They behave as if the argument of the C<each> or C<each_as_row> method
+of the result object returned by the C<execute> method.  In
+asynchronous mode, as C<each> and C<each_as_row> methods of the return
+object are not available, these callbacks must be used.  In
+synchronous mode, both those methods and these callbacks are
+available, but if callbacks are specified, methods are disabled.
+Anyway, at most one of these callbacks can be specified.
+
+The callback is not expected to throw any exception.
 
 =item cb => code-reference
 
@@ -866,6 +884,13 @@ The lock mode for the C<SELECT> operation.  If the value is C<update>,
 C<FOR UPDATE> option is included in the C<SELECT> statement.  If the
 value is C<share>, C<LOCK IN SHARE MODE> option is included in the
 C<SELECT> statement.
+
+=item each_cb => code-reference
+
+=item each_as_row_cb => code-reference
+
+The callback function invoked whenever rows are received from the
+server.  See the C<execute> method for more information.
 
 =item cb => code-reference
 
@@ -1299,6 +1324,9 @@ represents the row as a hash reference where key/value pairs represent
 column names and their values.  If there is no row in the result, the
 code reference will not be invoked at all.
 
+This method is not available in asynchronous mode.  Use C<each_cb>
+option instead.
+
 =item $list = $result->all
 
 Return a list which contains all the rows in the result.  The method
@@ -1342,6 +1370,9 @@ C<undef>, otherwise.
 Iterate for rows like the C<each> method does, but gives the table row
 object for each row to the specified code reference instead of a hash
 reference.
+
+This method is not available in asynchronous mode.  Use
+C<each_as_row_cb> option instead.
 
 =item $list = $result->all_as_rows
 

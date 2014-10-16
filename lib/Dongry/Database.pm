@@ -423,13 +423,15 @@ sub execute ($$;$%) {
             my $data = $_[0]->packet->{data};
             my $row = {map { $cols->[$_]->{name} => $data->[$_]->{value} } 0..$#$data};
             if ($args{each_as_row_cb}) {
-              $args{each_as_row_cb}->($self, bless {
+              local $_ = bless {
                 db => $self,
                 table_name => $args{table_name},
                 data => $row,
-              }, 'Dongry::Table::Row');
+              }, 'Dongry::Table::Row';
+              $args{each_as_row_cb}->();
             } elsif ($args{each_cb}) {
-              $args{each_cb}->($self, $row);
+              local $_ = $row;
+              $args{each_cb}->();
             } else {
               push @row, $row;
             }
@@ -511,11 +513,18 @@ sub execute ($$;$%) {
         redo;
       }
     };
-    return if not defined wantarray and not $args{cb};
+    return if not defined wantarray and not $args{cb} and not $args{each_cb} and not $args{each_as_row_cb};
 
     my $result = bless {db => $self, sth => $sth, row_count => $rows,
                         table_name => $args{table_name}},
         'Dongry::Database::Executed';
+
+    if ($args{each_as_row_cb}) {
+      $result->each_as_row ($args{each_as_row_cb});
+    } elsif ($args{each_cb}) {
+      $result->each ($args{each_cb});
+    }
+
     if ($args{cb}) {
       local $Carp::CarpLevel = $Carp::CarpLevel + 1;
       $args{cb}->($self, $result);
@@ -1193,7 +1202,7 @@ sub load ($$) {
 
 =head1 LICENSE
 
-Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2014 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

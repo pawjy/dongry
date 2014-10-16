@@ -170,7 +170,7 @@ sub _execute_cb_all_as_rows : Test(14) {
   $cv->recv;
 } # _execute_cb_all_as_rows
 
-sub _execute_cb_each_cb : Test(18) {
+sub _execute_cb_each_cb : Test(17) {
   my $db = new_db;
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (1), (2)');
@@ -183,8 +183,7 @@ sub _execute_cb_each_cb : Test(18) {
   my @row;
   $db->execute ('select * from foo order by id asc', undef,
                 each_cb => sub {
-                  is $_[0], $db;
-                  push @row, $_[1];
+                  push @row, $_;
                 },
                 cb => sub {
                   is $_[0], $db;
@@ -224,7 +223,7 @@ sub _execute_cb_each_cb : Test(18) {
   $cv->recv;
 } # _execute_cb_each_cb
 
-sub _execute_cb_each_as_row_cb : Test(24) {
+sub _execute_cb_each_as_row_cb : Test(23) {
   my $db = new_db;
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (1), (2)');
@@ -237,8 +236,7 @@ sub _execute_cb_each_as_row_cb : Test(24) {
   my @row;
   $db->execute ('select * from foo order by id asc', undef,
                 each_as_row_cb => sub {
-                  is $_[0], $db;
-                  push @row, $_[1];
+                  push @row, $_;
                 },
                 table_name => 'foobar',
                 each_cb => sub {

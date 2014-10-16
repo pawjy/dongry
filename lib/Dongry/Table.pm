@@ -214,16 +214,16 @@ sub fill_related_rows ($$$$;%) {
     for my $col (@cols) {
       $hash = $hash->{$_->get_bare ($col)} ||= {};
     }
-    ($hash->{$_[1]->get_bare ($col)} ||= $self->{db}->_list)->push ($_[1]);
+    ($hash->{$_->get_bare ($col)} ||= $self->{db}->_list)->push ($_);
   } : sub {
     my $hash = $map;
     for my $col (@cols) {
       $hash = $hash->{$_->get_bare ($col)} ||= {};
     }
-    if ($hash->{$_[1]->get_bare ($col)}) {
+    if ($hash->{$_->get_bare ($col)}) {
       carp "More than one rows found for an object";
     } else {
-      $hash->{$_[1]->get_bare ($col)} = $_[1];
+      $hash->{$_->get_bare ($col)} = $_;
     }
   };
 
