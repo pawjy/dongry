@@ -176,7 +176,7 @@ sub connect ($$;%) {
       my $timer; $timer = AE::timer (3, 0, sub {
         undef $timer;
         $onerror_args->{db}->{dbhs}->{$name} = bless {
-          error_text => "Connect timeout - |$dsn|",
+          error_text => "$dsn: Connect timeout",
         }, 'Dongry::Database::BrokenConnection';
         $args{cb}->($onerror_args->{db}, 0) if $args{cb};
       });
@@ -185,19 +185,22 @@ sub connect ($$;%) {
       $self->{dbhs}->{$name}->connect (%connect)->then (sub {
         undef $timer;
         if ($onerror_args->{db}) {
-          $onerror_args->{db}->onconnect->($onerror_args->{db}, source_name => $name);
+          {
+            local $onerror_args->{db}->{reconnect_disabled}->{$name} = 1;
+            $onerror_args->{db}->onconnect->($onerror_args->{db}, source_name => $name);
+          }
           $args{cb}->($onerror_args->{db}, 1) if $args{cb};
         }
       }, sub {
         my $error_text = ''.$_[0];
         $onerror_args->{db}->{dbhs}->{$name} = bless {
-          error_text => $error_text,
+          error_text => "$dsn: $error_text",
         }, 'Dongry::Database::BrokenConnection';
         my $file_name = $onerror_args->{caller}->{file};
         my $line = $onerror_args->{caller}->{line};
         $onerror_args->{db}->onerror->($onerror_args->{db},
                                        anyevent => 1,
-                                       text => $error_text,
+                                       text => "$dsn: $error_text",
                                        file_name => $file_name,
                                        line => $line,
                                        source_name => $name,
@@ -208,13 +211,18 @@ sub connect ($$;%) {
       });
     }; # $connect
 
-    if (my $client = $self->{dbhs}->{$name}) {
+
+    if ($self->{reconnect_disabled}->{$name}) {
+      $args{cb}->($self, 1) if $args{cb};
+    } elsif (my $client = $self->{dbhs}->{$name}) {
       $client->ping->then (sub {
         if ($_[0]) {
           $args{cb}->($self, 1) if $args{cb};
         } else {
           $connect->();
         }
+      })->catch (sub {
+        warn "Died within handler: $_[0]";
       });
     } else {
       $connect->();
@@ -397,7 +405,9 @@ sub execute ($$;$%) {
     $self->connect ($name, cb => sub {
       my ($self, $ok) = @_;
       if ($ok) {
-        my $client = $self->{dbhs}->{$name};
+        my $client = $self->{dbhs}->{$name} || bless {
+          error_text => 'Connection is lost during event loop',
+        }, 'Dongry::Database::BrokenConnection';
         $client->statement_prepare ($self->{last_sql} = $sql)->then (sub {
           my $x = $_[0];
           die $x unless $x->is_success;
@@ -428,9 +438,9 @@ sub execute ($$;$%) {
                 $result->{row_count} = $y->packet->{affected_rows};
               } else {
                 $result->{row_count} = @row;
-              }
-              unless ($args{each_as_row_cb} or $args{each_cb}) {
-                $result->{data} = \@row;
+                unless ($args{each_as_row_cb} or $args{each_cb}) {
+                  $result->{data} = \@row;
+                }
               }
               $result->{no_each} = 1;
             } else { # error
@@ -1121,23 +1131,23 @@ sub ping {
 
 sub query {
   require AnyEvent::MySQL::Client::Promise;
-  return AnyEvent::MySQL::Client::Promise->reject ("No connection");
+  return AnyEvent::MySQL::Client::Promise->reject ("No connection ($_[0]->{error_text})");
 }
 sub statement_prepare {
   require AnyEvent::MySQL::Client::Promise;
-  return AnyEvent::MySQL::Client::Promise->reject ("No connection");
+  return AnyEvent::MySQL::Client::Promise->reject ("No connection ($_[0]->{error_text})");
 }
 sub statement_execute {
   require AnyEvent::MySQL::Client::Promise;
-  return AnyEvent::MySQL::Client::Promise->reject ("No connection");
+  return AnyEvent::MySQL::Client::Promise->reject ("No connection ($_[0]->{error_text})");
 }
 sub statement_close {
   require AnyEvent::MySQL::Client::Promise;
-  return AnyEvent::MySQL::Client::Promise->reject ("No connection");
+  return AnyEvent::MySQL::Client::Promise->reject ("No connection ($_[0]->{error_text})");
 }
 sub statement_reset {
   require AnyEvent::MySQL::Client::Promise;
-  return AnyEvent::MySQL::Client::Promise->reject ("No connection");
+  return AnyEvent::MySQL::Client::Promise->reject ("No connection ($_[0]->{error_text})");
 }
 
 sub disconnect {

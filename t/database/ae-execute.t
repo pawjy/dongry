@@ -818,7 +818,7 @@ sub _execute_cb_result_table_name : Test(1) {
   $cv->recv;
 } # _execute_cb_result_table_name
 
-sub _execute_cb_all_insert : Test(14) {
+sub _execute_cb_all_insert : Test(13) {
   my $db = new_db;
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (1), (2)');
@@ -843,7 +843,6 @@ sub _execute_cb_all_insert : Test(14) {
   ng $result->is_error;
   ng $result->error_text;
   is $result->row_count, 1;
-  eq_or_diff $result->all->to_a, [];
   dies_here_ok { $result->all };
   dies_here_ok { $result->first };
   my $invoked;
