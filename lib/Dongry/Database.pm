@@ -665,6 +665,9 @@ sub select ($$$;%) {
       ($sql, $where_bind,
        source_name => $args{source_name},
        must_be_writable => $args{must_be_writable},
+       each_cb => $args{each_cb},
+       table_name => $table_name,
+       each_as_row_cb => $args{each_as_row_cb},
        cb => $cb);
   return unless defined wantarray;
 

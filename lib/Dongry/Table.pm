@@ -209,12 +209,31 @@ sub fill_related_rows ($$$$;%) {
   }
 
   my $map = {};
+  my $each_cb = $args{multiple} ? sub {
+    my $hash = $map;
+    for my $col (@cols) {
+      $hash = $hash->{$_->get_bare ($col)} ||= {};
+    }
+    ($hash->{$_[1]->get_bare ($col)} ||= $self->{db}->_list)->push ($_[1]);
+  } : sub {
+    my $hash = $map;
+    for my $col (@cols) {
+      $hash = $hash->{$_->get_bare ($col)} ||= {};
+    }
+    if ($hash->{$_[1]->get_bare ($col)}) {
+      carp "More than one rows found for an object";
+    } else {
+      $hash->{$_[1]->get_bare ($col)} = $_[1];
+    }
+  };
+
   $self->{db}->select
       ($self->table_name,
        $where,
        fields => $args{fields},
        source_name => $args{source_name},
        lock => $args{lock}, 
+       each_as_row_cb => $each_cb,
        cb => sub {
     my $db = $_[0];
     if ($_[1]->is_error) {
@@ -224,23 +243,6 @@ sub fill_related_rows ($$$$;%) {
       return;
     }
 
-    $_[1]->each_as_row ($args{multiple} ? sub {
-      my $hash = $map;
-      for my $col (@cols) {
-        $hash = $hash->{$_->get_bare ($col)} ||= {};
-      }
-      ($hash->{$_->get_bare ($col)} ||= $db->_list)->push ($_);
-    } : sub {
-      my $hash = $map;
-      for my $col (@cols) {
-        $hash = $hash->{$_->get_bare ($col)} ||= {};
-      }
-      if ($hash->{$_->get_bare ($col)}) {
-        carp "More than one rows found for an object";
-      } else {
-        $hash->{$_->get_bare ($col)} = $_;
-      }
-    });
     my $default = $args{multiple} ? $db->_list : undef;
     for my $obj (@$list) {
       my $hash = $map;
