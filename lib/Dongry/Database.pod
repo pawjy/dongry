@@ -376,7 +376,7 @@ subsequent SQL requests already queued but not executed yet, and it is
 unclear whether they should be executed after the occurence of an
 error.
 
-=item $db->connect ($source_name)
+=item $db->connect ($source_name, %opts)
 
 Connect to the data source whose name is specified by the argument, if
 any, or the C<default> data source, otherwise.  If there is already a
@@ -394,7 +394,35 @@ L<AnyEvent::DBI> is used for the connection, the method only does
 instantiate the L<AnyEvent::DBI> method and the actual connection is
 established asynchronously.
 
-=item $db->disconnect ($source_name)
+The following option is available:
+
+=over 4
+
+=item cb => code-reference
+
+The callback function invoked when the connection has been established
+(or immediately if the connection is already established).
+
+In synchronous mode, the code reference is synchronously invoked when
+the connection has been successfully established.
+
+In asynchronos mode, the code reference is asynchronously invoked when
+the connection has been successfully or erronerously established,
+except when the C<connect> method is invoked within the C<onconnect>
+handler for the same C<source_name>, in which case the callback is
+synchronously invoked.
+
+The code reference receives two arguments: the database object and a
+return object which contains whether the connection has been
+successfully established (C<< $_[1]->is_success >>) or not (C<<
+$_[1]->is_error >>).
+
+The code reference should not throw any exception.  See the C<onerror>
+method for rationale.
+
+=back
+
+=item $db->disconnect ($source_name, %opts)
 
 If a data source name is specified, disconnect the connection for the
 data source.  Otherwise, disconnect all the connections hold by the
@@ -404,12 +432,34 @@ method does nothing.
 Please notice that if there is an uncommitted transaction session, it
 will be rollbacked by the invocation of this method.
 
-You don't have to invoke this method explicitly in general, as the
-C<DESTROY> method for the database object will invoke this method
-automatically.
+You don't have to invoke this method explicitly in synchronous mode,
+as the C<DESTROY> method for the database object will invoke this
+method automatically.  In asynchronous mode, you should explicitly
+invoke this method to gracefully shutdown the connection to the
+server.
 
 If the connection is in the asynchronous mode, any queued SQL
 statements might still be executed after the method is invoked.
+
+The following option is available:
+
+=over 4
+
+=item cb => code-reference
+
+The callback function invoked when the connection has been closed (or
+immediately if the connection is already closed).
+
+In synchronous mode, the code reference is synchronously invoked when
+the connection has been closed.
+
+In asynchronos mode, the code reference is asynchronously invoked when
+the connection has been closed.
+
+The code reference receives a arguments: the database object.
+
+The code reference should not throw any exception.  See the C<onerror>
+method for rationale.
 
 =back
 
@@ -1377,8 +1427,11 @@ note that versioned packages are likely out-of-dated.
 
 =head1 DEPENDENCY
 
-Perl 5.10 or later is required.  (Though the module can be used in
-Perl 5.8, some tests fail due to bugs of perl.)
+Perl 5.10 or later is required.
+
+Although the module can be used in Perl 5.8, some tests fail due to
+bugs of perl.  In addition, a required module of the asynchronous mode
+does not support Perl 5.8.
 
 Dongry requires the L<DBI> module as underlying database API.  Dongry
 uses the L<List::Ish> module as list object implementation by default,

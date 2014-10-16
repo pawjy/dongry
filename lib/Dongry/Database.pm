@@ -176,9 +176,11 @@ sub connect ($$;%) {
       my $timer; $timer = AE::timer (3, 0, sub {
         undef $timer;
         $onerror_args->{db}->{dbhs}->{$name} = bless {
-          error_text => "$dsn: Connect timeout",
+          error_text => "$dsn: Connect timeout (3)",
         }, 'Dongry::Database::BrokenConnection';
-        $args{cb}->($onerror_args->{db}, 0) if $args{cb};
+        $args{cb}->($onerror_args->{db}, bless {
+          error_text => "$dsn: Connect timeout (3)",
+        }, 'Dongry::Database::Executed::NotAvailable') if $args{cb};
       });
 
       $self->{dbhs}->{$name} = AnyEvent::MySQL::Client->new;
@@ -189,7 +191,7 @@ sub connect ($$;%) {
             local $onerror_args->{db}->{reconnect_disabled}->{$name} = 1;
             $onerror_args->{db}->onconnect->($onerror_args->{db}, source_name => $name);
           }
-          $args{cb}->($onerror_args->{db}, 1) if $args{cb};
+          $args{cb}->($onerror_args->{db}, bless {}, 'Dongry::Database::Executed::NoResult') if $args{cb};
         }
       }, sub {
         my $error_text = ''.$_[0];
@@ -205,19 +207,22 @@ sub connect ($$;%) {
                                        line => $line,
                                        source_name => $name,
                                        sql => $onerror_args->{db}->{last_sql});
-        $args{cb}->($onerror_args->{db}, 0) if $args{cb};
+        $args{cb}->($onerror_args->{db}, bless {
+          error_text => "$dsn: $error_text",
+        }, 'Dongry::Database::Executed::NotAvailable') if $args{cb};
       })->catch (sub {
         warn "Died within handler: $_[0]";
       });
     }; # $connect
 
-
     if ($self->{reconnect_disabled}->{$name}) {
-      $args{cb}->($self, 1) if $args{cb};
+      $args{cb}->($self, bless {}, 'Dongry::Database::Executed::NoResult')
+          if $args{cb};
     } elsif (my $client = $self->{dbhs}->{$name}) {
       $client->ping->then (sub {
         if ($_[0]) {
-          $args{cb}->($self, 1) if $args{cb};
+          $args{cb}->($self, bless {}, 'Dongry::Database::Executed::NoResult')
+              if $args{cb};
         } else {
           $connect->();
         }
@@ -247,7 +252,8 @@ sub connect ($$;%) {
           }, AutoCommit => 1, ReadOnly => !$source->{writable},
           AutoInactiveDestroy => 1});
     $self->onconnect->($self, source_name => $name);
-    $args{cb}->($self, 1) if $args{cb};
+    $args{cb}->($self, bless {}, 'Dongry::Database::Executed::NoResult')
+        if $args{cb};
   }
 } # connect
 
@@ -404,7 +410,7 @@ sub execute ($$;$%) {
     my $onerror_args = {caller => _get_caller};
     $self->connect ($name, cb => sub {
       my ($self, $ok) = @_;
-      if ($ok) {
+      if ($ok->is_success) {
         my $client = $self->{dbhs}->{$name} || bless {
           error_text => 'Connection is lost during event loop',
         }, 'Dongry::Database::BrokenConnection';
@@ -980,6 +986,18 @@ use Carp;
 
 sub is_success ($) { 0 }
 sub is_error ($) { 1 }
+
+sub row_count ($) {
+  croak "Result is not available";
+} # row_count
+
+package Dongry::Database::Executed::NoResult;
+our $VERSION = '1.0';
+push our @ISA, 'Dongry::Database::Executed';
+use Carp;
+
+sub is_success ($) { 1 }
+sub is_error ($) { 0 }
 
 sub row_count ($) {
   croak "Result is not available";
