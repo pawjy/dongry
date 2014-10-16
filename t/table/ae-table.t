@@ -122,8 +122,8 @@ sub _insert_cb_exception_error : Test(3) {
     },
   }, ae => 1;
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -138,7 +138,7 @@ sub _insert_cb_exception_error : Test(3) {
 
   $cv->recv;
   ok not $@;
-  like $warn, qr{^Died within handler: abc at};
+  like $warn, qr{Died within handler: abc at};
 
   eq_or_diff $db->select ('foo', {id => {-gt => 1}},
                           order => [id => -1])->all->to_a, [];
@@ -167,8 +167,8 @@ sub _insert_cb_return : Test(7) {
   $cv->recv;
 
   isa_ok $result, 'Dongry::Database::Executed';
-  ng $result->is_success;
-  ok $result->is_error;
+  ok $result->is_success;
+  ng $result->is_error;
   ng $result->error_text;
   ng $result->error_sql;
   dies_here_ok { $result->all };
@@ -327,16 +327,15 @@ sub _find_cb_return : Test(5) {
   my $invoked;
   my $result;
   my $value;
-  dies_here_ok {
-    my $return = $db->table ('foo')->find ({id => {-gt => 4}},
-                                           order => [id => 1],
-                                           source_name => 'ae', cb => sub {
-      $result = $_[1];
-      $value = $_;
-      $invoked++;
-      $cv->send;
-    });
-  };
+  my $return = $db->table ('foo')->find ({id => {-gt => 4}},
+                                         order => [id => 1],
+                                         source_name => 'ae', cb => sub {
+    $result = $_[1];
+    $value = $_;
+    $invoked++;
+    $cv->send;
+  });
+  isa_ok $return, 'Dongry::Database::Executed';
 
   $cv->recv;
   is $invoked, 1;
@@ -365,16 +364,15 @@ sub _find_cb_return_not_found : Test(5) {
   my $invoked;
   my $result;
   my $value;
-  dies_here_ok {
-    my $return = $db->table ('foo')->find ({id => {-gt => 400}},
-                                           order => [id => 1],
-                                           source_name => 'ae', cb => sub {
-      $result = $_[1];
-      $value = $_;
-      $invoked++;
-      $cv->send;
-    });
-  };
+  my $return = $db->table ('foo')->find ({id => {-gt => 400}},
+                                         order => [id => 1],
+                                         source_name => 'ae', cb => sub {
+    $result = $_[1];
+    $value = $_;
+    $invoked++;
+    $cv->send;
+  });
+  isa_ok $return, 'Dongry::Database::Executed';
 
   $cv->recv;
   is $invoked, 1;
@@ -403,16 +401,15 @@ sub _find_all_cb_return : Test(7) {
   my $invoked;
   my $result;
   my $value;
-  dies_here_ok {
-    my $return = $db->table ('foo')->find_all ({id => {-gt => 4}},
-                                               order => [id => 1],
-                                               source_name => 'ae', cb => sub {
-      $result = $_[1];
-      $value = $_;
-      $invoked++;
-      $cv->send;
-    });
-  };
+  my $return = $db->table ('foo')->find_all ({id => {-gt => 4}},
+                                             order => [id => 1],
+                                             source_name => 'ae', cb => sub {
+    $result = $_[1];
+    $value = $_;
+    $invoked++;
+    $cv->send;
+  });
+  isa_ok $return, 'Dongry::Database::Executed';
 
   $cv->recv;
   is $invoked, 1;
@@ -660,8 +657,8 @@ sub _fill_related_rows_cb_exception_error : Test(3) {
 
   my $mock1 = Test::MoreMore::Mock->new (related_id => 12345);
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -676,7 +673,7 @@ sub _fill_related_rows_cb_exception_error : Test(3) {
   $cv->recv;
   
   ok not $@;
-  like $warn, qr<^Died within handler: abc at >;
+  like $warn, qr<Died within handler: abc at >;
   ng $mock1->related_row;
 
   $cv = AE::cv;

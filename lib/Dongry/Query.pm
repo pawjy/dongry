@@ -1,7 +1,8 @@
 package Dongry::Query;
 use strict;
 use warnings;
-our $VERSION = '2.0';
+our $VERSION = '3.0';
+use Carp qw(croak);
 
 push our @CARP_NOT, qw(Dongry::Database);
 
@@ -109,6 +110,7 @@ sub find_all {
     };
     if (defined wantarray) {
       my $dummy = $self->table->find_all ($self->where, %param);
+      croak "Async mode not supported" if $dummy->can ('then');
       return $return;
     } else {
       $self->table->find_all ($self->where, %param);
@@ -157,6 +159,7 @@ sub find {
     };
     if (defined wantarray) {
       my $dummy = $self->table->find_all ($self->where, %param);
+      croak "Async mode not supported" if $dummy->can ('then');
       return $return;
     } else {
       $self->table->find_all ($self->where, %param);
@@ -211,6 +214,7 @@ sub count {
 
   if (defined wantarray) {
     my $row = $self->table->find ($self->where, %param);
+    croak "Async mode not supported" if $row->can ('then');
     return $row ? $row->get ('count') : 0;
   } else {
     $self->table->find ($self->where, %param);
@@ -233,7 +237,7 @@ sub DESTROY {
 
 =head1 LICENSE
 
-Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2014 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

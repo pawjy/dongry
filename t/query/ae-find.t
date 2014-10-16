@@ -844,8 +844,8 @@ sub _find_filtered_cb_error_exception : Test(3) {
          return $_[1]->map (sub { [$_->get ('id') + 1] });
        });
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -860,7 +860,7 @@ sub _find_filtered_cb_error_exception : Test(3) {
 
   ng $filtered;
   ok not $@;
-  like $warn, qr{^Died within handler: abc at \Q@{[__FILE__]} line @{[__LINE__ - 10]}\E\.?\n$};
+  like $warn, qr{Died within handler: abc at \Q@{[__FILE__]} line @{[__LINE__ - 10]}\E\.?\n};
 
   $cv = AE::cv;
   $db->disconnect (undef, cb => sub { $cv->send });
@@ -885,8 +885,8 @@ sub _find_all_filtered_cb_error_exception : Test(3) {
          return $_[1]->map (sub { [$_->get ('id') + 1] });
        });
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -901,7 +901,7 @@ sub _find_all_filtered_cb_error_exception : Test(3) {
 
   ng $filtered;
   ok not $@;
-  like $warn, qr{^Died within handler: abc at \Q@{[__FILE__]} line @{[__LINE__ - 10]}\E\.?\n$};
+  like $warn, qr{Died within handler: abc at \Q@{[__FILE__]} line @{[__LINE__ - 10]}\E\.?\n};
 
   $cv = AE::cv;
   $db->disconnect (undef, cb => sub { $cv->send });
@@ -926,8 +926,8 @@ sub _count_filtered_cb_error_exception : Test(3) {
          return $_[1]->map (sub { [$_->get ('id') + 1] });
        });
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -942,7 +942,7 @@ sub _count_filtered_cb_error_exception : Test(3) {
 
   ng $filtered;
   ok not $@;
-  like $warn, qr{^Died within handler: abc at \Q@{[__FILE__]} line @{[__LINE__ - 10]}\E\.?\n$};
+  like $warn, qr{Died within handler: abc at \Q@{[__FILE__]} line @{[__LINE__ - 10]}\E\.?\n};
 
   $cv = AE::cv;
   $db->disconnect (undef, cb => sub { $cv->send });
@@ -967,8 +967,8 @@ sub _find_filtered_cb_error_exception_carp : Test(3) {
          return $_[1]->map (sub { [$_->get ('id') + 1] });
        });
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -1008,8 +1008,8 @@ sub _find_all_filtered_cb_error_exception_carp : Test(3) {
          return $_[1]->map (sub { [$_->get ('id') + 1] });
        });
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -1049,8 +1049,8 @@ sub _count_filtered_cb_error_exception_carp : Test(3) {
          return $_[1]->map (sub { [$_->get ('id') + 1] });
        });
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 

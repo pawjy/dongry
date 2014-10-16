@@ -394,6 +394,8 @@ sub execute ($$;$%) {
         "Data source |%s| cannot be used while the source is forced to |%s|",
         $name, $self->{force_source_name};
   }
+  croak "Data source |$name| is not defined"
+      unless $self->{sources}->{$name};
 
   if (not $self->{sources}->{$name}->{writable} and
       ($args{must_be_writable} or
