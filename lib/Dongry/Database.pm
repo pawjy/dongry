@@ -123,19 +123,10 @@ sub connect ($$;%) {
   my $source = $self->{sources}->{$name}
       or croak "Data source |$name| is not defined";
   my %args = @_;
-  if ($self->{dbhs}->{$name}) {
-    if ($source->{anyevent}) {
-      ## checked later
-      #
-    } else {
-      if ($self->{dbhs}->{$name}->ping) {
-        $args{cb}->($self, 1) if $args{cb};
-        return;
-      } else {
-        $self->disconnect ($name);
-      }
-    }
-  }
+
+  my $return = bless {
+    cb => $args{cb},
+  }, 'Dongry::Database::Executed';
 
   if ($source->{anyevent}) {
     if ($SQL_DEBUG) {
@@ -143,6 +134,7 @@ sub connect ($$;%) {
     }
 
     require AnyEvent::MySQL::Client;
+    $return->_thenablize;
 
     my %connect;
     my $dsn = $source->{dsn};
@@ -173,14 +165,18 @@ sub connect ($$;%) {
     my $connect = sub {
       my $timer; $timer = AE::timer (3, 0, sub {
         undef $timer;
+        # XXX disconnect
+        $onerror_args->{db}->{dbhs}->{$name}->disconnect
+            if $onerror_args->{db}->{dbhs}->{$name};
         $onerror_args->{db}->{dbhs}->{$name} = bless {
           error_text => "$dsn: Connect timeout (3)",
         }, 'Dongry::Database::BrokenConnection';
-        $args{cb}->($onerror_args->{db}, bless {
+        $return->_ng ($onerror_args->{db}, bless {
           error_text => "$dsn: Connect timeout (3)",
-        }, 'Dongry::Database::Executed::NotAvailable') if $args{cb};
+        }, 'Dongry::Database::Executed::NotAvailable');
       });
 
+      $self->{dbhs}->{$name}->disconnect if $self->{dbhs}->{$name};
       $self->{dbhs}->{$name} = AnyEvent::MySQL::Client->new;
       $self->{dbhs}->{$name}->connect (%connect)->then (sub {
         undef $timer;
@@ -189,9 +185,10 @@ sub connect ($$;%) {
             local $onerror_args->{db}->{reconnect_disabled}->{$name} = 1;
             $onerror_args->{db}->onconnect->($onerror_args->{db}, source_name => $name);
           }
-          $args{cb}->($onerror_args->{db}, bless {}, 'Dongry::Database::Executed::NoResult') if $args{cb};
+          $return->_ok ($onerror_args->{db}, bless {}, 'Dongry::Database::Executed::NoResult');
         }
       }, sub {
+        undef $timer;
         my $error_text = ''.$_[0];
         $onerror_args->{db}->{dbhs}->{$name} = bless {
           error_text => "$dsn: $error_text",
@@ -205,22 +202,20 @@ sub connect ($$;%) {
                                        line => $line,
                                        source_name => $name,
                                        sql => $onerror_args->{db}->{last_sql});
-        $args{cb}->($onerror_args->{db}, bless {
+        $return->_ng ($onerror_args->{db}, bless {
           error_text => "$dsn: $error_text",
-        }, 'Dongry::Database::Executed::NotAvailable') if $args{cb};
+        }, 'Dongry::Database::Executed::NotAvailable');
       })->catch (sub {
         warn "Died within handler: $_[0]";
-      })->then (sub { undef $onerror_args });
+      })->then (sub { undef $onerror_args; undef $return });
     }; # $connect
 
     if ($self->{reconnect_disabled}->{$name}) {
-      $args{cb}->($self, bless {}, 'Dongry::Database::Executed::NoResult')
-          if $args{cb};
+      $return->_ok ($self, bless {}, 'Dongry::Database::Executed::NoResult');
     } elsif (my $client = $self->{dbhs}->{$name}) {
       $client->ping->then (sub {
         if ($_[0]) {
-          $args{cb}->($self, bless {}, 'Dongry::Database::Executed::NoResult')
-              if $args{cb};
+          $return->_ok ($self, bless {}, 'Dongry::Database::Executed::NoResult');
         } else {
           $connect->();
         }
@@ -230,9 +225,19 @@ sub connect ($$;%) {
     } else {
       $connect->();
     }
+    return $return;
   } else { # DBI
     if ($SQL_DEBUG) {
       eval qq{ require $SQLDebugClass } or die $@;
+    }
+
+    if ($self->{dbhs}->{$name}) {
+      if ($self->{dbhs}->{$name}->ping) {
+        $return->_ok ($self, bless {}, 'Dongry::Database::Executed::NoResult');
+        return $return;
+      } else {
+        $self->disconnect ($name);
+      }
     }
 
     require DBI;
@@ -255,14 +260,19 @@ sub connect ($$;%) {
           }, AutoCommit => 1, ReadOnly => !$source->{writable},
           AutoInactiveDestroy => 1});
     $self->onconnect->($self, source_name => $name);
-    $args{cb}->($self, bless {}, 'Dongry::Database::Executed::NoResult')
-        if $args{cb};
+    $return->_ok ($self, bless {}, 'Dongry::Database::Executed::NoResult');
+    return $return;
   }
 } # connect
 
 sub disconnect ($;$%) {
   my ($self, $_name, %args) = @_;
+  my $return = bless {
+    cb => $args{cb},
+  }, 'Dongry::Database::Executed';
+
   my @then;
+  my $has_promise;
   for my $name (
     defined $_name ? ($_name) : (keys %{$self->{sources} or {}})
   ) {
@@ -278,27 +288,35 @@ sub disconnect ($;$%) {
     
     if ($self->{dbhs}->{$name}) {
       my $result = $self->{dbhs}->{$name}->disconnect;
-      if (UNIVERSAL::can ($result, 'then')) {
+      if (UNIVERSAL::can ($result, 'then') and $result->can ('then')) {
         push @then, $result;
       }
       delete $self->{dbhs}->{$name};
     }
-  }
-  if ($args{cb}) {
-    if (@then) {
-      (ref $then[0])->all (\@then)->then (sub {
-        $args{cb}->($self);
-      }, sub {
-        $args{cb}->($self);
-      });
-    } else {
-      $args{cb}->($self);
+    if ($self->{sources}->{$name}->{anyevent}) {
+      $has_promise = 1;
     }
   }
+  $return->_thenablize if $has_promise;
+  if (@then) {
+    (ref $then[0])->all (\@then)->then (sub {
+      $return->_ok ($self);
+    }, sub {
+      $return->_ok ($self);
+    });
+  } else {
+    $return->_ok ($self);
+  }
+  return $return;
 } # disconnect
 
 sub DESTROY {
   $_[0]->disconnect;
+
+  local $@;
+  eval { die };
+  warn "Possible memory leak detected (".(ref $_[0]).")\n"
+      if $@ =~ /during global destruction/;
 } # DESTROY
 
 # ------ Transaction and source selection ------
@@ -889,6 +907,46 @@ sub first_as_row ($) {
                 data => $data}, 'Dongry::Table::Row';
 } # first_as_row
 
+sub _ok ($$$) {
+  my $self = $_[0];
+  $self->{promise_ok}->($_[2]) if $self->{promise_ok};
+  delete $self->{promise_ok};
+  delete $self->{promise_ng};
+  (delete $self->{cb})->($_[1], $_[2]) if $self->{cb};
+  return;
+} # _ok
+
+sub _ng ($$$) {
+  my $self = $_[0];
+  $self->{promise_ng}->($_[2]) if $self->{promise_ng};
+  delete $self->{promise_ok};
+  delete $self->{promise_ng};
+  (delete $self->{cb})->($_[1], $_[2]) if $self->{cb};
+  return;
+} # _ng
+
+sub _thenablize ($) {
+  my $self = $_[0];
+  require AnyEvent::MySQL::Client::Promise;
+  $self->{promise} = AnyEvent::MySQL::Client::Promise->new (sub {
+    $self->{promise_ok} = $_[0];
+    $self->{promise_ng} = $_[1];
+  });
+} # _thenablize
+
+sub then ($;$$) {
+  my $self = $_[0];
+  croak 'This object is not thenable' unless $self->{promise};
+  return $self->{promise}->then ($_[1], $_[2]);
+} # then
+
+sub can {
+  if ($_[1] eq 'then') {
+    return 0 unless ref $_[0] and $_[0]->{promise};
+  }
+  return shift->SUPER::can (@_);
+} # can
+
 sub debug_info ($) {
   my $self = shift;
   my @info;
@@ -902,6 +960,11 @@ sub debug_info ($) {
 
 sub DESTROY {
   $_[0]->{sth}->finish if $_[0]->{sth};
+
+  local $@;
+  eval { die };
+  warn "Possible memory leak detected (".(ref $_[0]).")\n"
+      if $@ =~ /during global destruction/;
 } # DESTROY
 
 package Dongry::Database::Executed::Inserted;
@@ -1045,9 +1108,11 @@ sub DESTROY {
     die "Transaction is rollbacked since it is not explicitly committed",
         Carp::shortmess();
   }
-  if ($Dongry::LeakTest) {
-    warn "Possible memory leak by object " . ref $_[0];
-  }
+
+  local $@;
+  eval { die };
+  warn "Possible memory leak detected (".(ref $_[0]).")\n"
+      if $@ =~ /during global destruction/;
 } # DESTROY
 
 # ------ Source selection ------
@@ -1068,9 +1133,11 @@ sub debug_info ($) {
 
 sub DESTROY {
   $_[0]->end;
-  if ($Dongry::LeakTest) {
-    warn "Possible memory leak by object " . ref $_[0];
-  }
+
+  local $@;
+  eval { die };
+  warn "Possible memory leak detected (".(ref $_[0]).")\n"
+      if $@ =~ /during global destruction/;
 } # DESTROY
 
 # ------ Dummy objects ------

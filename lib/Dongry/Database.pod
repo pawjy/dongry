@@ -392,6 +392,8 @@ the asynchronous mode is used for the connection, the method only does
 instantiate the L<AnyEvent::MySQL::Client> method and the actual
 connection is established asynchronously.
 
+In the asynchronous mode, the returned object is I<thenable>.
+
 The following option is available:
 
 =over 4
@@ -401,11 +403,11 @@ The following option is available:
 The callback function invoked when the connection has been established
 (or immediately if the connection is already established).
 
-In synchronous mode, the code reference is synchronously invoked when
-the connection has been successfully established.
+In the synchronous mode, the code reference is synchronously invoked
+when the connection has been successfully established.
 
-In asynchronos mode, the code reference is asynchronously invoked when
-the connection has been successfully or erronerously established,
+In the asynchronos mode, the code reference is asynchronously invoked
+when the connection has been successfully or erronerously established,
 except when the C<connect> method is invoked within the C<onconnect>
 handler for the same C<source_name>, in which case the callback is
 synchronously invoked.
@@ -417,6 +419,9 @@ $_[1]->is_error >>).
 
 The code reference should not throw any exception.  See the C<onerror>
 method for rationale.
+
+In the asynchronous mode, the C<then> method of the returned object
+should be used instead of the callback function.
 
 =back
 
@@ -439,6 +444,8 @@ server.
 If the connection is in the asynchronous mode, any queued SQL
 statements might still be executed after the method is invoked.
 
+In the asynchronous mode, the returned object is I<thenable>.
+
 The following option is available:
 
 =over 4
@@ -448,16 +455,19 @@ The following option is available:
 The callback function invoked when the connection has been closed (or
 immediately if the connection is already closed).
 
-In synchronous mode, the code reference is synchronously invoked when
-the connection has been closed.
+In the synchronous mode, the code reference is synchronously invoked
+when the connection has been closed.
 
-In asynchronos mode, the code reference is asynchronously invoked when
-the connection has been closed.
+In the asynchronos mode, the code reference is asynchronously invoked
+when the connection has been closed.
 
 The code reference receives a arguments: the database object.
 
 The code reference should not throw any exception.  See the C<onerror>
 method for rationale.
+
+In the asynchronous mode, the C<then> method of the returned object
+should be used instead of the callback function.
 
 =back
 
@@ -1285,9 +1295,24 @@ asynchronous mode, in particular.
 =head1 METHODS OF RESULT OBJECT
 
 SQL execution methods of the database object, such as C<execute>,
-C<select>, C<insert>, and so on, return the result object.  A result
-object holds the execution result of the SQL statement, which can be
-accessible from following methods:
+C<select>, C<insert>, and so on, return the result object.
+
+In the synchronous mode, the object returned by the method itself
+contains the result of the method.
+
+In the asynchronous mode, the object returned by the method does not
+contain the result, as it is not yet available.  If the returned
+object is referred to as I<thenable>, the returned object has the
+C<then> method.  Callback functions registered by the C<then> method
+will receive the actual result object of the original method as the
+argument.
+
+The callback function specified by the C<cb> option also receives a
+result object as the second argument in many methods.  Such an result
+object also contains the result of the method.
+
+A result object holds the execution result of the SQL statement, which
+can be accessible from following methods:
 
 =over 4
 
@@ -1401,6 +1426,34 @@ As described in the section of the C<insert> method, row data or table
 row objects accessible from the result object returned by the
 C<insert> method is based on the argument to the method and might be
 different from the actual data on the database.
+
+A I<thenable> result object has the following method:
+
+=over 4
+
+=item $promise = $result->then ($onfulfill, $onreject)
+
+Register callback functions invoked when the operation of the original
+method has succeeded or failed, respectively.  One of these callback
+is invoked once the operation result is available, with the result
+object containing the actual result of the method.
+
+This method is actually the C<then> method of a promise object.  Both
+fulfill and reject callbacks can be omitted.  The method returns a new
+promise.  The new promise is to be resolved with the returned value of
+the invoked callback function, or to be rejected by the exception
+thrown by the callback function.
+
+=back
+
+A I<thenable> result object behaves as if it were a L<Promise> object,
+except there is no C<catch> method.  As it has the C<then> method, it
+can be used as the return value of a promise callback or the argument
+of the C<< Promise->resolve >> method to create a promise to be
+resolved with the actual result object.
+
+For more information on promise, see documentation of L<Promise>
+<https://github.com/wakaba/perl-promise>.
 
 =head1 COMPATIBILITY
 
