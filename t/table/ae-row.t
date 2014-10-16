@@ -183,8 +183,8 @@ sub _reload_cb_exception_error : Test(4) {
   my $row = $db->table ('foo')->find ({id => 124});
   $db->execute ('drop table foo');
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -200,7 +200,7 @@ sub _reload_cb_exception_error : Test(4) {
   $cv->recv;
 
   ok not $@;
-  like $warn, qr{^Died within handler: abc at };
+  like $warn, qr{Died within handler: abc at };
   is $row->get ('value'), '1325679120';
   is $row->get_bare ('value'), '2012-01-04 12:12:00';
 
@@ -339,8 +339,8 @@ sub _update_cb_exception_error : Test(4) {
   my $row = $db->table ('foo')->find ({id => 124});
   $db->execute ('drop table foo');
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -356,7 +356,7 @@ sub _update_cb_exception_error : Test(4) {
   $cv->recv;
 
   ok not $@;
-  like $warn, qr{^Died within handler: abc at };
+  like $warn, qr{Died within handler: abc at };
   is $row->get ('value'), '1325679120';
   is $row->get_bare ('value'), '2012-01-04 12:12:00';
 

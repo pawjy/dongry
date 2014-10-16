@@ -335,7 +335,7 @@ sub _find_cb_return : Test(5) {
     $invoked++;
     $cv->send;
   });
-  isa_ok $return, 'Dongry::Database::Executed';
+  ok $return->can ('then');
 
   $cv->recv;
   is $invoked, 1;
@@ -372,7 +372,7 @@ sub _find_cb_return_not_found : Test(5) {
     $invoked++;
     $cv->send;
   });
-  isa_ok $return, 'Dongry::Database::Executed';
+  ok $return->can ('then');
 
   $cv->recv;
   is $invoked, 1;
@@ -409,7 +409,7 @@ sub _find_all_cb_return : Test(7) {
     $invoked++;
     $cv->send;
   });
-  isa_ok $return, 'Dongry::Database::Executed';
+  ok $return->can ('then');
 
   $cv->recv;
   is $invoked, 1;
