@@ -1,9 +1,6 @@
 Carp
 Carp::Heavy
-DBI
 Encode
 Exporter::Lite
 Scalar::Util
 Time::Local
-
-DBD::mysql
