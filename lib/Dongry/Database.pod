@@ -713,10 +713,10 @@ The callback is not expected to throw any exception.
 
 The callback function invoked when the SQL has been executed.
 
-In synchronous mode, the code reference is synchronously invoked when
-the SQL has successfully been executed.
+In the synchronous mode, the code reference is synchronously invoked
+when the SQL has successfully been executed.
 
-In asynchronous mode, the code reference is asynchronously invoked
+In the asynchronous mode, the code reference is asynchronously invoked
 when the SQL has been executed, successfully or erroneously.
 
 The code reference receives two arguments: the database object and the
@@ -726,6 +726,9 @@ mode.  In asynchronous mode, the result object describes the error.
 The code reference should not throw any exception in asynchronous
 mode.  See the C<onerror> method for rationale.
 
+In the asynchronous mode, the C<then> method of the returned object
+should be used instead of the callback function.
+
 =back
 
 The method would return a result object which is I<not> bound to any
@@ -734,6 +737,8 @@ retrieved from the C<row_count> method of the result object.  If the
 SQL statement returns rows (e.g. C<SELECT> or C<SHOW>), they are
 accessible from various methods of the result object.  The method does
 not return a value in asynchronous mode.
+
+In the asynchronous mode, the returned object is I<thenable>.
 
 =back
 

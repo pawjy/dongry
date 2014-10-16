@@ -414,6 +414,11 @@ sub execute ($$;$%) {
   }
 
   if ($self->{sources}->{$name}->{anyevent}) {
+    my $return = bless {
+      cb => $args{cb},
+    }, 'Dongry::Database::Executed::NoResult';
+    $return->_thenablize;
+
     # XXX retry
     # XXX transaction
 
@@ -466,11 +471,12 @@ sub execute ($$;$%) {
                 }
               }
               $result->{no_each} = 1;
+              $return->_ok ($self, $result);
             } else { # error
               $result = bless {error_text => ''.$y, error_sql => $sql},
                   'Dongry::Database::Executed::NotAvailable';
+              $return->_ng ($self, $result);
             }
-            return $args{cb}->($self, $result) if $args{cb};
           })->then (sub {
             return $client->statement_close ($x->packet->{statement_id});
           }, sub {
@@ -485,7 +491,10 @@ sub execute ($$;$%) {
               'Dongry::Database::Executed::NotAvailable';
           my $file_name = $onerror_args->{caller}->{file};
           my $line = $onerror_args->{caller}->{line};
-          $args{cb}->($self, $result) if $args{cb};
+          eval {
+            $return->_ng ($self, $result);
+          };
+          warn "Died within handler: $@" if $@;
           $self->onerror->($self,
                            anyevent => 1,
                            text => $result->{error_text},
@@ -495,14 +504,15 @@ sub execute ($$;$%) {
                            sql => $sql);
         })->catch (sub {
           warn "Died within handler: $_[0]";
-        })->then (sub { undef $client; undef $self; %args = () });
+        })->then (sub { undef $client; undef $self; %args = (); undef $return });
       } else { # not $ok
         my $result = bless {error_text => '|connect| failed', error_sql => $sql},
             'Dongry::Database::Executed::NotAvailable';
-        $args{cb}->($self, $result) if $args{cb};
+        $return->_ng ($self, $result);
+        undef $return;
       }
     });
-    return bless {}, 'Dongry::Database::Executed::NotAvailable';
+    return $return;
   } else {
     $self->connect ($name);
     my $dbh = $self->{dbhs}->{$name};
@@ -532,22 +542,16 @@ sub execute ($$;$%) {
         redo;
       }
     };
-    return if not defined wantarray and not $args{cb} and not $args{each_cb} and not $args{each_as_row_cb};
 
     my $result = bless {db => $self, sth => $sth, row_count => $rows,
-                        table_name => $args{table_name}},
+                        table_name => $args{table_name}, cb => $args{cb}},
         'Dongry::Database::Executed';
-
     if ($args{each_as_row_cb}) {
       $result->each_as_row ($args{each_as_row_cb});
     } elsif ($args{each_cb}) {
       $result->each ($args{each_cb});
     }
-
-    if ($args{cb}) {
-      local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-      $args{cb}->($self, $result);
-    }
+    $result->_ok ($self, $result);
     return $result;
   }
 } # execute

@@ -68,6 +68,7 @@ sub _onconnect_new : Test(2) {
   });
   lives_ok { $db->connect ('hoge') };
   is $onconnect_self, $db;
+  undef $onconnect_self;
 } # _onconnect_new
 
 # ------ |onerror| ------
@@ -83,6 +84,7 @@ sub _onerror_new : Test(2) {
   });
   dies_here_ok { $db->connect ('hoge') };
   is $onerror_self, $db;
+  undef $onerror_self;
 } # _onerror_new
 
 # ------ |connect| ------
@@ -105,6 +107,7 @@ sub _connect_unknown_name_onerror : Test(2) {
   });
   dies_here_ok { $db->connect ('hoge') };
   is $onerror_self, undef;
+  undef $onerror_self;
 } # _connect_unknown_name_onerror
 
 sub _connect_unknown_ds : Test(1) {
@@ -126,6 +129,7 @@ sub _connect_with_unknown_ds_onerror : Test(2) {
   });
   dies_here_ok { $db->connect ('hoge') };
   is $onerror_self, undef;
+  undef $onerror_self;
 } # _connect_with_unknown_ds_onerror
 
 sub _connect_wrong_mysql_dsn_onerror : Test(5) {
@@ -144,6 +148,7 @@ sub _connect_wrong_mysql_dsn_onerror : Test(5) {
   is $onerror_args{source_name}, 'hoge';
   like $onerror_args{text}, qr{DBI connect.*failed};
   is $onerror_args{sql}, undef;
+  undef $onerror_self;
 } # _connect_wrong_mysql_dsn_onerror
 
 sub _connect_connected : Test(2) {
@@ -183,6 +188,7 @@ sub _connect_wrong_username_onerror : Test(5) {
   is $onerror_args{source_name}, 'hoge';
   like $onerror_args{text}, qr{DBI connect.*failed};
   is $onerror_args{sql}, undef;
+  undef $onerror_self;
 } # _connect_wrong_username
 
 sub _connect_wrong_password : Test(1) {
@@ -209,6 +215,7 @@ sub _connect_wrong_password_onerror : Test(5) {
   is $onerror_args{source_name}, 'hoge';
   like $onerror_args{text}, qr{DBI connect.*failed};
   is $onerror_args{sql}, undef;
+  undef $onerror_self;
 } # _connect_wrong_password
 
 sub _connect_onconnect : Test(3) {
@@ -228,6 +235,7 @@ sub _connect_onconnect : Test(3) {
   is $invoked, 1;
   is $onconnect_self, $db;
   is $onconnect_args{source_name}, 'hoge';
+  undef $onconnect_self;
 } # _connect_onconnect
 
 sub _connect_onconnct_after_disconnect : Test(3) {
@@ -248,6 +256,7 @@ sub _connect_onconnct_after_disconnect : Test(3) {
   is $invoked, 2;
   is $onconnect_self, $db;
   is $onconnect_args{source_name}, 'hoge';
+  undef $onconnect_self;
 } # _connect_onconnect
 
 # ------ |disconnect| ------

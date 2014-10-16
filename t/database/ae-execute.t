@@ -170,7 +170,7 @@ sub _execute_cb_all_as_rows : Test(14) {
   $cv->recv;
 } # _execute_cb_all_as_rows
 
-sub _execute_cb_each_cb : Test(17) {
+sub _execute_cb_each_cb : Test(16) {
   my $db = new_db;
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (1), (2)');
@@ -223,7 +223,7 @@ sub _execute_cb_each_cb : Test(17) {
   $cv->recv;
 } # _execute_cb_each_cb
 
-sub _execute_cb_each_as_row_cb : Test(23) {
+sub _execute_cb_each_as_row_cb : Test(22) {
   my $db = new_db;
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (1), (2)');
@@ -474,6 +474,7 @@ sub _execute_syntax_error_onerror : Test(8) {
   $cv = AE::cv;
   $db->disconnect (undef, cb => sub { $cv->send });
   $cv->recv;
+  undef $db;
 } # _execute_syntax_error_onerror
 
 sub _execute_syntax_error_followed : Test(2) {
@@ -631,7 +632,7 @@ sub _execute_return_value : Test(9) {
   my $cv = AnyEvent->condvar;
 
   my $result = $db->execute ('select * from foo', undef,
-                             cb => sub { is $_[1]->row_count, 2; $cv->send },
+                             cb => sub { warn $_[1]; is $_[1]->row_count, 2; $cv->send },
                              source_name => 'ae');
 
   $cv->recv;
@@ -744,10 +745,10 @@ sub _execute_cb_error_die : Test(2) {
   my $cv = AnyEvent->condvar;
 
   my $line;
-  my $warn;
+  my $warn = '';
   {
     local $SIG{__WARN__} = sub {
-      $warn = $_[0];
+      $warn .= $_[0];
     };
 
     $line = __LINE__ + 3;
@@ -765,7 +766,7 @@ sub _execute_cb_error_die : Test(2) {
   };
 
   ok not $@;
-  is $warn, 'Died within handler: hoge at ' . __FILE__ . ' line ' . $line . ".\n";
+  like $warn, qr{\QDied within handler: hoge at @{[__FILE__]} line $line.\E};
 
   $cv = AE::cv;
   $db->disconnect (undef, cb => sub { $cv->send });
