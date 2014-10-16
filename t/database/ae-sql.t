@@ -101,8 +101,8 @@ sub _insert_cb_return : Test(6) {
   $cv->recv;
 
   isa_ok $result, 'Dongry::Database::Executed';
-  ng $result->is_success;
-  ok $result->is_error;
+  ok $result->is_success;
+  ng $result->is_error;
   dies_here_ok { $result->row_count };
   dies_here_ok { $result->all };
   isnt $result2, $result;
@@ -172,8 +172,8 @@ sub _insert_cb_error_exception : Test(2) {
                       writable => 1});
   $db->execute ('create table foo (id int)');
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
   $cv->begin;
@@ -194,7 +194,7 @@ sub _insert_cb_error_exception : Test(2) {
   $cv->recv;
 
   ok not $@;
-  is $warn, 'Died within handler: ab cd at ' . __FILE__ . ' line ' . (__LINE__ - 14) . ".\n";
+  like $warn, qr{\QDied within handler: ab cd at @{[__FILE__]} line @{[__LINE__ - 14]}.\E};
 } # _insert_cb_error_exception
 
 sub _insert_cb_error_exception_carp : Test(2) {
@@ -203,8 +203,8 @@ sub _insert_cb_error_exception_carp : Test(2) {
                       writable => 1});
   $db->execute ('create table foo (id int)');
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
   $cv->begin;
@@ -225,7 +225,7 @@ sub _insert_cb_error_exception_carp : Test(2) {
   $cv->recv;
 
   ok not $@;
-  like $warn, qr{^Died within handler: ab cd at }; ## Location is not helpful
+  like $warn, qr{^Died within handler: ab cd at }m; ## Location is not helpful
 } # _insert_cb_error_exception_carp
 
 # ------ select ------
@@ -285,8 +285,8 @@ sub _select_cb_return : Test(8) {
   $cv->recv;
 
   isa_ok $result, 'Dongry::Database::Executed';
-  ng $result->is_success;
-  ok $result->is_error;
+  ok $result->is_success;
+  ng $result->is_error;
   ng $result->error_text;
   ng $result->error_sql;
   ng $result->table_name;
@@ -332,8 +332,8 @@ sub _select_cb_exception_error : Test(2) {
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (34), (4)');
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
   $cv->begin;
@@ -349,7 +349,7 @@ sub _select_cb_exception_error : Test(2) {
   $cv->recv;
 
   ok not $@;
-  is $warn, 'Died within handler: fu ga at ' . __FILE__ . ' line ' . (__LINE__ - 10) . ".\n";
+  like $warn, qr{\QDied within handler: fu ga at @{[__FILE__]} line @{[__LINE__ - 10]}.\E};
 
   $cv = AE::cv;
   $db->disconnect (undef, cb => sub { $cv->send });
@@ -415,8 +415,8 @@ sub _update_cb_return : Test(8) {
   $cv->recv;
 
   isa_ok $result, 'Dongry::Database::Executed';
-  ng $result->is_success;
-  ok $result->is_error;
+  ok $result->is_success;
+  ng $result->is_error;
   ng $result->error_text;
   ng $result->error_sql;
   ng $result->table_name;
@@ -504,8 +504,8 @@ sub _update_cb_exception_error : Test(3) {
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (34), (4)');
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
   $cv->begin;
@@ -522,7 +522,7 @@ sub _update_cb_exception_error : Test(3) {
   $cv->recv;
 
   ok not $@;
-  is $warn, 'Died within handler: abc at ' . __FILE__ . ' line ' . (__LINE__ - 10) . ".\n";
+  like $warn, qr{\QDied within handler: abc at @{[__FILE__]} line @{[__LINE__ - 10]}.\E};
 
   $cv = AE::cv;
   $db->disconnect ('ae', cb => sub { $cv->send });
@@ -591,8 +591,8 @@ sub _delete_cb_return : Test(8) {
   $cv->recv;
 
   isa_ok $result, 'Dongry::Database::Executed';
-  ng $result->is_success;
-  ok $result->is_error;
+  ok $result->is_success;
+  ng $result->is_error;
   ng $result->error_text;
   ng $result->error_sql;
   ng $result->table_name;
@@ -680,8 +680,8 @@ sub _delete_cb_exception_error : Test(3) {
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (34), (4)');
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
   $cv->begin;
@@ -702,7 +702,7 @@ sub _delete_cb_exception_error : Test(3) {
   $cv->recv;
 
   ok not $@;
-  is $warn, 'Died within handler: abc at ' . __FILE__ . ' line ' . (__LINE__ - 14) . ".\n";
+  like $warn, qr{\QDied within handler: abc at @{[__FILE__]} line @{[__LINE__ - 14]}.\E};
 
   eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
       [{id => 4}, {id => 34}];

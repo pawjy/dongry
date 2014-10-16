@@ -1,7 +1,7 @@
 package Dongry::Database;
 use strict;
 use warnings;
-our $VERSION = '3.0';
+our $VERSION = '4.0';
 use Carp;
 use Carp::Heavy;
 use Scalar::Util qw(weaken);
@@ -558,6 +558,7 @@ sub execute ($$;$%) {
 
 # ------ Structured SQL executions ------
 
+# XXX promise not supported
 sub set_tz ($;$%) {
   my ($self, $tz, %args) = @_;
   $tz ||= '+00:00';
@@ -568,9 +569,9 @@ sub set_tz ($;$%) {
   return undef;
 } # set_tz
 
+# XXX cb/promise not supported
 sub has_table ($$;%) {
   my ($self, $name, %args) = @_;
-  # XXX $args{cb}
   my $row = $self->execute('SHOW TABLES LIKE :table', {
     table => Dongry::SQL::like ($name),
   }, source_name => $args{source_name})->first;
@@ -635,24 +636,21 @@ sub insert ($$$;%) {
         @sql_value;
   }
 
-  my $cb = $args{cb};
-  if ($cb) {
-    my $cb_orig = $cb;
-    $cb = sub {
-      unless ($_[1]->is_error) {
-        bless $_[1], 'Dongry::Database::Executed::Inserted';
-        $_[1]->{table_name} = $table_name;
-        $_[1]->{data} = $data;
-      }
-      goto &$cb_orig;
-    }; # $cb
-  }
+  my $cb_orig = $args{cb} || sub { };
+  my $cb = sub {
+    unless ($_[1]->is_error) {
+      bless $_[1], 'Dongry::Database::Executed::Inserted';
+      $_[1]->{table_name} = $table_name;
+      $_[1]->{data} = $data;
+    }
+    goto &$cb_orig;
+  }; # $cb
 
   my $return = $self->execute
       ($sql, \@values, source_name => $args{source_name}, cb => $cb);
 
   return unless defined wantarray;
-  return $return if $return->is_error;
+  return $return if $return->is_error or $return->can ('then');
   bless $return, 'Dongry::Database::Executed::Inserted';
   $return->{table_name} = $table_name;
   $return->{data} = $data;
@@ -690,15 +688,6 @@ sub select ($$$;%) {
     $args{must_be_writable} = 1;
   }
 
-  my $cb = $args{cb};
-  if ($cb) {
-    my $cb_orig = $cb;
-    $cb = sub {
-      $_[1]->{table_name} = $table_name unless $_[1]->is_error;
-      goto &$cb_orig;
-    }; # $cb
-  }
-
   my $return = $self->execute
       ($sql, $where_bind,
        source_name => $args{source_name},
@@ -706,10 +695,11 @@ sub select ($$$;%) {
        each_cb => $args{each_cb},
        table_name => $table_name,
        each_as_row_cb => $args{each_as_row_cb},
-       cb => $cb);
+       cb => $args{cb});
   return unless defined wantarray;
 
-  $return->{table_name} = $table_name unless $return->is_error;
+  $return->{table_name} = $table_name
+      if not $return->is_error and not $return->can ('then');
   return $return;
 } # select
 
