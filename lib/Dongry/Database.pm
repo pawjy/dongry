@@ -170,8 +170,6 @@ sub connect ($$;%) {
     # XXX SSL support
 
     my $onerror_args = {db => $self, caller => _get_caller};
-    weaken $onerror_args->{db};
-
     my $connect = sub {
       my $timer; $timer = AE::timer (3, 0, sub {
         undef $timer;
@@ -212,7 +210,7 @@ sub connect ($$;%) {
         }, 'Dongry::Database::Executed::NotAvailable') if $args{cb};
       })->catch (sub {
         warn "Died within handler: $_[0]";
-      });
+      })->then (sub { undef $onerror_args });
     }; # $connect
 
     if ($self->{reconnect_disabled}->{$name}) {

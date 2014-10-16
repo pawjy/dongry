@@ -82,6 +82,23 @@ test {
   is $invoked, 0;
 } n => 14, name => 'connect ae cb failure';
 
+test {
+  my $c = shift;
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, anyevent => 1}});
+
+  $db->execute ('show tables', undef, source_name => 'master', cb => sub {
+    $_[0]->disconnect (undef, cb => sub {
+      test {
+        ok 1;
+        done $c;
+        undef $c;
+      } $c;
+    });
+  });
+} n => 1, name => 'execute disconnect';
+
 run_tests;
 
 =head1 LICENSE

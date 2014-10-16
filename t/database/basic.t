@@ -11,8 +11,8 @@ sub _version : Test(8) {
   ok $Dongry::Database::VERSION;
   ok $Dongry::Database::Executed::VERSION;
   ok $Dongry::Database::Executed::Inserted::VERSION;
+  ok $Dongry::Database::Executed::NoResult::VERSION;
   ok $Dongry::Database::Transaction::VERSION;
-  ok $Dongry::Database::Transaction::AnyEvent::VERSION;
   ok $Dongry::Database::ForceSource::VERSION;
   ok $Dongry::Database::BrokenConnection::VERSION;
   ok $Dongry::Database::Registry::VERSION;
