@@ -1,8 +1,7 @@
 package Dongry::Database;
 use strict;
 use warnings;
-our $VERSION = '2.0';
-use DBI;
+our $VERSION = '3.0';
 use Carp;
 use Carp::Heavy;
 use Scalar::Util qw(weaken);
@@ -22,8 +21,8 @@ push our @CARP_NOT, qw(
   Dongry::Table Dongry::Table::Row Dongry::Query
   Dongry::SQL
   Dongry::Database::BrokenConnection
-  AnyEvent::DBI AnyEvent::DBI::Hashref AnyEvent::DBI::Carp
-); # XXX AnyEvent
+  AnyEvent::MySQL::Client
+);
 
 our $ListClass ||= 'List::Ish';
 
@@ -233,6 +232,7 @@ sub connect ($$;%) {
       $connect->();
     }
   } else { # DBI
+    require DBI;
     my $onerror_args = {db => $self};
     weaken $onerror_args->{db};
     $self->{dbhs}->{$name} = DBI->connect
@@ -308,23 +308,10 @@ sub transaction ($;%) {
       if $self->{force_source_name};
 
   $self->connect ('master');
-  $self->{in_transaction} = 1;
   if ($self->{sources}->{master}->{anyevent}) {
-    # XXX
-    weaken ($self = $self);
-    $self->{dbhs}->{master}->begin_work (sub {
-      if ($_[1]) {
-        if ($args{cb}) {
-          $args{cb}->($self);
-        }
-      } else {
-        if ($args{onerror}) {
-          $args{onerror}->($self);
-        }
-      }
-    });
-    return bless {db => $self}, 'Dongry::Database::Transaction::AnyEvent';
+    croak "|transaction| is not supported in asynchronous mode yet";
   } else {
+    $self->{in_transaction} = 1;
     $self->{dbhs}->{master}->begin_work ($args{cb});
     return bless {db => $self}, 'Dongry::Database::Transaction';
   }
@@ -336,7 +323,10 @@ sub force_source_name ($$) {
   croak "Can't force source while another source is forced"
       if $self->{force_source_name};
 
-  # XXX ae
+  if ($self->{sources}->{$_[0]} and $self->{sources}->{$_[0]}->{anyevent}) {
+    croak "|force_source_name| is not supported in asynchronous mode";
+  }
+
   $self->{force_source_name} = $_[0];
   return bless {db => $self, source_name => $_[0]},
       'Dongry::Database::ForceSource';
@@ -461,6 +451,8 @@ sub execute ($$;$%) {
           }, sub {
             warn $_[0];
             return $client->statement_close ($x->packet->{statement_id});
+          })->catch (sub {
+            warn $_[0];
           });
         })->catch (sub {
           my $x = $_[0];
@@ -476,6 +468,8 @@ sub execute ($$;$%) {
                            line => $line,
                            source_name => $name,
                            sql => $sql);
+        })->catch (sub {
+          warn "Died within handler: $_[0]";
         })->then (sub { undef $client; undef $self; %args = () });
       } else { # not $ok
         my $result = bless {error_text => '|connect| failed', error_sql => $sql},
@@ -1052,79 +1046,6 @@ sub DESTROY {
     warn "Possible memory leak by object " . ref $_[0];
   }
 } # DESTROY
-
-package Dongry::Database::Transaction::AnyEvent;
-our $VERSION = '1.0';
-push our @ISA, qw(Dongry::Database::Transaction);
-use Scalar::Util qw(weaken);
-use Carp;
-
-## Please note that the |in_transaction| flag does not sync with the
-## actual state of the transaction in the async mode.
-
-# XXX
-sub commit ($;%) {
-  my ($self, %args) = @_;
-  if ($self->{db}->{in_transaction}) {
-    weaken ($self = $self);
-    $self->{db}->{dbhs}->{master}->commit (sub {
-      if ($#_ || !$@) { ## AnyEvent::DBI documentation is wrong...
-        if ($args{cb}) {
-          my $result = bless {}, 'Dongry::Database::Executed::Inserted';
-          $args{cb}->($self->{db}, $result);
-        }
-      } else {
-        if ($args{cb}) {
-          my $result = bless {error_text => $@, error_sql => 'commit'},
-              'Dongry::Database::Executed::NotAvailable';
-          eval {
-            $args{cb}->($self->{db}, $result);
-            1;
-          } or do {
-            ## See note for |execute|.
-            warn $@;
-            die $@;
-          };
-        }
-      }
-    });
-    delete $self->{db}->{in_transaction};
-  } else {
-    croak "This transaction can no longer be committed";
-  }
-} # commit
-
-# XXX
-sub rollback ($;%) {
-  my ($self, %args) = @_;
-  if ($self->{db}->{in_transaction}) {
-    weaken ($self = $self);
-    $self->{db}->{dbhs}->{master}->rollback (sub {
-      if ($#_ || !$@) { ## AnyEvent::DBI documentation is wrong...
-        if ($args{cb}) {
-          my $result = bless {}, 'Dongry::Database::Executed::Inserted';
-          $args{cb}->($self->{db}, $result);
-        }
-      } else {
-        if ($args{cb}) {
-          my $result = bless {error_text => $@, error_sql => 'rollback'},
-              'Dongry::Database::Executed::NotAvailable';
-          eval {
-            $args{cb}->($self->{db}, $result);
-            1;
-          } or do {
-            ## See note for AnyEvent::DBI.
-            warn $@;
-            die $@;
-          };
-        }
-      }
-    });
-    delete $self->{db}->{in_transaction};
-  } else {
-    croak "This transaction can no longer be rollbacked";
-  }
-} # rollback
 
 # ------ Source selection ------
 

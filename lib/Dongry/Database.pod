@@ -40,10 +40,11 @@ accessible from the database object, as described in the following
 sections.
 
 In addition to the synchronous processing model, Dongry also supports
-the asynchronous event-based model by using the L<AnyEvent::DBI>
-module as its backend.  Since both modes can be switched or combined
-easily, you can transit one from the other, or you can partially
-change the processing mode, in very low cost.
+the asynchronous event-based model by using the
+L<AnyEvent::MySQL::Client> module as its backend.  Since both modes
+can be switched or combined easily, you can transit one from the
+other, or you can partially change the processing mode, in very low
+cost.
 
  + - - - - - - - - - - - - - - - - - - - - - +
  :                                           :
@@ -61,17 +62,15 @@ change the processing mode, in very low cost.
  |   | Bare SQL ops.                         |
  |   +---------------------------------------+
  |   | Connection management                 |
- +---+------------------+--------------------+
- |                      | AnyEvent::DBI      |
- |                      +--------------------+
- | DBI                                       |
- | DBD                                       |
- +-------------------------------------------+
+ +---+---------------+-----------------------+
+ | DBI               |                       |
+ | DBD::mysql        |AnyEvent::MySQL::Client|
+ +-------------------+-----------------------+
                     |   ^
                     |   |
                     v   |
  +-------------------------------------------+
- | Database                                  |
+ | MySQL Database                            |
  +-------------------------------------------+
    Fig. Various levels of features in Dongry
 
@@ -227,8 +226,8 @@ Default is false (i.e. not writable).
 
 =item anyevent => boolean
 
-Whether the asynchronous mode using L<AnyEvent::DBI> should be enabled
-or not.
+Whether the asynchronous mode using L<AnyEvent::MySQL::Client> should
+be enabled or not.
 
 =item label => string
 
@@ -277,11 +276,12 @@ case of this handler to execute some configuration statements
 Strictly speaking, there might not be a physical connection to the
 database server when the C<onconnect> handler is invoked.  In
 particular, if the C<anyevent> option of the data source is set, the
-C<onconnect> handler is invoked after the L<AnyEvent::DBI> object is
-instantiated, but the actual connection might not been established at
-that time.  You can assume that the C<onconnect> handler is invoked
-before any SQL statements or start of transactions are queued to
-execute with the connection, even when the C<anyevent> option is true.
+C<onconnect> handler is invoked after the L<AnyEvent::MySQL::Client>
+object is instantiated, but the actual connection might not been
+established at that time.  You can assume that the C<onconnect>
+handler is invoked before any SQL statements or start of transactions
+are queued to execute with the connection, even when the C<anyevent>
+option is true.
 
 Example:
 
@@ -345,7 +345,7 @@ another SQL execution error, which would recursively invoke the same
 error handler.
 
 Error handling in synchronous (standard) and asynchronous
-(L<AnyEvent::DBI>) modes different in several ways.
+(L<AnyEvent::MySQL::Client>) modes different in several ways.
 
 In the synchronous mode, errors are also handled in synchronously.  If
 the connection or an SQL statement causes an error because of a method
@@ -360,21 +360,19 @@ permanent, the subsequent executions would also result in error.  In
 such situation, you might want to invoke the C<disconnect> method
 explicitly to reestablish the connection.)
 
-In the asynchronous mode of L<AnyEvent::DBI>, as SQL statements are
-executed asynchronously, errors are also reported asynchronously.  If
-the method to access to the database accepts the C<cb> (callback)
-option, the callback function is invoked even if there is an error,
-but with the argument describing the error (See the documentation of
-the C<execute> method for details).  Then, the C<onerror> handler of
-the database object is invoked for the error.  No exception is thrown
-by Dongry, as it could terminate the AnyEvent event loop.  For this
-reason, the C<onerror> handler and C<cb> functions should not throw
-any exception in asynchronous mode.  Once an error is detected,
-whether fatal or not, the L<AnyEvent::DBI> connection is disabled and
-any subsequent requests would result in error.  There might be
-subsequent SQL requests already queued but not executed yet, and it is
-unclear whether they should be executed after the occurence of an
-error.
+In the asynchronous mode of L<AnyEvent::MySQL::Client>, as SQL
+statements are executed asynchronously, errors are also reported
+asynchronously.  If the method to access to the database accepts the
+C<cb> (callback) option, the callback function is invoked even if
+there is an error, but with the argument describing the error (See the
+documentation of the C<execute> method for details).  Then, the
+C<onerror> handler of the database object is invoked for the error.
+No exception is thrown by Dongry.  The C<onerror> handler and C<cb>
+functions should not throw any exception in asynchronous mode.  That
+means that if another statement is enqueued after an errorneous
+statement, that statement I<IS> executed after the error.  If it is
+not desired, the result of the previous statement must be checked
+before the next statement is enqueued.
 
 =item $db->connect ($source_name, %opts)
 
@@ -390,9 +388,9 @@ requires the connection is enforced.
 
 Returning from the method does not necessarily mean the physical
 connection to the database has been established.  In particular, if
-L<AnyEvent::DBI> is used for the connection, the method only does
-instantiate the L<AnyEvent::DBI> method and the actual connection is
-established asynchronously.
+the asynchronous mode is used for the connection, the method only does
+instantiate the L<AnyEvent::MySQL::Client> method and the actual
+connection is established asynchronously.
 
 The following option is available:
 
@@ -475,6 +473,8 @@ Start a transaction and return the transaction object.  The
 transaction object is a "guard" object; The transaction is effective
 as long as the object is live.
 
+This method is not supported in asynchronous mode yet.
+
 =back
 
 Once you get a transaction object, you can invoke SQL operations as
@@ -532,12 +532,12 @@ default data source is C<master>, not C<default>, within a
 transaction.
 
 It is also possible to use transactions in asynchronous (or
-L<AnyEvent::DBI>) mode, but controlling how queued SQL statements are
-executed and how errors are handled might be difficult than in
-synchronous mode.  Since L<AnyEvent::DBI> preserves the order of SQL
-statements and transaction start/end methods, you can write
-transaction and SQL methods sequentially.  However, you have to use
-the C<cb> (callback) function to observe whether the execution has
+L<AnyEvent::MySQL::Client>) mode, but controlling how queued SQL
+statements are executed and how errors are handled might be difficult
+than in synchronous mode.  Since L<AnyEvent::MySQL::Client> preserves
+the order of SQL statements and transaction start/end methods, you can
+write transaction and SQL methods sequentially.  However, you have to
+use the C<cb> (callback) function to observe whether the execution has
 been succeeded or not.  It means that you should invoke the C<commit>
 or C<rollback> method in a C<cb> function.  Please note that SQL
 execution error in asynchronous mode invalidates the connection (see
@@ -577,6 +577,8 @@ data source is forced.  Likewise, you cannot start a transaction when
 a data source is forced; and you cannot force a data source within a
 transaction.  The transaction automatically forces the C<master> data
 source.
+
+This method is not supported in asynchronous mode.
 
 =back
 
@@ -704,9 +706,8 @@ The callback function invoked when the SQL has been executed.
 In synchronous mode, the code reference is synchronously invoked when
 the SQL has successfully been executed.
 
-In asynchronos (or L<AnyEvent::DBI>) mode, the code reference is
-asynchronously invoked when the SQL has been executed, successfully or
-erroneously.
+In asynchronous mode, the code reference is asynchronously invoked
+when the SQL has been executed, successfully or erroneously.
 
 The code reference receives two arguments: the database object and the
 result object that would be returned by the method in synchronous
@@ -1471,10 +1472,9 @@ variable.  You can use L<List::Rubyish> or L<DBIx::MoCo::List>
 instead, for example.  The L<List::Ish> module is available at
 <https://github.com/wakaba/perl-ooutils/blob/master/lib/List/Ish.pm>.
 
-If you use asynchronous mode, the L<AnyEvent::DBI> module is required.
-In addition, modules L<AnyEvent::DBI::Hashref> and
-L<AnyEvent::DBI::Carp> available from
-<https://github.com/wakaba/perl-rdb-utils/> is required.
+If you use asynchronous mode, the L<AnyEvent::MySQL::Client> module
+available from <https://github.com/wakaba/perl-anyevent-mysql-client>
+is required.
 
 Additional modules might be used by L<Dongry::Type> modules, but they
 are not required as long as you don't use such modules specificalliy.
@@ -1489,11 +1489,10 @@ for debugging and testing purposes.
 
 =head1 SEE ALSO
 
-L<DBI>.
+L<DBI>, L<DBD::mysql>.
 
-L<DBD::mysql>.
-
-L<AnyEvent::DBI>, L<AnyEvent::DBI::Carp>.
+L<AnyEvent::MySQL::Client>
+<https://github.com/wakaba/perl-anyevent-mysql-client>.
 
 MySQL Reference Manuals <http://dev.mysql.com/doc/index.html>.
 
