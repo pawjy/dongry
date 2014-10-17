@@ -44,6 +44,7 @@ sub new ($;%) {
 
 our $Registry ||= {};
 our $Instances = {};
+END { $Instances = {} }
 
 sub load ($$) {
   return $Instances->{$_[1]} if $Instances->{$_[1]};
@@ -126,6 +127,7 @@ sub connect ($$;%) {
 
   my $return = bless {
     cb => $args{cb},
+    caller => _get_caller,
   }, 'Dongry::Database::Executed';
 
   if ($source->{anyevent}) {
@@ -187,7 +189,7 @@ sub connect ($$;%) {
       $connect{error} = "Non-MySQL database driver is specified: |$dsn|";
     }
 
-    my $onerror_args = {db => $self, caller => _get_caller};
+    my $onerror_args = {db => $self, caller => $return->{caller}};
     my $connect = sub {
       if (defined $connect{error}) {
         AE::postpone (sub {
@@ -312,6 +314,7 @@ sub disconnect ($;$%) {
   my ($self, $_name, %args) = @_;
   my $return = bless {
     cb => $args{cb},
+    caller => _get_caller,
   }, 'Dongry::Database::Executed';
 
   my @then;
@@ -455,8 +458,10 @@ sub execute ($$;$%) {
   }
 
   if ($self->{sources}->{$name}->{anyevent}) {
+    my $onerror_args = {caller => _get_caller};
     my $return = bless {
       cb => $args{cb},
+      caller => $onerror_args->{caller},
     }, 'Dongry::Database::Executed::NoResult';
     $return->_thenablize;
 
@@ -468,7 +473,6 @@ sub execute ($$;$%) {
       croak 'Table name is not known' if not defined $args{table_name};
     }
 
-    my $onerror_args = {caller => _get_caller};
     $self->connect ($name, cb => sub {
       my ($self, $ok) = @_;
       if ($ok->is_success) {
@@ -952,6 +956,7 @@ sub _ok ($$$) {
   delete $self->{promise_ok};
   delete $self->{promise_ng};
   (delete $self->{cb})->($_[1], $_[2]) if $self->{cb};
+  $_[2]->{caller} ||= $self->{caller} if $_[2];
   return;
 } # _ok
 
@@ -961,6 +966,7 @@ sub _ng ($$$) {
   delete $self->{promise_ok};
   delete $self->{promise_ng};
   (delete $self->{cb})->($_[1], $_[2]) if $self->{cb};
+  $_[2]->{caller} ||= $self->{caller} if $_[2];
   return;
 } # _ng
 
@@ -1002,7 +1008,10 @@ sub DESTROY {
 
   local $@;
   eval { die };
-  warn "Possible memory leak detected (".(ref $_[0]).")\n"
+  warn sprintf "Possible memory leak detected (%s created at %s line %s)\n",
+      $_[0],
+      defined $_[0]->{caller}->{file} ? $_[0]->{caller}->{file} : '(unknown)',
+      defined $_[0]->{caller}->{line} ? $_[0]->{caller}->{line} : '(unknown)'
       if $@ =~ /during global destruction/;
 } # DESTROY
 
