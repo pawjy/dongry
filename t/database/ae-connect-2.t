@@ -182,6 +182,86 @@ test {
 
 test {
   my $c = shift;
+
+  my $db = Dongry::Database->new
+      (sources => {ae => {dsn => 'DBI:mysql:foo=bar', anyevent => 1}});
+
+  my $invoked = 0;
+  $db->connect ('ae')->then (sub {
+    test {
+      ok 0;
+    } $c;
+  }, sub {
+    my ($result) = @_;
+    test {
+      isa_ok $result, 'Dongry::Database::Executed';
+      ok not $result->is_success;
+      ok $result->is_error;
+      like $result->error_text, qr{Unknown};
+      dies_here_ok { $result->all };
+      dies_here_ok { $result->each (sub { }) };
+      dies_here_ok { $result->first };
+      dies_here_ok { $result->all_as_rows };
+      dies_here_ok { $result->each_as_row (sub { }) };
+      dies_here_ok { $result->first_as_row };
+    } $c;
+    $invoked++;
+    $db->disconnect ('ae', cb => sub {
+      my ($db2) = @_;
+      test {
+        is $db2, $db;
+        is $invoked, 1;
+        done $c;
+        undef $c;
+      } $c;
+    });
+  });
+
+  is $invoked, 0;
+} n => 13, name => 'connect ae failure promise, unknown param';
+
+test {
+  my $c = shift;
+
+  my $db = Dongry::Database->new
+      (sources => {ae => {dsn => 'DBI:your:host=bar.test', anyevent => 1}});
+
+  my $invoked = 0;
+  $db->connect ('ae')->then (sub {
+    test {
+      ok 0;
+    } $c;
+  }, sub {
+    my ($result) = @_;
+    test {
+      isa_ok $result, 'Dongry::Database::Executed';
+      ok not $result->is_success;
+      ok $result->is_error;
+      like $result->error_text, qr{Non-MySQL};
+      dies_here_ok { $result->all };
+      dies_here_ok { $result->each (sub { }) };
+      dies_here_ok { $result->first };
+      dies_here_ok { $result->all_as_rows };
+      dies_here_ok { $result->each_as_row (sub { }) };
+      dies_here_ok { $result->first_as_row };
+    } $c;
+    $invoked++;
+    $db->disconnect ('ae', cb => sub {
+      my ($db2) = @_;
+      test {
+        is $db2, $db;
+        is $invoked, 1;
+        done $c;
+        undef $c;
+      } $c;
+    });
+  });
+
+  is $invoked, 0;
+} n => 13, name => 'connect ae failure promise, non-mysql';
+
+test {
+  my $c = shift;
   my $db = Dongry::Database->new (sources => {async => {dsn => '', anyevent => 1}});
   my $result = $db->disconnect;
   isa_ok $result, 'Dongry::Database::Executed';

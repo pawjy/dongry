@@ -136,15 +136,20 @@ sub connect ($$;%) {
     require AnyEvent::MySQL::Client;
     $return->_thenablize;
 
+    ## <http://search.cpan.org/dist/DBD-mysql/lib/DBD/mysql.pm#connect>.
     my %connect;
     my $dsn = $source->{dsn};
     $connect{username} = $source->{username};
     $connect{pass} = $source->{password};
     if ($dsn =~ s/^dbi:mysql://i) {
       my %dsn;
-      for (split /;/, $dsn) {
-        my ($n, $v) = split /=/, $_, 2;
-        $dsn{$n} = $v;
+      if ($dsn =~ /[;=]/) {
+        for (split /;/, $dsn) {
+          my ($n, $v) = split /=/, $_, 2;
+          $dsn{$n} = $v;
+        }
+      } else {
+        $dsn{database} = $dsn;
       }
       $connect{username} = delete $dsn{user}
           if not defined $connect{username};
@@ -155,17 +160,51 @@ sub connect ($$;%) {
         $connect{hostname} = 'unix/';
         $connect{port} = delete $dsn{mysql_socket};
       } else {
-        $connect{hostname} = $dsn{hostname};
+        $connect{hostname} = $dsn{host};
         $connect{port} = defined $dsn{port} ? $dsn{port} : 3306;
       }
+      if (0 and $source->{tls}) { # future extension...
+        $connect{tls} = $source->{tls};
+      } else {
+        $connect{tls} = {} if delete $dsn{mysql_ssl};
+        $connect{tls}->{key_file} = delete $dsn{mysql_ssl_client_key}
+            if defined $dsn{mysql_ssl_client_key};
+        $connect{tls}->{cert_file} = delete $dsn{mysql_ssl_client_cert}
+            if defined $dsn{mysql_ssl_client_cert};
+        $connect{tls}->{ca_file} = delete $dsn{mysql_ssl_ca_file}
+            if defined $dsn{mysql_ssl_ca_file};
+        $connect{tls}->{ca_path} = delete $dsn{mysql_ssl_ca_path}
+            if defined $dsn{mysql_ssl_ca_path};
+        $connect{tls}->{cipher_list} = delete $dsn{mysql_ssl_cipher}
+            if defined $dsn{mysql_ssl_cipher};
+      }
+      delete $dsn{$_} for qw(host port user password dbname database
+                             mysql_ssl mysql_ssl_client_key
+                             mysql_ssl_client_cert mysql_ssl_ca_file
+                             mysql_ssl_ca_pathmysql_ssl_cipher);
+      $connect{error} = "Unknown dsn parameter |@{[join ' ', keys %dsn]}|" if keys %dsn;
+    } else {
+      $connect{error} = "Non-MySQL database driver is specified: |$dsn|";
     }
-    # XXX SSL support
 
     my $onerror_args = {db => $self, caller => _get_caller};
     my $connect = sub {
+      if (defined $connect{error}) {
+        AE::postpone (sub {
+          $onerror_args->{db}->{dbhs}->{$name}->disconnect
+              if $onerror_args->{db}->{dbhs}->{$name};
+          $onerror_args->{db}->{dbhs}->{$name} = bless {
+            error_text => $connect{error},
+          }, 'Dongry::Database::BrokenConnection';
+          $return->_ng ($onerror_args->{db}, bless {
+            error_text => $connect{error},
+          }, 'Dongry::Database::Executed::NotAvailable');
+        });
+        return;
+      }
+
       my $timer; $timer = AE::timer (3, 0, sub {
         undef $timer;
-        # XXX disconnect
         $onerror_args->{db}->{dbhs}->{$name}->disconnect
             if $onerror_args->{db}->{dbhs}->{$name};
         $onerror_args->{db}->{dbhs}->{$name} = bless {

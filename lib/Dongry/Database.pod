@@ -205,8 +205,9 @@ It is a hash reference containg following key/value pairs:
 
 =item dsn => string (REQUIRED)
 
-The "dsn" string used to connect the database.  See L<DBI> for more
-information.
+The "dsn" string used to connect the database.  See L<DBI> and
+<http://search.cpan.org/dist/DBD-mysql/lib/DBD/mysql.pm#connect> for
+more information.
 
 =item username => string
 
@@ -243,6 +244,17 @@ reflected to the actual connection, depending on the exact timing of
 the modification and establishment of the connection.  Therefore, you
 should not try to modify these values once it is set to the database
 object.
+
+TLS or SSL can be used to connect to the server by specifying
+C<mysql_*> options in C<dsn>.  However, please note that
+L<DBD::mysql>, which is used in the synchronous mode through L<DBI>,
+might not be compiled with SSL-support enabled, in which case
+L<DBD::mysql> silently ignores C<mysql_*> options (!).  Once
+connected, the application can determine whether TLS is used or not by
+the following code:
+
+  $tls_enabled = $db->execute ('SHOW STATUS LIKE "Ssl_cipher"')
+      ->first->{Value} ne '';
 
 =item $db->onconnect ($code)
 
