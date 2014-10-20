@@ -853,6 +853,15 @@ sub debug_info ($) {
 package Dongry::Database::Executed;
 our $VERSION = '2.0';
 use Carp;
+use overload bool => sub { 1 }, '""' => sub {
+  my $text = $_[0]->debug_info;
+  if (defined $_[0]->{caller}) {
+    return sprintf "%s at %s line %s.\n",
+      $text, $_[0]->{caller}->{file}, $_[0]->{caller}->{line};
+  } else {
+    return $text;
+  }
+}, fallback => 1;
 
 push our @CARP_NOT, qw(Dongry::Database);
 

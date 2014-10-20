@@ -214,6 +214,14 @@ sub _executed_debug_info_3 : Test(1) {
   is $result->debug_info, '{DBExecuted: table_name = foo}';
 } # _executed_debug_info_3
 
+sub _executed_stringify_1 : Test(1) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  my $result = $db->insert ('foo', [{id => 0}]);
+  ok !!$result;
+  ok ''.$result;
+} # _executed_stringify_1
+
 sub _transaction_debug_info : Test(1) {
   my $db = new_db;
   my $transaction = $db->transaction;
