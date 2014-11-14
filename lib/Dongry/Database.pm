@@ -183,7 +183,7 @@ sub connect ($$;%) {
       delete $dsn{$_} for qw(host port user password dbname database
                              mysql_ssl mysql_ssl_client_key
                              mysql_ssl_client_cert mysql_ssl_ca_file
-                             mysql_ssl_ca_pathmysql_ssl_cipher);
+                             mysql_ssl_ca_path mysql_ssl_cipher);
       $connect{error} = "Unknown dsn parameter |@{[join ' ', keys %dsn]}|" if keys %dsn;
     } else {
       $connect{error} = "Non-MySQL database driver is specified: |$dsn|";
