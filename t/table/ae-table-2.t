@@ -73,7 +73,7 @@ test {
     test {
       isa_ok $result, 'Dongry::Table::Row';
       eq_or_diff $result->values_as_hashref,
-          [{id => 123, value => '1970-03-03 15:15:33'}];
+          {id => 123, value => '1970-03-03 15:15:33'};
     } $c;
     return $db->table ('foo11')->create
         ({id => 123, value => 5325333}, duplicate => 'ignore', source_name => 'ae');
