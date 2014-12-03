@@ -2,4 +2,5 @@ Data::Dumper
 DateTime::Format::MySQL
 List::Rubyish
 Path::Class
+Path::Tiny
 Test::Class

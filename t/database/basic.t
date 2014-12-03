@@ -11,8 +11,8 @@ sub _version : Test(8) {
   ok $Dongry::Database::VERSION;
   ok $Dongry::Database::Executed::VERSION;
   ok $Dongry::Database::Executed::Inserted::VERSION;
+  ok $Dongry::Database::Executed::NoResult::VERSION;
   ok $Dongry::Database::Transaction::VERSION;
-  ok $Dongry::Database::Transaction::AnyEvent::VERSION;
   ok $Dongry::Database::ForceSource::VERSION;
   ok $Dongry::Database::BrokenConnection::VERSION;
   ok $Dongry::Database::Registry::VERSION;
@@ -213,6 +213,14 @@ sub _executed_debug_info_3 : Test(1) {
   my $result = $db->insert ('foo', [{id => 0}]);
   is $result->debug_info, '{DBExecuted: table_name = foo}';
 } # _executed_debug_info_3
+
+sub _executed_stringify_1 : Test(2) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  my $result = $db->insert ('foo', [{id => 0}]);
+  ok !!$result;
+  ok ''.$result;
+} # _executed_stringify_1
 
 sub _transaction_debug_info : Test(1) {
   my $db = new_db;

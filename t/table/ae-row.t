@@ -44,6 +44,10 @@ sub _reload_cb : Test(9) {
   ng $result->error_sql;
   is $row->get ('value'), '989629931';
   is $row->get_bare ('value'), '2001-05-12 01:12:11';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _reload_cb
 
 sub _reload_cb_return : Test(10) {
@@ -82,6 +86,10 @@ sub _reload_cb_return : Test(10) {
   ng $result->error_sql;
   is $row->get ('value'), '989629931';
   is $row->get_bare ('value'), '2001-05-12 01:12:11';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _reload_cb_return
 
 sub _reload_cb_error : Test(9) {
@@ -119,6 +127,10 @@ sub _reload_cb_error : Test(9) {
   like $result->error_sql, qr{foo};
   is $row->get ('value'), '1325679120';
   is $row->get_bare ('value'), '2012-01-04 12:12:00';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _reload_cb_error
 
 sub _reload_cb_exception : Test(3) {
@@ -143,14 +155,18 @@ sub _reload_cb_exception : Test(3) {
     die "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
 
-  like $@, qr{^abc at };
+  $cv->recv;
+
+  ok not $@;
   is $row->get ('value'), '989629931';
   is $row->get_bare ('value'), '2001-05-12 01:12:11';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _reload_cb_exception
 
 sub _reload_cb_exception_error : Test(4) {
@@ -167,8 +183,8 @@ sub _reload_cb_exception_error : Test(4) {
   my $row = $db->table ('foo')->find ({id => 124});
   $db->execute ('drop table foo');
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -178,15 +194,19 @@ sub _reload_cb_exception_error : Test(4) {
     die "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
 
-  ok defined $@;
-  like $warn, qr{^abc at };
+  $cv->recv;
+
+  ok not $@;
+  like $warn, qr{Died within handler: abc at };
   is $row->get ('value'), '1325679120';
   is $row->get_bare ('value'), '2012-01-04 12:12:00';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _reload_cb_exception_error
 
 sub _update_cb : Test(9) {
@@ -223,6 +243,10 @@ sub _update_cb : Test(9) {
   ng $result->error_sql;
   is $row->get ('value'), '989629931';
   is $row->get_bare ('value'), '2001-05-12 01:12:11';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _update_cb
 
 sub _update_cb_error : Test(9) {
@@ -260,6 +284,10 @@ sub _update_cb_error : Test(9) {
   like $result->error_sql, qr{foo};
   is $row->get ('value'), '1325679120';
   is $row->get_bare ('value'), '2012-01-04 12:12:00';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _update_cb_error
 
 sub _update_cb_exception : Test(3) {
@@ -283,14 +311,18 @@ sub _update_cb_exception : Test(3) {
     die "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
 
-  like $@, qr{^abc at };
+  $cv->recv;
+
+  ok not $@;
   is $row->get ('value'), '989629931';
   is $row->get_bare ('value'), '2001-05-12 01:12:11';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _update_cb_exception
 
 sub _update_cb_exception_error : Test(4) {
@@ -307,8 +339,8 @@ sub _update_cb_exception_error : Test(4) {
   my $row = $db->table ('foo')->find ({id => 124});
   $db->execute ('drop table foo');
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -318,15 +350,19 @@ sub _update_cb_exception_error : Test(4) {
     die "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
 
-  ok defined $@;
-  like $warn, qr{^abc at };
+  $cv->recv;
+
+  ok not $@;
+  like $warn, qr{Died within handler: abc at };
   is $row->get ('value'), '1325679120';
   is $row->get_bare ('value'), '2012-01-04 12:12:00';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _update_cb_exception_error
 
 __PACKAGE__->runtests;
@@ -337,7 +373,7 @@ $Dongry::LeakTest = 1;
 
 =head1 LICENSE
 
-Copyright 2012 Wakaba <w@suika.fam.cx>.
+Copyright 2012-2014 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

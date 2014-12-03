@@ -42,6 +42,10 @@ sub _execute_cb_all : Test(14) {
   dies_here_ok { $result->first_as_row };
   dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   ng $invoked;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_cb_all
 
 sub _execute_cb_first : Test(14) {
@@ -78,9 +82,13 @@ sub _execute_cb_first : Test(14) {
   dies_here_ok { $result->first_as_row };
   dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   ng $invoked;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_cb_first
 
-sub _execute_cb_each : Test(14) {
+sub _execute_cb_each : Test(15) {
   my $db = new_db;
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (1), (2)');
@@ -106,8 +114,8 @@ sub _execute_cb_each : Test(14) {
   ng $result->is_error;
   ng $result->error_text;
   my @values;
-  $result->each (sub { push @values, $_ });
-  eq_or_diff \@values, [{id => 1}, {id => 2}];
+  dies_here_ok { $result->each (sub { push @values, $_ }) };
+  eq_or_diff \@values, [];
   dies_here_ok { $result->all };
   dies_here_ok { $result->first };
   my $invoked;
@@ -116,6 +124,10 @@ sub _execute_cb_each : Test(14) {
   dies_here_ok { $result->first_as_row };
   dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   ng $invoked;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_cb_each
 
 sub _execute_cb_all_as_rows : Test(14) {
@@ -152,7 +164,160 @@ sub _execute_cb_all_as_rows : Test(14) {
   dies_here_ok { $result->first_as_row };
   dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   ng $invoked;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_cb_all_as_rows
+
+sub _execute_cb_each_cb : Test(16) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2)');
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+
+  my $cv = AnyEvent->condvar;
+
+  my $result;
+  my @row;
+  $db->execute ('select * from foo order by id asc', undef,
+                each_cb => sub {
+                  push @row, $_;
+                },
+                cb => sub {
+                  is $_[0], $db;
+                  $result = $_[1];
+                  push @row, undef;
+                  $cv->send;
+                },
+                source_name => 'ae');
+
+  $cv->recv;
+
+  eq_or_diff \@row, [
+    {id => 1},
+    {id => 2},
+    undef,
+  ];
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 0;
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  dies_here_ok { $result->all };
+  my @values;
+  dies_here_ok { $result->each (sub { push @values, $_ }) };
+  eq_or_diff \@values, [];
+  dies_here_ok { $result->first };
+  my $invoked;
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  ng $invoked;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
+} # _execute_cb_each_cb
+
+sub _execute_cb_each_as_row_cb : Test(22) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2)');
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+
+  my $cv = AnyEvent->condvar;
+
+  my $result;
+  my @row;
+  $db->execute ('select * from foo order by id asc', undef,
+                each_as_row_cb => sub {
+                  push @row, $_;
+                },
+                table_name => 'foobar',
+                each_cb => sub {
+                  ok 0;
+                },
+                cb => sub {
+                  is $_[0], $db;
+                  $result = $_[1];
+                  push @row, undef;
+                  $cv->send;
+                },
+                source_name => 'ae');
+
+  $cv->recv;
+
+  isa_ok $row[0], 'Dongry::Table::Row';
+  is $row[0]->table_name, 'foobar';
+  is $row[0]->get ('id'), 1;
+  isa_ok $row[1], 'Dongry::Table::Row';
+  is $row[1]->table_name, 'foobar';
+  is $row[1]->get ('id'), 2;
+  is $row[2], undef;
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  is $result->row_count, 0;
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  dies_here_ok { $result->all };
+  my @values;
+  dies_here_ok { $result->each (sub { push @values, $_ }) };
+  eq_or_diff \@values, [];
+  dies_here_ok { $result->first };
+  my $invoked;
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  ng $invoked;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
+} # _execute_cb_each_as_row_cb
+
+sub _execute_cb_each_as_row_cb_no_table_name : Test(3) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2)');
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+
+  my $cv = AnyEvent->condvar;
+
+  my $result;
+  my @row;
+  dies_here_ok {
+    $db->execute ('select * from foo order by id asc', undef,
+                  each_as_row_cb => sub {
+                    is $_[0], $db;
+                    push @row, $_[1];
+                  },
+                  each_cb => sub {
+                    ok 0;
+                  },
+                  cb => sub {
+                    is $_[0], $db;
+                    $result = $_[1];
+                    push @row, undef;
+                    $cv->send;
+                  },
+                  source_name => 'ae');
+  };
+
+  eq_or_diff \@row, [];
+  is $result, undef;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
+} # _execute_cb_each_as_row_cb_no_table_name
 
 sub _execute_cb_first_as_row : Test(14) {
   my $db = new_db;
@@ -189,6 +354,10 @@ sub _execute_cb_first_as_row : Test(14) {
   dies_here_ok { $result->first_as_row };
   dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   ng $invoked;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_cb_first_as_row
 
 sub _execute_cb_each_as_row : Test(14) {
@@ -226,6 +395,10 @@ sub _execute_cb_each_as_row : Test(14) {
   dies_here_ok { $result->first_as_row };
   dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
   ng $invoked;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_cb_each_as_row
 
 sub _execute_syntax_error : Test(7) {
@@ -256,6 +429,10 @@ sub _execute_syntax_error : Test(7) {
   ok $result->is_error;
   like $result->error_text, qr{syntax};
   is $result->error_sql, 'select * from';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_syntax_error
 
 sub _execute_syntax_error_onerror : Test(8) {
@@ -293,6 +470,11 @@ sub _execute_syntax_error_onerror : Test(8) {
   is $onerror_info->{line}, $execute_line;
   ok $onerror_info->{anyevent};
   is $onerror_info->{source_name}, 'ae';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
+  undef $db;
 } # _execute_syntax_error_onerror
 
 sub _execute_syntax_error_followed : Test(2) {
@@ -322,6 +504,10 @@ sub _execute_syntax_error_followed : Test(2) {
   $cv->recv;
 
   is $invoked, 1;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_syntax_error_followed
 
 sub _execute_syntax_error_followed_2 : Test(2) {
@@ -349,6 +535,10 @@ sub _execute_syntax_error_followed_2 : Test(2) {
   $cv->recv;
 
   is $invoked, 1;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_syntax_error_followed_2
 
 sub _execute_connection_error : Test(7) {
@@ -375,8 +565,12 @@ sub _execute_connection_error : Test(7) {
   isa_ok $result, 'Dongry::Database::Executed';
   ng $result->is_success;
   ok $result->is_error;
-  like $result->error_text, qr[Can't connect|Unknown database|Access denied];
+  like $result->error_text, qr[Can't connect|Unknown database|Access denied|\|connect\| failed];
   is $result->error_sql, 'create table foo (id int)';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_connection_error
 
 sub _execute_connection_error_2 : Test(12) {
@@ -405,7 +599,7 @@ sub _execute_connection_error_2 : Test(12) {
   isa_ok $result, 'Dongry::Database::Executed';
   ng $result->is_success;
   ok $result->is_error;
-  like $result->error_text, qr{Can't connect|Unknown database|Access denied};
+  like $result->error_text, qr{Can't connect|Unknown database|Access denied|\|connect\| failed};
   is $result->error_sql, 'create table foo (id int)';
 
   $result = undef;
@@ -415,11 +609,17 @@ sub _execute_connection_error_2 : Test(12) {
     is $_[0], $db;
     $result = $_[1];
     $invoked++;
+    $cv->send;
   }, source_name => 'ae');
+  $cv->recv;
   
   is $invoked, 2;
-  like $result->error_text, qr{Can't connect|Unknown database|Access denied};
+  like $result->error_text, qr{Can't connect|Unknown database|Access denied|\|connect\| failed};
   is $result->error_sql, 'hoge';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_connection_error_2
 
 sub _execute_return_value : Test(9) {
@@ -432,7 +632,7 @@ sub _execute_return_value : Test(9) {
   my $cv = AnyEvent->condvar;
 
   my $result = $db->execute ('select * from foo', undef,
-                             cb => sub { is $_[1]->row_count, 2; $cv->send },
+                             cb => sub { warn $_[1]; is $_[1]->row_count, 2; $cv->send },
                              source_name => 'ae');
 
   $cv->recv;
@@ -445,6 +645,10 @@ sub _execute_return_value : Test(9) {
   dies_here_ok { $result->all_as_rows };
   dies_here_ok { $result->first_as_row };
   dies_here_ok { $result->each_as_row (sub { }) };
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_return_value
 
 sub _execute_cb_croak : Test(1) {
@@ -463,10 +667,16 @@ sub _execute_cb_croak : Test(1) {
                 },
                 source_name => 'ae');
 
-  eval {
-    $cv->recv;
-  };
-  like $@, qr{^hoge at }; ## file/line is meaningless
+  $db->execute ('select * from foo', undef, cb => sub {
+    $cv->send;
+  }, source_name => 'ae');
+
+  $cv->recv;
+  ok not $@;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_cb_croak
 
 sub _execute_cb_die : Test(1) {
@@ -485,10 +695,16 @@ sub _execute_cb_die : Test(1) {
                 },
                 source_name => 'ae');
 
-  eval {
-    $cv->recv;
-  };
-  is $@, 'hoge at ' . __FILE__ . ' line ' . (__LINE__ - 7) . ".\n";
+  $db->execute ('select * from foo', undef, cb => sub {
+    $cv->send;
+  }, source_name => 'ae');
+
+  $cv->recv;
+  ok not $@;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_cb_die
 
 sub _execute_cb_die_by_error : Test(1) {
@@ -507,28 +723,33 @@ sub _execute_cb_die_by_error : Test(1) {
                 },
                 source_name => 'ae');
 
-  eval {
-    $cv->recv;
-  };
-  like $@,
-      qr{function_not_found.* at \Q@{[__FILE__]} line @{[__LINE__ - 8]}.\E$};
+  $db->execute ('select * from foo', undef, cb => sub {
+    $cv->send;
+  }, source_name => 'ae');
+
+  $cv->recv;
+  ok not $@;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_cb_die_by_error
 
-sub _execute_cb_error_die : Test(3) {
+sub _execute_cb_error_die : Test(2) {
   my $db = new_db;
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (1), (2)');
   $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
                       writable => 1});
 
+  my $cv = AnyEvent->condvar;
+
   my $line;
-  my $warn;
+  my $warn = '';
   {
     local $SIG{__WARN__} = sub {
-      $warn = $_[0];
+      $warn .= $_[0];
     };
-
-    my $cv = AnyEvent->condvar;
 
     $line = __LINE__ + 3;
     $db->execute ('select syntax error', undef,
@@ -537,15 +758,19 @@ sub _execute_cb_error_die : Test(3) {
                   },
                   source_name => 'ae');
 
-    eval {
-      $cv->recv;
-      1;
-    } or do {
-      ok 1;
-    };
+    $db->execute ('select * from foo', undef, cb => sub {
+      $cv->send;
+    }, source_name => 'ae');
+
+    $cv->recv;
   };
-  ok defined $@; ## Actual exception is hidden by AnyEvent::DBI.
-  is $warn, 'hoge at ' . __FILE__ . ' line ' . $line . ".\n";
+
+  ok not $@;
+  like $warn, qr{\QDied within handler: hoge at @{[__FILE__]} line $line.\E};
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_cb_die
 
 sub _execute_cb_onerror_order : Test(1) {
@@ -569,6 +794,10 @@ sub _execute_cb_onerror_order : Test(1) {
   $cv->recv;
 
   eq_or_diff \@error, ['cb', 'onerror'];
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_cb_onerror_order
 
 sub _execute_cb_result_table_name : Test(1) {
@@ -582,7 +811,137 @@ sub _execute_cb_result_table_name : Test(1) {
          $cv->send;
        });
   $cv->recv;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_cb_result_table_name
+
+sub _execute_cb_all_insert : Test(13) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2)');
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+
+  my $cv = AnyEvent->condvar;
+
+  my $result;
+  $db->execute ('insert into foo (id) values (3)', undef,
+                cb => sub {
+                  is $_[0], $db;
+                  $result = $_[1];
+                  $cv->send;
+                },
+                source_name => 'ae');
+
+  $cv->recv;
+
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  is $result->row_count, 1;
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->first };
+  my $invoked;
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  ng $invoked;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
+} # _execute_cb_all_insert
+
+sub _execute_cb_all_insert_each_cb : Test(14) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2)');
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+
+  my $cv = AnyEvent->condvar;
+
+  my $result;
+  my $invoked = 0;
+  $db->execute ('insert into foo (id) values (3)', undef,
+                each_cb => sub {
+                  $invoked++;
+                },
+                cb => sub {
+                  is $_[0], $db;
+                  $result = $_[1];
+                  $cv->send;
+                },
+                source_name => 'ae');
+
+  $cv->recv;
+
+  is $invoked, 0;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  is $result->row_count, 1;
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  ng $invoked;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
+} # _execute_cb_all_insert_each_cb
+
+sub _execute_cb_all_insert_each_as_row_cb : Test(14) {
+  my $db = new_db;
+  $db->execute ('create table foo (id int)');
+  $db->execute ('insert into foo (id) values (1), (2)');
+  $db->source (ae => {dsn => $db->source ('master')->{dsn}, anyevent => 1,
+                      writable => 1});
+
+  my $cv = AnyEvent->condvar;
+
+  my $result;
+  my $invoked = 0;
+  $db->execute ('insert into foo (id) values (3)', undef,
+                each_as_row_cb => sub {
+                  $invoked++;
+                },
+                table_name => 'xab',
+                cb => sub {
+                  is $_[0], $db;
+                  $result = $_[1];
+                  $cv->send;
+                },
+                source_name => 'ae');
+
+  $cv->recv;
+
+  is $invoked, 0;
+  isa_ok $result, 'Dongry::Database::Executed';
+  ok $result->is_success;
+  ng $result->is_error;
+  ng $result->error_text;
+  is $result->row_count, 1;
+  dies_here_ok { $result->all };
+  dies_here_ok { $result->first };
+  dies_here_ok { $result->each (sub { $invoked++ }) };
+  dies_here_ok { $result->all_as_rows };
+  dies_here_ok { $result->first_as_row };
+  dies_here_ok { $result->each_as_row (sub { $invoked++ }) };
+  ng $invoked;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
+} # _execute_cb_all_insert_each_as_row_cb
 
 __PACKAGE__->runtests;
 
@@ -592,7 +951,7 @@ $Dongry::LeakTest = 1;
 
 =head1 LICENSE
 
-Copyright 2012 Wakaba <w@suika.fam.cx>.
+Copyright 2012-2014 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

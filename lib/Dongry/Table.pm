@@ -1,7 +1,7 @@
 package Dongry::Table;
 use strict;
 use warnings;
-our $VERSION = '2.0';
+our $VERSION = '3.0';
 use Carp;
 
 push our @CARP_NOT, qw(Dongry::Database);
@@ -79,33 +79,34 @@ sub insert ($$;%) {
     $args{duplicate} = $self->_serialize_values ($args{duplicate});
   }
 
-  if (defined wantarray or $args{cb}) {
-    my $cb = $args{cb};
-    if ($cb) {
-      my $orig_cb = $cb;
-      $cb = sub {
-        $_[1]->{parsed_data} = $data unless $_[1]->is_error;
-        goto &$orig_cb;
-      }; # $cb
-    }
+  my $orig_cb = $args{cb} || sub {};
+  my $cb = sub {
+    $_[1]->{parsed_data} = $data
+        if not $_[1]->is_error and not $_[1]->can ('then');
+    goto &$orig_cb;
+  }; # $cb
 
-    my $return = $self->{db}->insert
-        ($self->table_name, $s_data, %args, cb => $cb);
-    $return->{parsed_data} = $data unless $return->is_error;
-    return $return;
-  } else {
-    $self->{db}->insert ($self->table_name, $s_data, %args);
-  }
+  return $self->{db}->insert
+      ($self->table_name, $s_data, %args, cb => $cb);
 } # insert
 
 sub create ($$;%) {
   my ($self, $values, %args) = @_;
   croak "Option |cb| is not supported" if $args{cb};
   my $return = $self->insert ([$values], %args);
-  return undef unless $return->row_count;
-  my $row = $return->first_as_row;
-  $row->{flags} = $args{flags} if $args{flags};
-  return $row;
+  if ($return->can ('then')) {
+    return $return->then (sub {
+      return undef unless $_[0]->row_count;
+      my $row = $_[0]->first_as_row;
+      $row->{flags} = $args{flags} if $args{flags};
+      return $row;
+    });
+  } else {
+    return undef unless $return->row_count;
+    my $row = $return->first_as_row;
+    $row->{flags} = $args{flags} if $args{flags};
+    return $row;
+  }
 } # create
 
 # ------ Retrieval ------
@@ -138,9 +139,7 @@ sub find ($$;%) {
                 source_name => $args{source_name},
                 _table_schema => $schema,
                 cb => $cb);
-  return $cb
-      ? $result->row_count ? $return : $return ## Die if error (async)
-      : $result->first_as_row if defined wantarray;
+  return $result->can ('then') ? $result->then (sub { $_[0]->first_as_row }) : ($cb ? $return : $result->first_as_row);
 } # find
 
 sub find_all ($$;%) {
@@ -172,7 +171,7 @@ sub find_all ($$;%) {
                 source_name => $args{source_name},
                 _table_schema => $schema,
                 cb => $cb);
-  return $return || $result->all_as_rows if defined wantarray;
+  return $result->can ('then') ? $result->then (sub { $_[0]->all_as_rows }) : ($cb ? $return : $result->all_as_rows);
 } # find_all
 
 our $MaxFillItems ||= 100;
@@ -209,12 +208,31 @@ sub fill_related_rows ($$$$;%) {
   }
 
   my $map = {};
+  my $each_cb = $args{multiple} ? sub {
+    my $hash = $map;
+    for my $col (@cols) {
+      $hash = $hash->{$_->get_bare ($col)} ||= {};
+    }
+    ($hash->{$_->get_bare ($col)} ||= $self->{db}->_list)->push ($_);
+  } : sub {
+    my $hash = $map;
+    for my $col (@cols) {
+      $hash = $hash->{$_->get_bare ($col)} ||= {};
+    }
+    if ($hash->{$_->get_bare ($col)}) {
+      carp "More than one rows found for an object";
+    } else {
+      $hash->{$_->get_bare ($col)} = $_;
+    }
+  };
+
   $self->{db}->select
       ($self->table_name,
        $where,
        fields => $args{fields},
        source_name => $args{source_name},
        lock => $args{lock}, 
+       each_as_row_cb => $each_cb,
        cb => sub {
     my $db = $_[0];
     if ($_[1]->is_error) {
@@ -224,23 +242,6 @@ sub fill_related_rows ($$$$;%) {
       return;
     }
 
-    $_[1]->each_as_row ($args{multiple} ? sub {
-      my $hash = $map;
-      for my $col (@cols) {
-        $hash = $hash->{$_->get_bare ($col)} ||= {};
-      }
-      ($hash->{$_->get_bare ($col)} ||= $db->_list)->push ($_);
-    } : sub {
-      my $hash = $map;
-      for my $col (@cols) {
-        $hash = $hash->{$_->get_bare ($col)} ||= {};
-      }
-      if ($hash->{$_->get_bare ($col)}) {
-        carp "More than one rows found for an object";
-      } else {
-        $hash->{$_->get_bare ($col)} = $_;
-      }
-    });
     my $default = $args{multiple} ? $db->_list : undef;
     for my $obj (@$list) {
       my $hash = $map;
@@ -484,7 +485,7 @@ sub DESTROY {
 
 =head1 LICENSE
 
-Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2014 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

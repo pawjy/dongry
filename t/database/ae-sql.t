@@ -41,6 +41,10 @@ sub _insert_cb : Test(10) {
 
   my $result2 = $db->execute ('select * from foo order by id asc');
   eq_or_diff $result2->all->to_a, [{id => 12}, {id => 21}];
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _insert_cb
 
 sub _insert_cb_error : Test(9) {
@@ -71,6 +75,10 @@ sub _insert_cb_error : Test(9) {
   ng $result->table_name;
   dies_here_ok { $result->row_count };
   dies_here_ok { $result->all };
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _insert_cb_error
 
 sub _insert_cb_return : Test(6) {
@@ -93,11 +101,15 @@ sub _insert_cb_return : Test(6) {
   $cv->recv;
 
   isa_ok $result, 'Dongry::Database::Executed';
-  ng $result->is_success;
-  ok $result->is_error;
+  ok $result->is_success;
+  ng $result->is_error;
   dies_here_ok { $result->row_count };
   dies_here_ok { $result->all };
   isnt $result2, $result;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _insert_cb_return
 
 sub _insert_cb_exception : Test(1) {
@@ -110,17 +122,21 @@ sub _insert_cb_exception : Test(1) {
   $cv->begin;
 
   my $result;
-  $cv->begin;
   $db->insert ('foo', [{id => 12}, {id => 21}], cb => sub {
     die "ab cd";
   }, source_name => 'ae');
 
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
+
   $cv->end;
-  eval {
-    $cv->recv;
-    ng 1;
-  };
-  is $@, 'ab cd at ' . __FILE__ . ' line ' . (__LINE__ - 8) . ".\n";
+  $cv->recv;
+
+  $cv = AE::cv;
+  $db->disconnect ('ae', cb => sub { $cv->send });
+  $cv->recv;
+
+  ok not $@;
 } # _insert_cb_exception
 
 sub _insert_cb_exception_carp : Test(1) {
@@ -133,17 +149,21 @@ sub _insert_cb_exception_carp : Test(1) {
   $cv->begin;
 
   my $result;
-  $cv->begin;
   $db->insert ('foo', [{id => 12}, {id => 21}], cb => sub {
     Carp::croak "ab cd";
   }, source_name => 'ae');
 
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
+
   $cv->end;
-  eval {
-    $cv->recv;
-    ng 1;
-  };
-  like $@, qr{^ab cd at }; ## Location is not helpful
+  $cv->recv;
+
+  $cv = AE::cv;
+  $db->disconnect ('ae', cb => sub { $cv->send });
+  $cv->recv;
+
+  ok not $@;
 } # _insert_cb_exception_carp
 
 sub _insert_cb_error_exception : Test(2) {
@@ -152,25 +172,29 @@ sub _insert_cb_error_exception : Test(2) {
                       writable => 1});
   $db->execute ('create table foo (id int)');
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
   $cv->begin;
 
   my $result;
-  $cv->begin;
   $db->insert ('foo', [{id => 12}, {notid => 21}], cb => sub {
     die "ab cd";
   }, source_name => 'ae');
 
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
+
   $cv->end;
-  eval {
-    $cv->recv;
-    ng 1;
-  };
-  ok defined $@;
-  is $warn, 'ab cd at ' . __FILE__ . ' line ' . (__LINE__ - 9) . ".\n";
+  $cv->recv;
+
+  $cv = AE::cv;
+  $db->disconnect ('ae', cb => sub { $cv->send });
+  $cv->recv;
+
+  ok not $@;
+  like $warn, qr{\QDied within handler: ab cd at @{[__FILE__]} line @{[__LINE__ - 14]}.\E};
 } # _insert_cb_error_exception
 
 sub _insert_cb_error_exception_carp : Test(2) {
@@ -179,25 +203,29 @@ sub _insert_cb_error_exception_carp : Test(2) {
                       writable => 1});
   $db->execute ('create table foo (id int)');
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
   $cv->begin;
 
   my $result;
-  $cv->begin;
   $db->insert ('foo', [{id => 12}, {notid => 21}], cb => sub {
     Carp::croak "ab cd";
   }, source_name => 'ae');
 
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
+
   $cv->end;
-  eval {
-    $cv->recv;
-    ng 1;
-  };
-  ok defined $@;
-  like $warn, qr{^ab cd at }; ## Location is not helpful
+  $cv->recv;
+
+  $cv = AE::cv;
+  $db->disconnect ('ae', cb => sub { $cv->send });
+  $cv->recv;
+
+  ok not $@;
+  like $warn, qr{^Died within handler: ab cd at }m; ## Location is not helpful
 } # _insert_cb_error_exception_carp
 
 # ------ select ------
@@ -231,6 +259,10 @@ sub _select_cb : Test(9) {
   is $result->table_name, 'foo';
   is $result->row_count, 2;
   eq_or_diff $result->all->to_a, [{id => 4}, {id => 34}];
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _select_cb
 
 sub _select_cb_return : Test(8) {
@@ -253,13 +285,17 @@ sub _select_cb_return : Test(8) {
   $cv->recv;
 
   isa_ok $result, 'Dongry::Database::Executed';
-  ng $result->is_success;
-  ok $result->is_error;
+  ok $result->is_success;
+  ng $result->is_error;
   ng $result->error_text;
   ng $result->error_sql;
   ng $result->table_name;
   dies_here_ok { $result->row_count };
   dies_here_ok { $result->first };
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _select_cb_return
 
 sub _select_cb_exception : Test(1) {
@@ -272,20 +308,21 @@ sub _select_cb_exception : Test(1) {
   my $cv = AnyEvent->condvar;
   $cv->begin;
 
-  $cv->begin;
   $db->select ('foo', {id => {-gt => 1}}, order => [id => 1], cb => sub {
     die "fu ga";
-    $cv->end;
   }, source_name => 'ae');
 
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
+
   $cv->end;
+  $cv->recv;
 
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  ok not $@;
 
-  is $@, 'fu ga at ' . __FILE__ . ' line ' . (__LINE__ - 11) . ".\n";
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _select_cb_exception
 
 sub _select_cb_exception_error : Test(2) {
@@ -295,27 +332,28 @@ sub _select_cb_exception_error : Test(2) {
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (34), (4)');
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
   $cv->begin;
 
-  $cv->begin;
   $db->select ('foo', {mid => {-gt => 1}}, order => [id => 1], cb => sub {
     die "fu ga";
-    $cv->end;
   }, source_name => 'ae');
 
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
+
   $cv->end;
+  $cv->recv;
 
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  ok not $@;
+  like $warn, qr{\QDied within handler: fu ga at @{[__FILE__]} line @{[__LINE__ - 10]}.\E};
 
-  ok defined $@;
-  is $warn, 'fu ga at ' . __FILE__ . ' line ' . (__LINE__ - 12) . ".\n";
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _select_cb_exception_error
 
 # ------ update ------
@@ -352,6 +390,10 @@ sub _update_cb : Test(10) {
 
   eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
       [{id => 34}, {id => 54}];
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _update_cb
 
 sub _update_cb_return : Test(8) {
@@ -373,13 +415,17 @@ sub _update_cb_return : Test(8) {
   $cv->recv;
 
   isa_ok $result, 'Dongry::Database::Executed';
-  ng $result->is_success;
-  ok $result->is_error;
+  ok $result->is_success;
+  ng $result->is_error;
   ng $result->error_text;
   ng $result->error_sql;
   ng $result->table_name;
   dies_here_ok { $result->row_count };
   dies_here_ok { $result->all };
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _update_cb_return
 
 sub _update_cb_error : Test(10) {
@@ -414,6 +460,10 @@ sub _update_cb_error : Test(10) {
 
   eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
       [{id => 4}, {id => 34}];
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _update_cb_error
 
 sub _update_cb_exception : Test(2) {
@@ -427,18 +477,21 @@ sub _update_cb_exception : Test(2) {
   $cv->begin;
 
   my $result;
-  $cv->begin;
   $db->update ('foo', {id => 54}, where => {id => 4}, cb => sub {
     die "abc";
   }, source_name => 'ae');
 
-  $cv->end;
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
 
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 9) . ".\n";
+  $cv->end;
+  $cv->recv;
+
+  ok not $@;
+
+  $cv = AE::cv;
+  $db->disconnect ('ae', cb => sub { $cv->send });
+  $cv->recv;
 
   eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
       [{id => 34}, {id => 54}];
@@ -451,27 +504,29 @@ sub _update_cb_exception_error : Test(3) {
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (34), (4)');
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
   $cv->begin;
 
   my $result;
-  $cv->begin;
   $db->update ('foo', {idx => 54}, where => {id => 4}, cb => sub {
     die "abc";
-    $cv->end;
   }, source_name => 'ae');
 
-  $cv->end;
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
 
-  ok defined $@;
-  is $warn, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 11) . ".\n";
+  $cv->end;
+  $cv->recv;
+
+  ok not $@;
+  like $warn, qr{\QDied within handler: abc at @{[__FILE__]} line @{[__LINE__ - 10]}.\E};
+
+  $cv = AE::cv;
+  $db->disconnect ('ae', cb => sub { $cv->send });
+  $cv->recv;
 
   eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
       [{id => 4}, {id => 34}];
@@ -511,6 +566,10 @@ sub _delete_cb : Test(10) {
 
   eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
       [{id => 34}];
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _delete_cb
 
 sub _delete_cb_return : Test(8) {
@@ -532,13 +591,17 @@ sub _delete_cb_return : Test(8) {
   $cv->recv;
 
   isa_ok $result, 'Dongry::Database::Executed';
-  ng $result->is_success;
-  ok $result->is_error;
+  ok $result->is_success;
+  ng $result->is_error;
   ng $result->error_text;
   ng $result->error_sql;
   ng $result->table_name;
   dies_here_ok { $result->row_count };
   dies_here_ok { $result->all };
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _delete_cb_return
 
 sub _delete_cb_error : Test(10) {
@@ -573,6 +636,10 @@ sub _delete_cb_error : Test(10) {
 
   eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
       [{id => 4}, {id => 34}];
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _delete_cb_error
 
 sub _delete_cb_exception : Test(2) {
@@ -586,18 +653,21 @@ sub _delete_cb_exception : Test(2) {
   $cv->begin;
 
   my $result;
-  $cv->begin;
   $db->delete ('foo', {id => 4}, cb => sub {
     die "abc";
   }, source_name => 'ae');
 
-  $cv->end;
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
 
-  is $@, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 9) . ".\n";
+  $cv->end;
+  $cv->recv;
+
+  ok not $@;
+
+  $cv = AE::cv;
+  $db->disconnect ('ae', cb => sub { $cv->send });
+  $cv->recv;
 
   eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
       [{id => 34}];
@@ -610,27 +680,29 @@ sub _delete_cb_exception_error : Test(3) {
   $db->execute ('create table foo (id int)');
   $db->execute ('insert into foo (id) values (34), (4)');
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
   $cv->begin;
 
   my $result;
-  $cv->begin;
   $db->delete ('foo', {xid => 4}, cb => sub {
     die "abc";
-    $cv->end;
   }, source_name => 'ae');
 
-  $cv->end;
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
 
-  ok defined $@;
-  is $warn, 'abc at ' . __FILE__ . ' line ' . (__LINE__ - 11) . ".\n";
+  $cv->end;
+  $cv->recv;
+
+  $cv = AE::cv;
+  $db->disconnect ('ae', cb => sub { $cv->send });
+  $cv->recv;
+
+  ok not $@;
+  like $warn, qr{\QDied within handler: abc at @{[__FILE__]} line @{[__LINE__ - 14]}.\E};
 
   eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
       [{id => 4}, {id => 34}];
@@ -670,6 +742,10 @@ sub _set_tz_cb : Test(7) {
   ng $result->error_text;
   ng $result->error_sql;
   is $tz, '+01:00';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _set_tz_cb
 
 sub _set_tz_error : Test(7) {
@@ -704,6 +780,10 @@ sub _set_tz_error : Test(7) {
   like $result->error_text, qr{time zone};
   is $result->error_sql, 'SET time_zone = ?';
   isnt $tz, 'ho ge';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _set_tz_error
 
 __PACKAGE__->runtests;
@@ -714,7 +794,7 @@ $Dongry::LeakTest = 1;
 
 =head1 LICENSE
 
-Copyright 2012 Wakaba <w@suika.fam.cx>.
+Copyright 2012-2014 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

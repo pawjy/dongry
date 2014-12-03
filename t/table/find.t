@@ -11,6 +11,24 @@ use Encode;
 
 # ------ |find| and |find_all| ------
 
+sub _find_no_source : Test(1) {
+  my $schema = {
+    table1 => {
+      type => {
+        col1 => 'timestamp_as_DateTime',
+        col2 => 'as_ref',
+      },
+      _create => 'create table table1 (col1 timestamp, col2 blob)',
+    },
+  };
+  my $db = new_db schema => $schema;
+
+  dies_here_ok {
+    $db->table ('table1')->find
+        ({}, source_name => 'notfound');
+  };
+} # _find_no_source
+
 sub _find_parsable_1 : Test(7) {
   my $schema = {
     table1 => {

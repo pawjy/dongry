@@ -71,14 +71,18 @@ per the table schema as well.
 
 The C<cb> (callback) function, if specified, is invoked after the
 execution of the SQL statement.  See the C<execute> method of the
-database object for more information.
+database object for more information.  In the asynchronous mode, the
+C<then> method of the returned object should be used instead of the
+callback function.
 
 The rows objects accessible from the result object returned by this
 method would hold both I<parsed> and I<serialized> values - the
 I<parsed> values are the values specified as the argument to this
 method, while the I<serialized> values are stringified representation
-of them.  Both set of values would contain any default values.  The
-method does not return a value in asynchronous mode.
+of them.  Both set of values would contain any default values.
+
+In the asynchronous mode, the returned object is I<thenable> (see
+L<Dongry::Database>).
 
 See the following section on the serialization for more information on
 how values are converted into SQL statements.
@@ -119,7 +123,15 @@ specify a hash reference as the value of the C<flags> option to the
 method, you can access them via the C<flags> method of the table row
 object returned by the C<create> method.
 
-The method does not support the C<cb> option and asynchronous mode.
+In the synchronous mode, a row object representing the created row is
+returned.  If no row is created (e.g. C<<duplicate => 'ignore'>> was
+specified), C<undef> is returned.
+
+In the asynchronous mode, a promise that is to be resolved with the
+row object representing the created row, if any, or C<undef>
+otherwise, is returned.
+
+The method does not support the C<cb> option.
 
 Example:
 
@@ -159,8 +171,9 @@ argument.  It must be a I<schema-aware> C<where> structure as
 described in L<Dongry::SQL>.
 
 If there is a row, a table row object representing the row is
-returned.  Otherwise, the C<undef> value is returned.  However, the
-method does not return a value in asynchronous mode.
+returned.  Otherwise, the C<undef> value is returned.  In the
+asynchronous mode, a promise that is to be resolved with such a value
+is returned instead.
 
 Following options for the C<select> method of the database object also
 apply to this method: C<fields>, C<group>, C<order>, C<offset>,
@@ -171,7 +184,9 @@ execution of the SQL statement.  See the C<execute> method of the
 database object for more information.  The return object only contains
 whether there is an error or not, possibly with error descriptions.
 The C<$_> variable contains the value that would returned by the
-method in synchronous mode.
+method in synchronous mode.  In the asynchronous mode, the C<then>
+method of the returned object should be used instead of the callback
+function.
 
 Example:
 
@@ -198,8 +213,8 @@ argument.  It must be a schema-aware C<where> structure as described
 in L<Dongry::SQL>.
 
 The method returns a (possibly empty) list object containing table row
-objects representing the selected rows.  However, the method does not
-return a value in asynchronous mode.
+objects representing the selected rows.  In the asynchronous mode, a
+promise that is to be resolved with such a value is returned instead.
 
 Following options for the C<select> method of the database object also
 apply to this method: C<distinct>, C<fields>, C<group>, C<order>,
@@ -210,7 +225,9 @@ execution of the SQL statement.  See the C<execute> method of the
 database object for more information.  The return object only contains
 whether there is an error or not, possibly with error descriptions.
 The C<$_> variable contains the value that would returned by the
-method in synchronous mode.
+method in synchronous mode.  In the asynchronous mode, the C<then>
+method of the returned object should be used instead of the callback
+function.
 
 Example:
 
@@ -446,6 +463,8 @@ The C<cb> (callback) function, if specified, is invoked after the
 execution of the SQL statement.  See the C<execute> method of the
 database object for more information.  The return object only contains
 whether there is an error or not, possibly with error descriptions.
+In the asynchronous mode, the C<then> method of the returned object
+should be used instead of the callback function.
 
 The serialized and parsed values of the specified columns hold by the
 table row object are updated to the new value.  If the bare SQL
@@ -454,6 +473,8 @@ C<get> and C<get_bare> methods for the column would raise an error.
 Likewise, once a primary key column is tainted by a bare SQL fragment
 object, the C<update> method would no longer be able to update the row
 and the C<reload> method would become useless as well.
+
+In the asynchronous mode, the returned object is I<thenable>.
 
 Example:
 
@@ -479,6 +500,10 @@ The C<cb> (callback) function, if specified, is invoked after the
 execution of the SQL statement.  See the C<execute> method of the
 database object for more information.  The return object only contains
 whether there is an error or not, possibly with error descriptions.
+In the asynchronous mode, the C<then> method of the returned object
+should be used instead of the callback function.
+
+In the asynchronous mode, the returned object is I<thenable>.
 
 Example:
 
@@ -545,11 +570,11 @@ L<Dongry::SQL>, L<Dongry::Type>.
 
 =head1 AUTHOR
 
-Wakaba <w@suika.fam.cx>.
+Wakaba <wakaba@suikawiki.org>.
 
 =head1 LICENSE
 
-Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2014 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

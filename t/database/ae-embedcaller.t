@@ -23,6 +23,10 @@ sub _execute_plain : Test(1) {
   $cv->recv;
 
   is $sql, 'show tables';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_plain
 
 sub _execute_embedded : Test(1) {
@@ -43,6 +47,10 @@ sub _execute_embedded : Test(1) {
 
   is $sql,
       'show tables /* ae at '.__FILE__.' line '.(__LINE__-5).' */';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_embedded
 
 sub _select_embedded : Test(1) {
@@ -64,6 +72,10 @@ sub _select_embedded : Test(1) {
   is $sql,
       'SELECT * FROM `foo` WHERE `id` = ? /* ae at '.__FILE__.
       ' line '.(__LINE__-6).' */';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _select_embedded
 
 sub _insert_embedded : Test(1) {
@@ -85,6 +97,10 @@ sub _insert_embedded : Test(1) {
   is $sql,
       'INSERT INTO `foo` (`id`) VALUES (?) /* ae at '.__FILE__.
       ' line '.(__LINE__-6).' */';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _insert_embedded
 
 sub _update_embedded : Test(1) {
@@ -107,6 +123,10 @@ sub _update_embedded : Test(1) {
   is $sql,
       'UPDATE `foo` SET `id` = ? WHERE `id` = ? /* ae at '.__FILE__.
       ' line '.(__LINE__-6).' */';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _update_embedded
 
 sub _delete_embedded : Test(1) {
@@ -129,6 +149,10 @@ sub _delete_embedded : Test(1) {
   is $sql,
       'DELETE FROM `foo` WHERE `id` = ? /* ae at '.__FILE__.
       ' line '.(__LINE__-6).' */';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _delete_embedded
 
 sub _set_tz_embedded : Test(1) {
@@ -149,6 +173,10 @@ sub _set_tz_embedded : Test(1) {
   is $sql,
       'SET time_zone = ? /* ae at '.__FILE__.
       ' line '.(__LINE__-6).' */';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _set_tz_embedded
 
 sub _execute_embedded_line : Test(1) {
@@ -168,6 +196,10 @@ sub _execute_embedded_line : Test(1) {
 
   is $sql,
       'show tables /* ae at foo/*bar* /baz/*hoge* /fuga line 54 */';
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _execute_embedded_line
 
 __PACKAGE__->runtests;
@@ -178,7 +210,7 @@ $Dongry::LeakTest = 1;
 
 =head1 LICENSE
 
-Copyright 2012 Wakaba <w@suika.fam.cx>.
+Copyright 2012-2014 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

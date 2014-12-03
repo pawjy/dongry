@@ -37,6 +37,10 @@ sub _find_null_cb : Test(7) {
   ok $result->is_success;
   ng $result->is_error;
   is $value, undef;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_null_cb
 
 sub _find_all_null_cb : Test(7) {
@@ -68,6 +72,10 @@ sub _find_all_null_cb : Test(7) {
   ok $result->is_success;
   ng $result->is_error;
   isa_list_n_ok $value, 0;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_all_null_cb
 
 sub _count_null_cb : Test(7) {
@@ -99,6 +107,10 @@ sub _count_null_cb : Test(7) {
   ok $result->is_success;
   ng $result->is_error;
   is $value, 0;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _count_null_cb
 
 sub _find_filtered_cb : Test(7) {
@@ -140,6 +152,10 @@ sub _find_filtered_cb : Test(7) {
   ok $result->is_success;
   ng $result->is_error;
   eq_or_diff $value, [2];
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_filtered_cb
 
 sub _find_all_filtered_cb : Test(8) {
@@ -182,6 +198,10 @@ sub _find_all_filtered_cb : Test(8) {
   ng $result->is_error;
   isa_list_n_ok $value, 3;
   eq_or_diff $value->to_a, [[2], [3], [4]];
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_all_filtered_cb
 
 sub _count_filtered_cb : Test(7) {
@@ -223,6 +243,10 @@ sub _count_filtered_cb : Test(7) {
   ok $result->is_success;
   ng $result->is_error;
   eq_or_diff $value, 3;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _count_filtered_cb
 
 sub _count_filtered_cb_zero : Test(7) {
@@ -263,6 +287,10 @@ sub _count_filtered_cb_zero : Test(7) {
   ok $result->is_success;
   ng $result->is_error;
   eq_or_diff $value, 0;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _count_filtered_cb_zero
 
 sub _find_filtered_cb_return : Test(8) {
@@ -306,6 +334,10 @@ sub _find_filtered_cb_return : Test(8) {
   ok $result->is_success;
   ng $result->is_error;
   eq_or_diff $value, [2];
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_filtered_cb_return
 
 sub _find_all_filtered_cb_return : Test(9) {
@@ -350,6 +382,10 @@ sub _find_all_filtered_cb_return : Test(9) {
   ng $result->is_error;
   isa_list_n_ok $value, 3;
   eq_or_diff $value->to_a, [[2], [3], [4]];
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_all_filtered_cb_return
 
 sub _count_filtered_cb_return : Test(8) {
@@ -393,6 +429,10 @@ sub _count_filtered_cb_return : Test(8) {
   ok $result->is_success;
   ng $result->is_error;
   eq_or_diff $value, 3;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _count_filtered_cb_return
 
 sub _count_filtered_cb_return_zero : Test(8) {
@@ -435,6 +475,10 @@ sub _count_filtered_cb_return_zero : Test(8) {
   ok $result->is_success;
   ng $result->is_error;
   eq_or_diff $value, 0;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _count_filtered_cb_return_zero
 
 sub _find_filtered_cb_error : Test(9) {
@@ -478,6 +522,10 @@ sub _find_filtered_cb_error : Test(9) {
   like $result->error_text, qr{id2};
   ok $result->error_sql;
   is $value, undef;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_filtered_cb_error
 
 sub _find_all_filtered_cb_error : Test(9) {
@@ -521,6 +569,10 @@ sub _find_all_filtered_cb_error : Test(9) {
   like $result->error_text, qr{id2};
   ok $result->error_sql;
   is $value, undef;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_all_filtered_cb_error
 
 sub _count_filtered_cb_error : Test(9) {
@@ -564,6 +616,10 @@ sub _count_filtered_cb_error : Test(9) {
   like $result->error_text, qr{id2};
   ok $result->error_sql;
   is $value, undef;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _count_filtered_cb_error
 
 sub _find_filtered_cb_exception : Test(1) {
@@ -588,12 +644,16 @@ sub _find_filtered_cb_exception : Test(1) {
     die "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
 
-  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 8]}\E\.?\n$};
+  $cv->recv;
+
+  ok not $@;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_filtered_cb_exception
 
 sub _find_all_filtered_cb_exception : Test(1) {
@@ -618,12 +678,16 @@ sub _find_all_filtered_cb_exception : Test(1) {
     die "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
 
-  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 8]}\E\.?\n$};
+  $cv->recv;
+
+  ok not $@;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_all_filtered_cb_exception
 
 sub _count_filtered_cb_exception : Test(1) {
@@ -648,12 +712,16 @@ sub _count_filtered_cb_exception : Test(1) {
     die "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
 
-  like $@, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 8]}\E\.?\n$};
+  $cv->recv;
+
+  ok not $@;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _count_filtered_cb_exception
 
 sub _find_filtered_cb_exception_carp : Test(1) {
@@ -678,12 +746,16 @@ sub _find_filtered_cb_exception_carp : Test(1) {
     Carp::croak "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
 
-  like $@, qr{^abc at };
+  $cv->recv;
+
+  ok not $@;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_filtered_cb_exception_carp
 
 sub _find_all_filtered_cb_exception_carp : Test(1) {
@@ -708,12 +780,16 @@ sub _find_all_filtered_cb_exception_carp : Test(1) {
     Carp::croak "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
 
-  like $@, qr{^abc at };
+  $cv->recv;
+
+  ok not $@;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_all_filtered_cb_exception_carp
 
 sub _count_filtered_cb_exception_carp : Test(1) {
@@ -738,12 +814,16 @@ sub _count_filtered_cb_exception_carp : Test(1) {
     Carp::croak "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-    ng 1;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
 
-  like $@, qr{^abc at };
+  $cv->recv;
+
+  ok not $@;
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _count_filtered_cb_exception_carp
 
 sub _find_filtered_cb_error_exception : Test(3) {
@@ -764,8 +844,8 @@ sub _find_filtered_cb_error_exception : Test(3) {
          return $_[1]->map (sub { [$_->get ('id') + 1] });
        });
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -773,13 +853,18 @@ sub _find_filtered_cb_error_exception : Test(3) {
     die "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
+
+  $cv->recv;
 
   ng $filtered;
-  ok defined $@;
-  like $warn, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 9]}\E\.?\n$};
+  ok not $@;
+  like $warn, qr{Died within handler: abc at \Q@{[__FILE__]} line @{[__LINE__ - 10]}\E\.?\n};
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_filtered_cb_error_exception
 
 sub _find_all_filtered_cb_error_exception : Test(3) {
@@ -800,8 +885,8 @@ sub _find_all_filtered_cb_error_exception : Test(3) {
          return $_[1]->map (sub { [$_->get ('id') + 1] });
        });
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -809,13 +894,18 @@ sub _find_all_filtered_cb_error_exception : Test(3) {
     die "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
+
+  $cv->recv;
 
   ng $filtered;
-  ok defined $@;
-  like $warn, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 9]}\E\.?\n$};
+  ok not $@;
+  like $warn, qr{Died within handler: abc at \Q@{[__FILE__]} line @{[__LINE__ - 10]}\E\.?\n};
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_all_filtered_cb_error_exception
 
 sub _count_filtered_cb_error_exception : Test(3) {
@@ -836,8 +926,8 @@ sub _count_filtered_cb_error_exception : Test(3) {
          return $_[1]->map (sub { [$_->get ('id') + 1] });
        });
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -845,13 +935,18 @@ sub _count_filtered_cb_error_exception : Test(3) {
     die "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
+
+  $cv->recv;
 
   ng $filtered;
-  ok defined $@;
-  like $warn, qr{^abc at \Q@{[__FILE__]} line @{[__LINE__ - 9]}\E\.?\n$};
+  ok not $@;
+  like $warn, qr{Died within handler: abc at \Q@{[__FILE__]} line @{[__LINE__ - 10]}\E\.?\n};
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _count_filtered_cb_error_exception
 
 sub _find_filtered_cb_error_exception_carp : Test(3) {
@@ -872,8 +967,8 @@ sub _find_filtered_cb_error_exception_carp : Test(3) {
          return $_[1]->map (sub { [$_->get ('id') + 1] });
        });
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -881,13 +976,18 @@ sub _find_filtered_cb_error_exception_carp : Test(3) {
     Carp::croak "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
+
+  $cv->recv;
 
   ng $filtered;
-  ok defined $@;
+  ok not $@;
   like $warn, qr{abc at };
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_filtered_cb_error_exception_carp
 
 sub _find_all_filtered_cb_error_exception_carp : Test(3) {
@@ -908,8 +1008,8 @@ sub _find_all_filtered_cb_error_exception_carp : Test(3) {
          return $_[1]->map (sub { [$_->get ('id') + 1] });
        });
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -917,13 +1017,18 @@ sub _find_all_filtered_cb_error_exception_carp : Test(3) {
     Carp::croak "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
+
+  $cv->recv;
 
   ng $filtered;
-  ok defined $@;
+  ok not $@;
   like $warn, qr{abc at };
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _find_all_filtered_cb_error_exception_carp
 
 sub _count_filtered_cb_error_exception_carp : Test(3) {
@@ -944,8 +1049,8 @@ sub _count_filtered_cb_error_exception_carp : Test(3) {
          return $_[1]->map (sub { [$_->get ('id') + 1] });
        });
 
-  my $warn;
-  local $SIG{__WARN__} = sub { $warn = $_[0] };
+  my $warn = '';
+  local $SIG{__WARN__} = sub { $warn .= $_[0] };
 
   my $cv = AnyEvent->condvar;
 
@@ -953,13 +1058,18 @@ sub _count_filtered_cb_error_exception_carp : Test(3) {
     Carp::croak "abc";
   }, source_name => 'ae');
 
-  eval {
-    $cv->recv;
-  };
+  $cv->begin;
+  $db->execute ('show tables', undef, cb => sub { $cv->end }, source_name => 'ae');
+
+  $cv->recv;
 
   ng $filtered;
-  ok defined $@;
+  ok not $@;
   like $warn, qr{abc at };
+
+  $cv = AE::cv;
+  $db->disconnect (undef, cb => sub { $cv->send });
+  $cv->recv;
 } # _count_filtered_cb_error_exception_carp
 
 __PACKAGE__->runtests;
@@ -970,7 +1080,7 @@ $Dongry::LeakTest = 1;
 
 =head1 LICENSE
 
-Copyright 2012 Wakaba <w@suika.fam.cx>.
+Copyright 2012-2014 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

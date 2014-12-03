@@ -936,6 +936,7 @@ sub _insert_duplicate_error : Test(8) {
   
   is $db->execute ('select * from foo', undef, source_name => 'master')
       ->row_count, 1;
+  undef $onerror_self;
 } # _insert_duplicate_error
 
 sub _insert_ignore_no_duplicate_error : Test(3) {
@@ -961,6 +962,7 @@ sub _insert_ignore_no_duplicate_error : Test(3) {
   
   eq_or_diff $db->execute ('select * from foo', undef, source_name => 'master')
       ->all->to_a, [{id => 2, val => 'abc'}];
+  undef $onerror_self;
 } # _insert_ignore_no_duplicate_error
 
 sub _insert_replace_no_duplicate_error : Test(3) {
@@ -986,6 +988,7 @@ sub _insert_replace_no_duplicate_error : Test(3) {
   
   eq_or_diff $db->execute ('select * from foo', undef, source_name => 'master')
       ->all->to_a, [{id => 2, val => 'xyz'}];
+  undef $onerror_self;
 } # _insert_replace_no_duplicate_error
 
 sub _insert_column_error : Test(8) {
@@ -1018,6 +1021,7 @@ sub _insert_column_error : Test(8) {
   
   is $db->execute ('select * from foo', undef, source_name => 'master')
       ->row_count, 0;
+  undef $onerror_self;
 } # _insert_column_error
 
 sub _insert_stupid_table_name : Test(1) {
@@ -1111,7 +1115,7 @@ sub _insert_utf8_flagged_table : Test(2) {
            [{id => 2, val => "abc"}];
 } # _insert_utf8_flagged_table
 
-sub _insert_utf8_unflagged_table : Test(2) {
+sub _insert_utf8_unflagged_table : Test(1) {
   reset_db_set;
   my $dsn = test_dsn 'inserttest1';
   my $db = Dongry::Database->new
@@ -1148,7 +1152,7 @@ sub _insert_utf8_flagged_column : Test(1) {
            [{id => 2, (encode 'utf-8', "\x{5000}\x{6000}") => "ho"}];
 } # _insert_utf8_flagged_table
 
-sub _insert_utf8_unflagged_column : Test(2) {
+sub _insert_utf8_unflagged_column : Test(1) {
   reset_db_set;
   my $dsn = test_dsn 'inserttest1';
   my $db = Dongry::Database->new
@@ -1425,7 +1429,7 @@ sub _insert_cb_exception_croak : Test(1) {
       Carp::croak 'abbc ';
     });
   };
-  like $@, qr/^abbc  at \Q@{[__FILE__]} line @{[__LINE__ - 2]}\E\.?\n$/;
+  like $@, qr/^abbc  at /; # line is useless
 } # _insert_cb_exception_croak
 
 sub _insert_cb_onerror : Test(2) {
@@ -1447,7 +1451,7 @@ __PACKAGE__->runtests;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2014 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

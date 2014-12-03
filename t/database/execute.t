@@ -1899,7 +1899,7 @@ sub _execute_callback_croak : Test(2) {
       Carp::croak "hoge";
     });
   };
-  like $@, qr/^hoge at \Q@{[__FILE__]} line @{[__LINE__ - 2]}\E\.?\n$/;
+  like $@, qr/^hoge at /; # line number is not useful
 
   eq_or_diff $db->execute ('select * from foo order by id asc')->all->to_a,
       [{id => 31}, {id => 43}];
@@ -1968,13 +1968,22 @@ sub _execute_cb_result_table_name : Test(1) {
        });
 } # _execute_cb_result_table_name
 
+sub _execute_bad_source_name : Test(2) {
+  my $db = new_db;
+  dies_here_ok {
+    $db->execute
+        ('create table foo (id int)', undef, source_name => 'hogenotfound');
+  };
+  ok not $db->{sources}->{hogenotfound};
+} # _execute_bad_source_name
+
 __PACKAGE__->runtests;
 
 1;
 
 =head1 LICENSE
 
-Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2014 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
