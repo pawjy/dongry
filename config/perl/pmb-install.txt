@@ -10,7 +10,7 @@ DBI~1.632
 ExtUtils::ParseXS~3.24
 List::AllUtils~0.09
 Test::Differences~0.63
-DBD::mysql~4.028
+DBD::mysql~4.029
 Path::Class~0.35
 common::sense~3.73
 List::Rubyish~0.03
