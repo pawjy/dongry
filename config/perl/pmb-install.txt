@@ -17,7 +17,7 @@ List::Rubyish~0.03
 Test::mysqld~0.17
 Types::Serialiser~1.0
 Module::Runtime~0.014
-Filter::Util::Call~1.49
+Filter::Util::Call~1.51
 DBIx::RewriteDSN~0.05
 Perl::OSType~1.007
 Algorithm::Diff~1.1903
