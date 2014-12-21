@@ -17,7 +17,7 @@ List::Rubyish~0.03
 Test::mysqld~0.17
 Types::Serialiser~1.0
 Module::Runtime~0.014
-Filter::Util::Call~1.52
+Filter::Util::Call~1.53
 DBIx::RewriteDSN~0.05
 Perl::OSType~1.007
 Algorithm::Diff~1.1903
@@ -26,7 +26,7 @@ ExtUtils::CBuilder~0.280220
 Parse::CPAN::Meta~1.4414
 lib::abs~0.93
 version~0.9909
-Test::Tester~0.109
+Test::Tester~0.111
 CPAN::Meta::YAML~0.012
 Class::Accessor::Lite~0.06
 Class::Singleton~1.5
@@ -42,7 +42,7 @@ DateTime::Format::Builder~0.81
 Class::Factory::Util~1.7
 DateTime::Locale~0.45
 List::Util~1.41
-Test::Builder~1.001009
+Test::Builder~1.001011
 AnyEvent::Util
 Digest::SHA~5.93
 Module::Implementation~0.09
@@ -56,7 +56,7 @@ Term::ANSIColor~4.03
 Test::Class~0.48
 Exporter::Lite~0.06
 Data::Dumper~2.154
-Test::More~1.001009
+Test::More~1.001011
 Text::Diff~1.41
 CPAN::Meta::Requirements~2.130
 File::Temp~0.2304
@@ -64,7 +64,7 @@ File::Copy::Recursive~0.38
 Test::Requires~0.08
 Module::Metadata~1.000024
 File::Spec~3.47
-Test::Simple~1.001009
+Test::Simple~1.001011
 Class::Data::Inheritable~0.08
 MRO::Compat~0.12
 File::Slurp~9999.19
