@@ -34,7 +34,7 @@ Params::Validate~1.15
 Exporter::Tiny~0.042
 Carp::Heavy~1.3301
 DateTime::Format::MySQL~0.05
-DateTime~1.12
+DateTime~1.14
 DateTime::Format::Strptime~1.56
 Test::NoWarnings~1.04
 Class::Accessor::Fast~0.34
