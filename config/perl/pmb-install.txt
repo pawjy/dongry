@@ -30,7 +30,7 @@ Test::Tester~0.114
 CPAN::Meta::YAML~0.012
 Class::Accessor::Lite~0.06
 Class::Singleton~1.5
-Params::Validate~1.16
+Params::Validate~1.17
 Exporter::Tiny~0.042
 Carp::Heavy~1.3301
 DateTime::Format::MySQL~0.05
