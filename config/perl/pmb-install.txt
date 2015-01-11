@@ -44,7 +44,7 @@ DateTime::Locale~0.45
 List::Util~1.41
 Test::Builder~1.001014
 AnyEvent::Util
-Digest::SHA~5.93
+Digest::SHA~5.95
 Module::Implementation~0.09
 Time::Local~1.2300
 Test::SharedFork~0.29
