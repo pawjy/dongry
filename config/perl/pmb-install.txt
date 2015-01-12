@@ -6,7 +6,7 @@ Module::Build~0.4210
 Test::Deep~0.115
 List::MoreUtils~0.402
 Data::MessagePack~0.48
-DBI~1.632
+DBI~1.633
 ExtUtils::ParseXS~3.24
 List::AllUtils~0.09
 Test::Differences~0.63
