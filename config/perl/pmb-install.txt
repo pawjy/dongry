@@ -48,7 +48,7 @@ Digest::SHA~5.95
 Module::Implementation~0.09
 Time::Local~1.2300
 Test::SharedFork~0.29
-Getopt::Long~2.42
+Getopt::Long~2.43
 Try::Tiny~0.22
 AnyEvent~7.08
 parent~0.228
