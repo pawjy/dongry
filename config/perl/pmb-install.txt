@@ -25,7 +25,7 @@ Path::Tiny~0.061
 ExtUtils::CBuilder~0.280220
 Parse::CPAN::Meta~1.4414
 lib::abs~0.93
-version~0.9911
+version~0.9912
 Test::Tester~0.114
 CPAN::Meta::YAML~0.012
 Class::Accessor::Lite~0.06
