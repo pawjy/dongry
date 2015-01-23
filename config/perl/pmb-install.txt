@@ -1,6 +1,6 @@
 Capture::Tiny~0.27
 JSON::XS~3.01
-Encode~2.67
+Encode~2.68
 CPAN::Meta~2.143240
 Module::Build~0.4211
 Test::Deep~0.115
@@ -58,7 +58,7 @@ Exporter::Lite~0.06
 Data::Dumper~2.154
 Test::More~1.001014
 Text::Diff~1.41
-CPAN::Meta::Requirements~2.131
+CPAN::Meta::Requirements~2.132
 File::Temp~0.2304
 File::Copy::Recursive~0.38
 Test::Requires~0.08
