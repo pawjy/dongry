@@ -240,7 +240,7 @@ Default is same as C<dsn>.
 
 Comment string to be embedded at the end of the SQL statements.  As
 described in L</"INTERPREATAION OF STRINGS">, non-ASCII characters, as
-well as utf8-flaged string, should not be specified.  This option
+well as utf8-flaged strings, should not be specified.  This option
 might be useful for debugging and loggin purposes.
 
 =back
@@ -487,6 +487,8 @@ method for rationale.
 
 In the asynchronous mode, the C<then> method of the returned object
 should be used instead of the callback function.
+
+=back
 
 =back
 
