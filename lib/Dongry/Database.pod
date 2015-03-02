@@ -1606,6 +1606,8 @@ L<DBIx::MoCo::Query>, L<DBIx::MoCo::ColumnMethods>,
 L<DBIx::MoCo::TableExtras>, L<SQL::Abstract>,
 L<SQL::NamedPlaceholder>, and L<List::Rubyish>.
 
+Thanks to hatz48.
+
 =head1 AUTHOR
 
 Wakaba <wakaba@suikawiki.org>.
