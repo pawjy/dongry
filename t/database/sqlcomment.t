@@ -27,6 +27,30 @@ sub _execute_commented : Test(1) {
       'show tables /* * / hello-dongry /* */';
 } # _execute_commented
 
+sub _execute_commented_0 : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'createtable';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, sql_comment => '0'}});
+
+  $db->execute ('show tables');
+
+  is $db->{last_sql},
+      'show tables /* 0 */';
+} # _execute_commented_0
+
+sub _execute_commented_empty : Test(1) {
+  reset_db_set;
+  my $dsn = test_dsn 'createtable';
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn, sql_comment => ''}});
+
+  $db->execute ('show tables');
+
+  is $db->{last_sql},
+      'show tables /*  */';
+} # _execute_commented_empty
+
 sub _select_commented : Test(1) {
   reset_db_set;
   my $dsn = test_dsn 'createtable';
