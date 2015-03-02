@@ -236,6 +236,11 @@ Informative name of the data source.  It is not used to connect to the
 data source.  This value might or might not be useful for debugging.
 Default is same as C<dsn>.
 
+=item sql_comment => string
+
+Comment string which embedded in SQL. When this source is used, specified
+string is always embedded in.
+
 =back
 
 Although it is in theory possible to modify the hash reference after

@@ -450,6 +450,11 @@ sub execute ($$;$%) {
     ($sql, $values) = _where [$sql, %$values];
   }
   
+  if ($self->{sources}->{$name}->{sql_comment}) {
+    my $comment = $self->{sources}->{$name}->{sql_comment};
+    $comment =~ s{\*/}{\* /}g;
+    $sql .= ' /* ' . $comment . ' */';
+  }
   if ($EmbedCallerInSQL) {
     my $caller = _get_caller;
     my $text = $name . ' at ' . $caller->{file} . ' line ' . $caller->{line};
