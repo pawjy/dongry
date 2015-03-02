@@ -1325,8 +1325,7 @@ If the C<SQL_DEBUG> environmental variable contains substring
 C<embed_caller>, or if the C<$Dongry::Database::EmbedCallerInSQL>
 variable has a true value, Dongry embeds the file name and the line
 number of the method invocations that request SQL executions into the
-SQL statement, as an SQL comment.  This would be useful in
-asynchronous mode, in particular.
+SQL statement, as an SQL comment.
 
 =head1 METHODS OF RESULT OBJECT
 
@@ -1506,7 +1505,7 @@ Some of features provided by Dongry do not work as intended depending
 on the database engine in use.  Specifically, transaction does not
 work for tables using the MyISAM engine.
 
-=head1 INTERPREATTION OF STRINGS
+=head1 INTERPREATAION OF STRINGS
 
 Lower-level interfaces of Dongry, i.e. methods of the database object
 such as C<execute>, C<select>, C<insert>, and so on, leave the
@@ -1547,14 +1546,8 @@ Example:
 
 =head1 AVAILABILITY
 
-The latest version of Dongry is available from following Git
-repositories: <https://github.com/wakaba/dongry>,
-<http://suika.fam.cx/gate/git/wi/perl/dongry.git/tree>.
-
-If you are old school such that you like versioned packages rather
-than living Git repository, you can get tarballs from
-<http://wakaba.github.com/packages/perl/#Dongry-Database>.  Please
-note that versioned packages are likely out-of-dated.
+The latest version of Dongry is available from the Git
+repository <https://github.com/wakaba/dongry>.
 
 =head1 DEPENDENCY
 
@@ -1614,7 +1607,7 @@ Wakaba <wakaba@suikawiki.org>.
 
 =head1 LICENSE
 
-Copyright 2011-2014 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2015 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
