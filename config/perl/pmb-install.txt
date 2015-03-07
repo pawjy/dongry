@@ -10,7 +10,7 @@ DBI~1.633
 ExtUtils::ParseXS~3.24
 List::AllUtils~0.09
 Test::Differences~0.63
-DBD::mysql~4.029
+DBD::mysql~4.031
 Path::Class~0.35
 common::sense~3.73
 List::Rubyish~0.03
@@ -21,7 +21,7 @@ Filter::Util::Call~1.54
 DBIx::RewriteDSN~0.05
 Perl::OSType~1.008
 Algorithm::Diff~1.1903
-Path::Tiny~0.061
+Path::Tiny~0.065
 ExtUtils::CBuilder~0.280220
 Parse::CPAN::Meta~1.4414
 lib::abs~0.93
