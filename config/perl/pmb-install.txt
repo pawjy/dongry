@@ -1,6 +1,6 @@
 Capture::Tiny~0.28
 JSON::XS~3.01
-Encode~2.70
+Encode~2.71
 CPAN::Meta~2.150001
 Module::Build~0.4211
 Test::Deep~0.115
