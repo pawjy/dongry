@@ -27,7 +27,7 @@ Parse::CPAN::Meta~1.4414
 lib::abs~0.93
 version~0.9912
 Test::Tester~0.114
-CPAN::Meta::YAML~0.012
+CPAN::Meta::YAML~0.014
 Class::Accessor::Lite~0.06
 Class::Singleton~1.5
 Params::Validate~1.18
