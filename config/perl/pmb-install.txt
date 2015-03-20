@@ -32,7 +32,7 @@ Class::Accessor::Lite~0.06
 Class::Singleton~1.5
 Params::Validate~1.18
 Exporter::Tiny~0.042
-Carp::Heavy~1.35
+Carp::Heavy~1.36
 DateTime::Format::MySQL~0.05
 DateTime~1.18
 DateTime::Format::Strptime~1.56
@@ -51,7 +51,7 @@ Test::SharedFork~0.29
 Getopt::Long~2.45
 Try::Tiny~0.22
 AnyEvent~7.08
-parent~0.231
+parent~0.232
 Term::ANSIColor~4.03
 Test::Class~0.48
 Exporter::Lite~0.06
