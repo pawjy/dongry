@@ -21,7 +21,7 @@ Filter::Util::Call~1.54
 DBIx::RewriteDSN~0.05
 Perl::OSType~1.008
 Algorithm::Diff~1.1903
-Path::Tiny~0.065
+Path::Tiny~0.068
 ExtUtils::CBuilder~0.280220
 Parse::CPAN::Meta~1.4414
 lib::abs~0.93
