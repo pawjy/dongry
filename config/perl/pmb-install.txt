@@ -62,7 +62,7 @@ CPAN::Meta::Requirements~2.133
 File::Temp~0.2304
 File::Copy::Recursive~0.38
 Test::Requires~0.08
-Module::Metadata~1.000026
+Module::Metadata~1.000027
 File::Spec~3.47
 Test::Simple~1.001014
 Class::Data::Inheritable~0.08
