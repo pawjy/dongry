@@ -51,7 +51,7 @@ Time::Local~1.2300
 Test::SharedFork~0.31
 Getopt::Long~2.45
 Try::Tiny~0.22
-AnyEvent~7.08
+AnyEvent~7.09
 parent~0.232
 Term::ANSIColor~4.03
 Test::Class~0.48
