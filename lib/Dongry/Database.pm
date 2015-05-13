@@ -205,15 +205,16 @@ sub connect ($$;%) {
         return;
       }
 
-      my $timer; $timer = AE::timer (3, 0, sub {
+      my $timeout = 10;
+      my $timer; $timer = AE::timer ($timeout, 0, sub {
         undef $timer;
         $onerror_args->{db}->{dbhs}->{$name}->disconnect
             if $onerror_args->{db}->{dbhs}->{$name};
         $onerror_args->{db}->{dbhs}->{$name} = bless {
-          error_text => "$dsn: Connect timeout (3)",
+          error_text => "$dsn: Connect timeout ($timeout)",
         }, 'Dongry::Database::BrokenConnection';
         $return->_ng ($onerror_args->{db}, bless {
-          error_text => "$dsn: Connect timeout (3)",
+          error_text => "$dsn: Connect timeout ($timeout)",
         }, 'Dongry::Database::Executed::NotAvailable');
       });
 
@@ -556,7 +557,7 @@ sub execute ($$;$%) {
           warn "Died within handler: $_[0]";
         })->then (sub { undef $client; undef $self; %args = (); undef $return });
       } else { # not $ok
-        my $result = bless {error_text => '|connect| failed', error_sql => $sql},
+        my $result = bless {error_text => "|connect| failed ($ok)", error_sql => $sql},
             'Dongry::Database::Executed::NotAvailable';
         $return->_ng ($self, $result);
         undef $return;
