@@ -4,7 +4,7 @@ Encode~2.73
 CPAN::Meta~2.150001
 Module::Build~0.4212
 Test::Deep~0.115
-List::MoreUtils~0.410
+List::MoreUtils~0.412
 Data::MessagePack~0.48
 DBI~1.633
 ExtUtils::MakeMaker~7.04
@@ -28,7 +28,7 @@ Parse::CPAN::Meta~1.4414
 lib::abs~0.93
 version~0.9912
 Test::Tester~0.114
-CPAN::Meta::YAML~0.014
+CPAN::Meta::YAML~0.016
 Class::Accessor::Lite~0.08
 Class::Singleton~1.5
 Params::Validate~1.18
