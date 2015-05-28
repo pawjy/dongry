@@ -53,7 +53,7 @@ Try::Tiny~0.22
 Getopt::Long~2.45
 AnyEvent~7.09
 Term::ANSIColor~4.03
-parent~0.232
+parent~0.234
 Exporter::Lite~0.06
 Test::Class~0.48
 Data::Dumper~2.154
