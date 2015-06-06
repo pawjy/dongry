@@ -48,7 +48,7 @@ Test::Builder~1.001014
 Digest::SHA~5.95
 Module::Implementation~0.09
 Time::Local~1.2300
-Test::SharedFork~0.32
+Test::SharedFork~0.33
 Try::Tiny~0.22
 Getopt::Long~2.46
 AnyEvent~7.09
