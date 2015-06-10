@@ -1,7 +1,7 @@
 Capture::Tiny~0.30
 JSON::XS~3.01
 Encode~2.73
-CPAN::Meta~2.150001
+CPAN::Meta~2.150005
 Module::Build~0.4212
 Test::Deep~0.115
 List::MoreUtils~0.412
@@ -24,7 +24,7 @@ Algorithm::Diff~1.1903
 Perl::OSType~1.008
 Path::Tiny~0.068
 ExtUtils::CBuilder~0.280223
-Parse::CPAN::Meta~1.4414
+Parse::CPAN::Meta~1.4417
 lib::abs~0.93
 version~0.9912
 Test::Tester~0.114
