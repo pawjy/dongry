@@ -2,7 +2,7 @@ Capture::Tiny~0.30
 JSON::XS~3.01
 Encode~2.73
 CPAN::Meta~2.150005
-Module::Build~0.4212
+Module::Build~0.4214
 Test::Deep~0.115
 List::MoreUtils~0.413
 Data::MessagePack~0.48
@@ -31,7 +31,7 @@ Test::Tester~0.114
 CPAN::Meta::YAML~0.016
 Class::Accessor::Lite~0.08
 Class::Singleton~1.5
-Params::Validate~1.18
+Params::Validate~1.19
 Exporter::Tiny~0.042
 Carp::Heavy~1.36
 DateTime::Format::MySQL~0.05
@@ -71,6 +71,6 @@ MRO::Compat~0.12
 File::Slurp~9999.19
 Time::HiRes~1.9726
 JSON::PP~2.27300
-DateTime::TimeZone~1.90
+DateTime::TimeZone~1.91
 AnyEvent::DBI~2.3
 AnyEvent::Worker~0.06
