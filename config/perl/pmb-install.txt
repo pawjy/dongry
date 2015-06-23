@@ -3,7 +3,7 @@ JSON::XS~3.01
 Encode~2.73
 CPAN::Meta~2.150005
 Module::Build~0.4214
-Test::Deep~0.115
+Test::Deep~0.117
 List::MoreUtils~0.413
 Data::MessagePack~0.48
 DBI~1.633
@@ -71,6 +71,6 @@ MRO::Compat~0.12
 File::Slurp~9999.19
 Time::HiRes~1.9726
 JSON::PP~2.27300
-DateTime::TimeZone~1.91
+DateTime::TimeZone~1.92
 AnyEvent::DBI~2.3
 AnyEvent::Worker~0.06
