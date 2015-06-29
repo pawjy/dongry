@@ -22,7 +22,7 @@ Filter::Util::Call~1.54
 DBIx::RewriteDSN~0.05
 Algorithm::Diff~1.1903
 Perl::OSType~1.008
-Path::Tiny~0.068
+Path::Tiny~0.070
 ExtUtils::CBuilder~0.280223
 Parse::CPAN::Meta~1.4417
 lib::abs~0.93
@@ -31,7 +31,7 @@ Test::Tester~0.114
 CPAN::Meta::YAML~0.016
 Class::Accessor::Lite~0.08
 Class::Singleton~1.5
-Params::Validate~1.19
+Params::Validate~1.20
 Exporter::Tiny~0.042
 Carp::Heavy~1.36
 DateTime::Format::MySQL~0.05
