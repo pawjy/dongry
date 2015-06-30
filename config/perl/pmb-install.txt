@@ -13,7 +13,7 @@ List::AllUtils~0.09
 Test::Differences~0.63
 DBD::mysql~4.031
 Path::Class~0.35
-common::sense~3.73
+common::sense~3.74
 List::Rubyish~0.03
 Test::mysqld~0.17
 Types::Serialiser~1.0
