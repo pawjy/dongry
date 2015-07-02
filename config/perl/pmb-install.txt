@@ -1,6 +1,6 @@
 Capture::Tiny~0.30
 JSON::XS~3.01
-Encode~2.74
+Encode~2.75
 CPAN::Meta~2.150005
 Module::Build~0.4214
 Test::Deep~0.117
@@ -35,7 +35,7 @@ Params::Validate~1.20
 Exporter::Tiny~0.042
 Carp::Heavy~1.36
 DateTime::Format::MySQL~0.05
-DateTime~1.19
+DateTime~1.20
 DateTime::Format::Strptime~1.56
 Test::NoWarnings~1.04
 Class::Accessor::Fast~0.34
