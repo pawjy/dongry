@@ -10,6 +10,7 @@ DBI~1.633
 ExtUtils::MakeMaker~7.04
 ExtUtils::ParseXS~3.24
 List::AllUtils~0.09
+Canary::Stability~2006
 Test::Differences~0.63
 DBD::mysql~4.031
 Path::Class~0.35
@@ -51,7 +52,7 @@ Time::Local~1.2300
 Test::SharedFork~0.33
 Getopt::Long~2.47
 Try::Tiny~0.22
-AnyEvent~7.09
+AnyEvent~7.11
 parent~0.234
 Term::ANSIColor~4.03
 Test::Class~0.50
