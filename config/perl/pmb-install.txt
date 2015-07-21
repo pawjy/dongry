@@ -23,7 +23,7 @@ Filter::Util::Call~1.54
 DBIx::RewriteDSN~0.05
 Algorithm::Diff~1.1903
 Perl::OSType~1.008
-Path::Tiny~0.070
+Path::Tiny~0.072
 ExtUtils::CBuilder~0.280223
 Parse::CPAN::Meta~1.4417
 lib::abs~0.93
@@ -64,7 +64,7 @@ Text::Diff~1.41
 CPAN::Meta::Requirements~2.133
 File::Temp~0.2304
 File::Copy::Recursive~0.38
-Test::Requires~0.08
+Test::Requires~0.09
 Module::Metadata~1.000027
 File::Spec~3.47
 Class::Data::Inheritable~0.08
