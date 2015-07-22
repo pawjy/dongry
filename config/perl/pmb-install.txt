@@ -12,7 +12,7 @@ ExtUtils::ParseXS~3.24
 List::AllUtils~0.09
 Canary::Stability~2006
 Test::Differences~0.63
-DBD::mysql~4.031
+DBD::mysql~4.032
 Path::Class~0.35
 common::sense~3.74
 List::Rubyish~0.03
@@ -64,7 +64,7 @@ Text::Diff~1.41
 CPAN::Meta::Requirements~2.133
 File::Temp~0.2304
 File::Copy::Recursive~0.38
-Test::Requires~0.09
+Test::Requires~0.10
 Module::Metadata~1.000027
 File::Spec~3.47
 Class::Data::Inheritable~0.08
