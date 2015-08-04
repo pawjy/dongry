@@ -6,7 +6,7 @@ Module::Build~0.4214
 Test::Deep~0.117
 List::MoreUtils~0.413
 Data::MessagePack~0.48
-DBI~1.633
+DBI~1.634
 ExtUtils::MakeMaker~7.04
 ExtUtils::ParseXS~3.24
 List::AllUtils~0.09
