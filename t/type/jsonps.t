@@ -1,4 +1,4 @@
-package test::Dongry::Type::JSON;
+package test::Dongry::Type::JSONPS;
 use strict;
 use warnings;
 no warnings 'utf8';
@@ -9,10 +9,10 @@ use base qw(Test::Class);
 use Encode;
 use DateTime;
 use Dongry::Database;
-use Dongry::Type::JSON;
+use Dongry::Type::JSONPS;
 
 sub _version : Test(1) {
-  ok $Dongry::Type::JSON::VERSION;
+  ok $Dongry::Type::JSONPS::VERSION;
 } # _version
 
 # ------ json ------
@@ -146,7 +146,7 @@ __PACKAGE__->runtests;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2015 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
