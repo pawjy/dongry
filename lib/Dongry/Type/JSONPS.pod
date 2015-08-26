@@ -1,12 +1,12 @@
 =head1 NAME
 
-Dongry::Type::JSON - Dongry data types for JSON, using |JSON::Functions::XS|
+Dongry::Type::JSONPS - Dongry data types for JSON, using |JSON::PS|
 
 =head1 DESCRIPTION
 
-The C<Dongry::Type::JSON> module defines data types for handing
+The C<Dongry::Type::JSONPS> module defines data types for handing
 JSON-encoded data structure as column value in Dongry.  The module
-uses the L<JSON::Functions::XS> module, which uses L<JSON::XS>.
+uses L<JSON::PS>.
 
 =head1 DATA TYPE
 
@@ -28,17 +28,16 @@ The Perl C<undef> value represents the C<NULL> value of SQL.
 
 =head1 DEPENDENCY
 
-The module requires L<JSON::Functions::XS>.  The latest version of the
-module is available from
-<https://github.com/wakaba/perl-json-functions-xs>.
+The module requires L<JSON::PS>.  The latest version of the module is
+available from <https://github.com/wakaba/perl-json-ps>.
 
 =head1 SEE ALSO
 
 L<Dongry::Type>.
 
-L<JSON::Functions::XS>.
+L<JSON::PS>.
 
-L<Dongry::Type::JSONPS>.
+L<Dongry::Type::JSON>.
 
 =head1 AUTHOR
 
@@ -46,7 +45,7 @@ Wakaba <wakaba@suikawiki.org>.
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2015 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

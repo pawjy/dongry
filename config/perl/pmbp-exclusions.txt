@@ -1,3 +1,4 @@
 - "../../modules/perl-json-functions-xs" tests
+- "../../modules/perl-json-ps" tests
 - "../../modules/perl-ooutils" tests
 - "../../modules/test-x1" tests
