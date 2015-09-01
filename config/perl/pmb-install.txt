@@ -7,8 +7,8 @@ Data::MessagePack~0.48
 List::MoreUtils~0.413
 Test::Deep~0.117
 DBI~1.634
-ExtUtils::MakeMaker~7.04
-ExtUtils::ParseXS~3.24
+ExtUtils::MakeMaker~7.06
+ExtUtils::ParseXS~3.30
 Canary::Stability~2006
 Test::Differences~0.63
 DBD::mysql~4.032
