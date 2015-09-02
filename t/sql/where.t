@@ -272,7 +272,7 @@ sub _where_named_not_defined : Test(10) {
   dies_here_ok { where [':hoge:keyword', 'hoge:keyword' => 333] };
 } # _where_named_not_defined
 
-sub _where_named_ref : Test(11) {
+sub _where_named_ref : Test(12) {
   for (
     [':hoge', hoge => \undef],
     [':hoge', hoge => \'abc'],
@@ -285,6 +285,7 @@ sub _where_named_ref : Test(11) {
     ['(:hoge)', hoge => [12, 44, bless {}, 'test::hogexs']],
     [':hoge:id', hoge => \undef],
     [':hoge:keyword', hoge => \undef],
+    [':hoge:nullable', hoge => \undef],
   ) {
     dies_here_ok {
       where $_;
@@ -341,6 +342,16 @@ sub _where_named_keyword_bad : Test(7) {
     };
   }
 } # _where_named_keyword_bad
+
+sub _where_nullable : Test(3) {
+  for (
+    [['x = :foo:nullable', foo => 'abc'] => ['x = ?', ['abc']]],
+    [['x = :foo:nullable', foo => ''] => ['x = ?', ['']]],
+    [['x = :foo:nullable', foo => undef] => ['x = NULL', []]],
+  ) {
+    eq_or_diff [where $_->[0]], $_->[1];
+  }
+} # _where_nullable
 
 sub _where_named_unknown_instruction : Test(1) {
   dies_here_ok {
@@ -559,7 +570,7 @@ __PACKAGE__->runtests;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2015 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

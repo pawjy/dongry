@@ -236,7 +236,7 @@ sub where ($;$) {
           croak "|$bind{$key}| is not a valid word";
         }
         $bind{$key};
-      } elsif (length $instruction) {
+      } elsif (not $instruction eq 'nullable' and length $instruction) {
         croak "Instruction |$instruction| is unknown";
       } elsif ($type eq 'ARRAY') {
         croak "List for |$key| is empty" unless @{$bind{$key} or []};
@@ -270,9 +270,13 @@ sub where ($;$) {
             croak "Type for |$column| is not defined but a reference is specified";
           }
         }
-        croak "Value for |$key| is not defined" if not defined $value;
-        push @placeholder, $value;
-        '?';
+        if ($instruction eq 'nullable' and not defined $value) {
+          'NULL';
+        } else {
+          croak "Value for |$key| is not defined" if not defined $value;
+          push @placeholder, $value;
+          '?';
+        }
       }
     }eg;
 
