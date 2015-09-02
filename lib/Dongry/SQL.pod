@@ -366,6 +366,12 @@ I<key>.  It is interpreted as an SQL expression.  The value must be a
 "where" construct or an C<undef> value.  If the value is C<undef>, SQL
 expression C<1 = 1>, which is always true, is inserted instead.
 
+=item :I<key>:nullable
+
+If the value of the key/value pair whose key is equal to I<key> is a
+non-C<undef> value, it is interpreted in the same way as C<< :I<key>
+>>.  If the value is C<undef>, it is replaced by an SQL C<NULL> value.
+
 =back
 
 Please note that Dongry does not assure the output is a (fragment of)
@@ -466,7 +472,7 @@ Wakaba <wakaba@suikawiki.org>.
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2015 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
