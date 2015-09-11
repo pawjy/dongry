@@ -7,7 +7,7 @@ Data::MessagePack~0.48
 List::MoreUtils~0.413
 Test::Deep~0.117
 DBI~1.634
-ExtUtils::MakeMaker~7.08
+ExtUtils::MakeMaker~7.10
 ExtUtils::ParseXS~3.30
 Canary::Stability~2006
 Test::Differences~0.63
