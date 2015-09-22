@@ -21,7 +21,7 @@ Module::Runtime~0.014
 Filter::Util::Call~1.55
 DBIx::RewriteDSN~0.05
 Algorithm::Diff~1.1903
-Perl::OSType~1.008
+Perl::OSType~1.009
 Path::Tiny~0.072
 ExtUtils::CBuilder~0.280223
 Parse::CPAN::Meta~1.4417
