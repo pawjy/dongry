@@ -41,7 +41,7 @@ Test::NoWarnings~1.04
 DateTime::Format::Builder~0.81
 Class::Accessor::Fast~0.34
 List::Util~1.42
-DateTime::Locale~0.46
+DateTime::Locale~0.92
 Class::Factory::Util~1.7
 AnyEvent::Util
 Test::Builder~1.001014
