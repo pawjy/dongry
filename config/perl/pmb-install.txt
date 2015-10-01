@@ -33,7 +33,7 @@ Class::Accessor::Lite~0.08
 Class::Singleton~1.5
 Params::Validate~1.21
 Exporter::Tiny~0.042
-DateTime~1.20
+DateTime~1.21
 DateTime::Format::MySQL~0.05
 Carp::Heavy~1.36
 DateTime::Format::Strptime~1.56
