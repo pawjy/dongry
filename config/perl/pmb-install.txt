@@ -36,7 +36,7 @@ Exporter::Tiny~0.042
 DateTime~1.21
 DateTime::Format::MySQL~0.05
 Carp::Heavy~1.36
-DateTime::Format::Strptime~1.56
+DateTime::Format::Strptime~1.57
 Test::NoWarnings~1.04
 DateTime::Format::Builder~0.81
 Class::Accessor::Fast~0.34
