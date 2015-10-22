@@ -70,7 +70,7 @@ Class::Data::Inheritable~0.08
 MRO::Compat~0.12
 File::Slurp~9999.19
 Time::HiRes~1.9726
-DateTime::TimeZone~1.93
+DateTime::TimeZone~1.94
 JSON::PP~2.27300
 AnyEvent::DBI~2.3
 AnyEvent::Worker~0.06
