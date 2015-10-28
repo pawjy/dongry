@@ -11,7 +11,7 @@ ExtUtils::MakeMaker~7.10
 ExtUtils::ParseXS~3.30
 Canary::Stability~2006
 Test::Differences~0.63
-DBD::mysql~4.032
+DBD::mysql~4.033
 Path::Class~0.35
 common::sense~3.74
 List::Rubyish~0.03
