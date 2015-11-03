@@ -50,7 +50,7 @@ Module::Implementation~0.09
 Time::Local~1.2300
 Test::SharedFork~0.34
 Try::Tiny~0.22
-Getopt::Long~2.47
+Getopt::Long~2.48
 AnyEvent~7.11
 Term::ANSIColor~4.03
 parent~0.234
