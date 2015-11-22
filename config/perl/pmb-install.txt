@@ -5,7 +5,7 @@ CPAN::Meta~2.150005
 Module::Build~0.4214
 Test::Deep~0.119
 List::MoreUtils~0.413
-Data::MessagePack~0.48
+Data::MessagePack~0.49
 DBI~1.634
 ExtUtils::ParseXS~3.30
 ExtUtils::MakeMaker~7.10
