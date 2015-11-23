@@ -10,7 +10,7 @@ DBI~1.634
 ExtUtils::ParseXS~3.30
 ExtUtils::MakeMaker~7.10
 Canary::Stability~2006
-Test::Differences~0.63
+Test::Differences~0.64
 DBD::mysql~4.033
 Path::Class~0.35
 common::sense~3.74
