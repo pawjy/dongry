@@ -3,7 +3,7 @@ JSON::XS~3.01
 Encode~2.78
 CPAN::Meta~2.150005
 Module::Build~0.4214
-Test::Deep~0.119
+Test::Deep~1.120
 List::MoreUtils~0.413
 Data::MessagePack~0.49
 DBI~1.634
