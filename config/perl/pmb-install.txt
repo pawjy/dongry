@@ -44,7 +44,7 @@ DateTime::Format::Strptime~1.61
 Test::NoWarnings~1.04
 Class::Accessor::Fast~0.34
 DateTime::Format::Builder~0.81
-DateTime::Locale~1.01
+DateTime::Locale~1.02
 Class::Factory::Util~1.7
 List::Util~1.42
 Test::Builder~1.001014
