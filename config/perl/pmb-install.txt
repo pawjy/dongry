@@ -31,7 +31,7 @@ lib::abs~0.93
 version~0.9912
 Package::Stash~0.37
 Test::Tester~0.114
-CPAN::Meta::YAML~0.016
+CPAN::Meta::YAML~0.018
 Class::Accessor::Lite~0.08
 Class::Singleton~1.5
 Params::Validate~1.21
@@ -54,7 +54,7 @@ Module::Implementation~0.09
 Time::Local~1.2300
 Test::SharedFork~0.34
 Getopt::Long~2.48
-Try::Tiny~0.22
+Try::Tiny~0.24
 AnyEvent~7.11
 parent~0.234
 Term::ANSIColor~4.04
