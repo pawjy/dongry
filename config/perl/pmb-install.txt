@@ -64,7 +64,7 @@ Data::Dumper~2.154
 Dist::CheckConflicts~0.11
 Text::Diff~1.43
 Test::More~1.001014
-CPAN::Meta::Requirements~2.133
+CPAN::Meta::Requirements~2.140
 File::Temp~0.2304
 File::Copy::Recursive~0.38
 Package::DeprecationManager~0.15
