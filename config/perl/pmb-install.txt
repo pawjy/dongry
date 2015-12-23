@@ -52,7 +52,7 @@ AnyEvent::Util
 Digest::SHA~5.95
 Module::Implementation~0.09
 Time::Local~1.2300
-Test::SharedFork~0.34
+Test::SharedFork~0.35
 Getopt::Long~2.48
 Try::Tiny~0.24
 AnyEvent~7.11
