@@ -40,7 +40,7 @@ Exporter::Tiny~0.042
 Carp::Heavy~1.38
 DateTime::Format::MySQL~0.05
 DateTime~1.21
-DateTime::Format::Strptime~1.62
+DateTime::Format::Strptime~1.63
 Test::NoWarnings~1.04
 Class::Accessor::Fast~0.34
 DateTime::Format::Builder~0.81
@@ -58,7 +58,7 @@ Try::Tiny~0.24
 AnyEvent~7.11
 parent~0.234
 Term::ANSIColor~4.04
-Exporter::Lite~0.07
+Exporter::Lite~0.08
 Test::Class~0.50
 Data::Dumper~2.154
 Dist::CheckConflicts~0.11
@@ -70,7 +70,7 @@ File::Copy::Recursive~0.38
 Package::DeprecationManager~0.15
 Test::Requires~0.10
 Module::Metadata~1.000027
-File::Spec~3.60
+File::Spec~3.62
 Class::Data::Inheritable~0.08
 MRO::Compat~0.12
 File::Slurp~9999.19
