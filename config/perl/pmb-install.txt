@@ -2,7 +2,7 @@ Capture::Tiny~0.30
 JSON::XS~3.01
 Encode~2.78
 CPAN::Meta~2.150005
-Module::Build~0.4214
+Module::Build~0.4216
 Test::Deep~1.120
 List::MoreUtils~0.413
 Data::MessagePack~0.49
@@ -75,6 +75,7 @@ Class::Data::Inheritable~0.08
 MRO::Compat~0.12
 File::Slurp~9999.19
 Time::HiRes~1.9728
+TAP::Harness~3.36
 JSON::PP~2.27300
 DateTime::TimeZone~1.94
 AnyEvent::DBI~2.3
