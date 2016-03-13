@@ -9,7 +9,7 @@ Data::MessagePack~0.49
 DBI~1.634
 ExtUtils::ParseXS~3.30
 ExtUtils::MakeMaker~7.10
-Canary::Stability~2006
+Canary::Stability~2011
 Test::Differences~0.64
 DBD::mysql~4.033
 Path::Class~0.36
