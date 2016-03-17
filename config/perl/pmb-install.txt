@@ -76,7 +76,7 @@ File::Slurp~9999.19
 Time::HiRes~1.9732
 TAP::Harness~3.36
 JSON::PP~2.27300
-DateTime::TimeZone~1.95
+DateTime::TimeZone~1.96
 AnyEvent::DBI~2.3
 Cwd~3.62
 AnyEvent::Worker~0.06
