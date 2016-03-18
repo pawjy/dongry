@@ -46,7 +46,7 @@ Class::Accessor::Fast~0.34
 DateTime::Format::Builder~0.81
 Class::Factory::Util~1.7
 DateTime::Locale~1.02
-List::Util~1.43
+List::Util~1.44
 Test::Builder~1.001014
 AnyEvent::Util
 Digest::SHA~5.95
