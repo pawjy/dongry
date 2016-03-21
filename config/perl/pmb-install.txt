@@ -40,7 +40,7 @@ Exporter::Tiny~0.042
 DateTime::Format::MySQL~0.06
 Carp::Heavy~1.38
 DateTime~1.25
-DateTime::Format::Strptime~1.64
+DateTime::Format::Strptime~1.65
 Test::NoWarnings~1.04
 Class::Accessor::Fast~0.34
 DateTime::Format::Builder~0.81
@@ -57,7 +57,7 @@ Getopt::Long~2.48
 Try::Tiny~0.24
 AnyEvent~7.12
 parent~0.234
-Term::ANSIColor~4.04
+Term::ANSIColor~4.05
 Exporter::Lite~0.08
 Test::Class~0.50
 Data::Dumper~2.154
