@@ -81,7 +81,7 @@ MRO::Compat~0.12
 File::Slurp~9999.19
 Time::HiRes~1.9732
 TAP::Harness~3.36
-DateTime::TimeZone~1.96
+DateTime::TimeZone~1.97
 JSON::PP~2.27300
 namespace::clean~0.26
 AnyEvent::DBI~2.3
