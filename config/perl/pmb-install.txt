@@ -27,7 +27,7 @@ Params::Util~1.07
 DBIx::RewriteDSN~0.05
 Algorithm::Diff~1.1903
 Perl::OSType~1.009
-Path::Tiny~0.084
+Path::Tiny~0.086
 ExtUtils::CBuilder~0.280224
 Parse::CPAN::Meta~1.4417
 namespace::autoclean~0.28
