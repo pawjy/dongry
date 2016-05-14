@@ -42,7 +42,7 @@ Class::Singleton~1.5
 Params::Validate~1.24
 Sub::Install~0.928
 Exporter::Tiny~0.042
-DateTime~1.26
+DateTime~1.27
 Carp::Heavy~1.38
 DateTime::Format::MySQL~0.06
 DateTime::Format::Strptime~1.68
