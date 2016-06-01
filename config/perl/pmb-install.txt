@@ -1,4 +1,4 @@
-Capture::Tiny~0.40
+Capture::Tiny~0.42
 JSON::XS~3.02
 Encode~2.84
 CPAN::Meta~2.150005
@@ -32,9 +32,9 @@ ExtUtils::CBuilder~0.280224
 Parse::CPAN::Meta~1.4417
 namespace::autoclean~0.28
 Package::Stash~0.37
-version~0.9916
+version~0.9917
 lib::abs~0.93
-Test::Tester~1.302019
+Test::Tester~1.302022
 CPAN::Meta::YAML~0.018
 Class::Accessor::Lite~0.08
 B::Hooks::EndOfScope~0.21
@@ -53,7 +53,7 @@ DateTime::Locale~1.03
 Class::Factory::Util~1.7
 List::Util~1.45
 AnyEvent::Util
-Test::Builder~1.302019
+Test::Builder~1.302022
 Digest::SHA~5.95
 Module::Implementation~0.09
 Time::Local~1.2300
@@ -68,7 +68,7 @@ Test::Class~0.50
 Data::Dumper~2.154
 Dist::CheckConflicts~0.11
 Sub::Name~0.15
-Test::More~1.302019
+Test::More~1.302022
 Text::Diff~1.44
 CPAN::Meta::Requirements~2.140
 File::Temp~0.2304
