@@ -34,7 +34,7 @@ namespace::autoclean~0.28
 Package::Stash~0.37
 version~0.9917
 lib::abs~0.93
-Test::Tester~1.302022
+Test::Tester~1.302026
 CPAN::Meta::YAML~0.018
 Class::Accessor::Lite~0.08
 B::Hooks::EndOfScope~0.21
@@ -53,13 +53,13 @@ DateTime::Locale~1.03
 Class::Factory::Util~1.7
 List::Util~1.45
 AnyEvent::Util
-Test::Builder~1.302022
+Test::Builder~1.302026
 Digest::SHA~5.95
 Module::Implementation~0.09
 Time::Local~1.2300
 Test::SharedFork~0.35
 Try::Tiny~0.24
-Getopt::Long~2.48
+Getopt::Long~2.49
 parent~0.234
 AnyEvent~7.12
 Term::ANSIColor~4.05
@@ -68,7 +68,7 @@ Test::Class~0.50
 Data::Dumper~2.154
 Dist::CheckConflicts~0.11
 Sub::Name~0.15
-Test::More~1.302022
+Test::More~1.302026
 Text::Diff~1.44
 CPAN::Meta::Requirements~2.140
 File::Temp~0.2304
@@ -81,7 +81,7 @@ MRO::Compat~0.12
 File::Slurp~9999.19
 Time::HiRes~1.9733
 TAP::Harness~3.36
-DateTime::TimeZone~1.98
+DateTime::TimeZone~2.00
 JSON::PP~2.27400
 namespace::clean~0.27
 AnyEvent::DBI~2.3
