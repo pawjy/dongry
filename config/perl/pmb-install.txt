@@ -4,7 +4,7 @@ Encode~2.84
 CPAN::Meta~2.150005
 Module::Build~0.4218
 Test::Deep~1.120
-Data::MessagePack~0.49
+Data::MessagePack~0.50
 List::MoreUtils~0.415
 DBI~1.636
 ExtUtils::MakeMaker~7.18
