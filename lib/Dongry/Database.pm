@@ -531,10 +531,10 @@ sub execute ($$;$%) {
           })->then (sub {
             return $client->statement_close ($x->packet->{statement_id});
           }, sub {
-            warn $_[0];
-            return $client->statement_close ($x->packet->{statement_id});
-          })->catch (sub {
-            warn $_[0];
+            my $error = $_[0];
+            return $client->statement_close ($x->packet->{statement_id})->catch (sub {
+              warn $_[0];
+            })->then (sub { die $error });
           });
         })->catch (sub {
           my $x = $_[0];
