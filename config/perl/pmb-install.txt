@@ -30,7 +30,7 @@ Parse::CPAN::Meta~1.4422
 lib::abs~0.93
 Package::Stash~0.37
 version~0.9917
-Test::Tester~1.302047
+Test::Tester~1.302049
 CPAN::Meta::YAML~0.018
 Class::Accessor::Lite~0.08
 Class::Singleton~1.5
@@ -48,8 +48,8 @@ List::Util~1.45
 Class::Factory::Util~1.7
 DateTime::Locale~1.05
 AnyEvent::Util
-Test::Builder~1.302047
-Digest::SHA~5.95
+Test::Builder~1.302049
+Digest::SHA~5.96
 Module::Implementation~0.09
 Time::Local~1.2300
 Test::SharedFork~0.35
@@ -63,7 +63,7 @@ Exporter::Lite~0.08
 Data::Dumper~2.161
 Dist::CheckConflicts~0.11
 Sub::Name~0.15
-Test::More~1.302047
+Test::More~1.302049
 Text::Diff~1.44
 CPAN::Meta::Requirements~2.140
 File::Temp~0.2304
