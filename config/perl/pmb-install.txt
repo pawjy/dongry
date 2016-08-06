@@ -7,7 +7,7 @@ CPAN::Meta~2.150005
 CPAN::Meta::Requirements~2.140
 CPAN::Meta::YAML~0.018
 Canary::Stability~2011
-Capture::Tiny~0.42
+Capture::Tiny~0.44
 Carp::Heavy~1.38
 Class::Accessor::Fast~0.34
 Class::Accessor::Lite~0.08
@@ -32,7 +32,7 @@ Encode~2.85
 Exporter::Lite~0.08
 Exporter::Tiny~0.042
 ExtUtils::CBuilder~0.280224
-ExtUtils::MakeMaker~7.18
+ExtUtils::MakeMaker~7.20
 ExtUtils::ParseXS~3.30
 File::Copy::Recursive~0.38
 File::Slurp~9999.19
