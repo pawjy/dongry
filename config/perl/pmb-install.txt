@@ -56,7 +56,7 @@ Package::Stash::XS~0.28
 Params::Util~1.07
 Params::Validate~1.24
 Parse::CPAN::Meta~1.4422
-Path::Class~0.36
+Path::Class~0.37
 Path::Tiny~0.096
 Perl::OSType~1.010
 Sub::Exporter::Progressive~0.001011
@@ -76,7 +76,7 @@ Test::Tester~1.302052
 Test::mysqld~0.17
 Text::Diff~1.44
 Time::HiRes~1.9739
-Time::Local~1.2300
+Time::Local~1.24
 Try::Tiny~0.24
 Types::Serialiser~1.0
 Variable::Magic~0.59
