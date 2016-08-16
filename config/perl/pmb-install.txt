@@ -62,7 +62,7 @@ Perl::OSType~1.010
 Sub::Exporter::Progressive~0.001011
 Sub::Identify~0.12
 Sub::Install~0.928
-Sub::Name~0.15
+Sub::Name~0.18
 TAP::Harness~3.36
 Term::ANSIColor~4.05
 Test::Builder~1.302052
