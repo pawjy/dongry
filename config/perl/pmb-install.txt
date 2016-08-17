@@ -46,7 +46,7 @@ List::MoreUtils~0.416
 List::Rubyish~0.03
 List::Util~1.45
 MRO::Compat~0.12
-Module::Build~0.4218
+Module::Build~0.4220
 Module::Implementation~0.09
 Module::Metadata~1.000033
 Module::Runtime~0.014
@@ -77,7 +77,7 @@ Test::mysqld~0.17
 Text::Diff~1.44
 Time::HiRes~1.9739
 Time::Local~1.24
-Try::Tiny~0.24
+Try::Tiny~0.27
 Types::Serialiser~1.0
 Variable::Magic~0.59
 XSLoader~0.22
