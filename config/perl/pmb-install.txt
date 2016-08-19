@@ -4,7 +4,7 @@ AnyEvent::DBI~2.3
 AnyEvent::Util
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.21
-CPAN::Meta~2.150005
+CPAN::Meta~2.150010
 CPAN::Meta::Requirements~2.140
 CPAN::Meta::YAML~0.018
 Canary::Stability~2011
@@ -55,14 +55,13 @@ Package::Stash~0.37
 Package::Stash::XS~0.28
 Params::Util~1.07
 Params::Validate~1.24
-Parse::CPAN::Meta~1.4422
 Path::Class~0.37
 Path::Tiny~0.096
 Perl::OSType~1.010
 Sub::Exporter::Progressive~0.001011
 Sub::Identify~0.12
 Sub::Install~0.928
-Sub::Name~0.18
+Sub::Name~0.19
 TAP::Harness~3.36
 Term::ANSIColor~4.05
 Test::Builder~1.302052
