@@ -20,7 +20,7 @@ DBD::mysql~4.035
 DBI~1.636
 DBIx::RewriteDSN~0.05
 Data::Dumper~2.161
-Data::MessagePack~0.50
+Data::MessagePack~1.00
 DateTime~1.36
 DateTime::Format::Builder~0.81
 DateTime::Format::MySQL~0.06
