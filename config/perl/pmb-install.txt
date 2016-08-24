@@ -16,7 +16,7 @@ Class::Data::Inheritable~0.08
 Class::Factory::Util~1.7
 Class::Singleton~1.5
 Cwd~3.62
-DBD::mysql~4.035
+DBD::mysql~4.036
 DBI~1.636
 DBIx::RewriteDSN~0.05
 Data::Dumper~2.161
@@ -58,7 +58,7 @@ Params::Validate~1.24
 Path::Class~0.37
 Path::Tiny~0.096
 Perl::OSType~1.010
-Sub::Exporter::Progressive~0.001011
+Sub::Exporter::Progressive~0.001012
 Sub::Identify~0.12
 Sub::Install~0.928
 Sub::Name~0.19
