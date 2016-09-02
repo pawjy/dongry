@@ -79,7 +79,7 @@ Time::Local~1.24
 Try::Tiny~0.27
 Types::Serialiser~1.0
 Variable::Magic~0.59
-XSLoader~0.22
+XSLoader~0.24
 common::sense~3.74
 lib::abs~0.93
 namespace::autoclean~0.28
