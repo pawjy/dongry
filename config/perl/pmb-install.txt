@@ -64,14 +64,14 @@ Sub::Install~0.928
 Sub::Name~0.19
 TAP::Harness~3.36
 Term::ANSIColor~4.05
-Test::Builder~1.302052
+Test::Builder~1.302056
 Test::Class~0.50
 Test::Differences~0.64
-Test::More~1.302052
+Test::More~1.302056
 Test::NoWarnings~1.04
 Test::Requires~0.10
 Test::SharedFork~0.35
-Test::Tester~1.302052
+Test::Tester~1.302056
 Test::mysqld~0.17
 Text::Diff~1.44
 Time::HiRes~1.9739
