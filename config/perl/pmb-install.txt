@@ -1,5 +1,5 @@
 Algorithm::Diff~1.1903
-AnyEvent~7.12
+AnyEvent~7.13
 AnyEvent::DBI~2.3
 AnyEvent::Util
 AnyEvent::Worker~0.06
