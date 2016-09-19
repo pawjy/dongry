@@ -21,12 +21,12 @@ DBI~1.636
 DBIx::RewriteDSN~0.05
 Data::Dumper~2.161
 Data::MessagePack~1.00
-DateTime~1.38
+DateTime~1.39
 DateTime::Format::Builder~0.81
 DateTime::Format::MySQL~0.06
 DateTime::Format::Strptime~1.68
-DateTime::Locale~1.06
-DateTime::TimeZone~2.02
+DateTime::Locale~1.07
+DateTime::TimeZone~2.03
 Devel::StackTrace~2.01
 Digest::SHA~5.96
 Dist::CheckConflicts~0.11
