@@ -7,7 +7,7 @@ B::Hooks::EndOfScope~0.21
 CPAN::Meta~2.150010
 CPAN::Meta::Requirements~2.140
 CPAN::Meta::YAML~0.018
-Canary::Stability~2011
+Canary::Stability~2012
 Capture::Tiny~0.44
 Carp::Heavy~1.38
 Class::Accessor::Fast~0.34
@@ -25,7 +25,7 @@ DateTime~1.39
 DateTime::Format::Builder~0.81
 DateTime::Format::MySQL~0.06
 DateTime::Format::Strptime~1.68
-DateTime::Locale~1.07
+DateTime::Locale~1.08
 DateTime::TimeZone~2.03
 Devel::StackTrace~2.01
 Digest::SHA~5.96
@@ -63,7 +63,7 @@ Path::Class~0.37
 Path::Tiny~0.096
 Perl::OSType~1.010
 Role::Tiny~2.000003
-Specio::Library::String~0.25
+Specio::Library::String~0.26
 Sub::Exporter::Progressive~0.001012
 Sub::Identify~0.12
 Sub::Install~0.928
