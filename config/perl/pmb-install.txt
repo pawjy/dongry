@@ -26,7 +26,7 @@ DateTime::Format::Builder~0.81
 DateTime::Format::MySQL~0.06
 DateTime::Format::Strptime~1.68
 DateTime::Locale~1.08
-DateTime::TimeZone~2.04
+DateTime::TimeZone~2.05
 Devel::StackTrace~2.01
 Digest::SHA~5.96
 Dist::CheckConflicts~0.11
