@@ -1,12 +1,11 @@
 Algorithm::Diff~1.1903
 AnyEvent~7.13
 AnyEvent::DBI~2.3
-AnyEvent::Util
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.21
 Canary::Stability~2012
 Capture::Tiny~0.44
-Carp~1.38
+Carp::Heavy~1.38
 Class::Accessor::Fast~0.34
 Class::Accessor::Lite~0.08
 Class::Data::Inheritable~0.08
@@ -22,7 +21,7 @@ DateTime~1.39
 DateTime::Format::Builder~0.81
 DateTime::Format::MySQL~0.06
 DateTime::Format::Strptime~1.68
-DateTime::Locale~1.09
+DateTime::Locale~1.10
 DateTime::TimeZone~2.06
 Devel::StackTrace~2.01
 Digest::SHA~5.96
@@ -52,7 +51,6 @@ Params::Validate~1.25
 Params::ValidationCompiler~0.13
 Path::Class~0.37
 Path::Tiny~0.098
-Role::Tiny~2.000003
 Role::Tiny::With~2.000003
 Specio::Declare~0.30
 Specio::Library::Numeric~0.30
@@ -64,6 +62,7 @@ Term::ANSIColor~4.05
 Test::Class~0.50
 Test::Differences~0.64
 Test::Fatal~0.014
+Test::More~1.302062
 Test::NoWarnings~1.04
 Test::Requires~0.10
 Test::SharedFork~0.35
