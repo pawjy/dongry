@@ -51,8 +51,9 @@ Params::Validate~1.26
 Params::ValidationCompiler~0.13
 Path::Class~0.37
 Path::Tiny~0.098
+Role::Tiny~2.000003
 Role::Tiny::With~2.000003
-Scalar::Util~1.46
+Specio~0.30
 Specio::Library::Builtins~0.30
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.12
