@@ -1,7 +1,7 @@
 package Dongry::Database;
 use strict;
 use warnings;
-our $VERSION = '4.0';
+our $VERSION = '5.0';
 use Carp;
 use Carp::Heavy;
 use Scalar::Util qw(weaken);
@@ -685,7 +685,25 @@ sub insert ($$$;%) {
     $sql .= sprintf ' ON DUPLICATE KEY UPDATE '
          . (join ', ', ('%s = %s') x (@sql_value / 2)),
         @sql_value;
-  }
+  } elsif ($args{duplicate} and ref $args{duplicate} eq 'ARRAY') {
+    my $value = $args{duplicate};
+    my @col = @$value;
+    croak 'Duplicate array is empty' unless @col;
+    my @sql_value;
+    while (@col) {
+      my $name = shift @col;
+      my $value = shift @col;
+      if (defined $value and ref $value eq 'Dongry::SQL::BareFragment') {
+        push @sql_value, (_quote $name), ${$value};
+      } else {
+        push @sql_value, (_quote $name), '?';
+        push @values, $value;
+      }
+    }
+    $sql .= sprintf ' ON DUPLICATE KEY UPDATE '
+         . (join ', ', ('%s = %s') x (@sql_value / 2)),
+        @sql_value;
+  } # duplicate
 
   my $cb_orig = $args{cb} || sub { };
   my $cb = sub {
@@ -1256,7 +1274,7 @@ sub load ($$) {
 
 =head1 LICENSE
 
-Copyright 2011-2014 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2016 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

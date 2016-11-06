@@ -772,7 +772,7 @@ The name of the data source used to select the database connection.
 For more information on how data source is selected, see the
 description for the C<execute> method.
 
-=item duplicate => "ignore" / "replace" / hashref
+=item duplicate => "ignore" / "replace" / arrayref / hashref
 
 How "duplicate entry" error is handled by the database.
 
@@ -784,10 +784,13 @@ possible error as well.
 If C<replace> is specified, an C<REPLACE> statement is issued such
 that any duplicate rows will be discarded before the insertion.
 
-If a hash reference is specified, the C<ON DUPLICATE KEY UPDATE>
-clause is appended to the C<INSERT> statement with the values
-specified in the hash.  The format of the hash reference is same as
-the second argument of the C<update> method.
+If an array or hash reference is specified, the C<ON DUPLICATE KEY
+UPDATE> clause is appended to the C<INSERT> statement with the values
+specified in the array or hash.  The format of the hash reference is
+same as the second argument of the C<update> method.  An array whose
+content is equal to a hash can be specified to preserve order of
+key/value pairs.  Note that the order of SQL fragments are significant
+when they contain column names.
 
 If this option is not specified, then a normal C<INSERT> statement is
 issued such that any duplication would be reported as an SQL execution
@@ -1601,7 +1604,7 @@ Wakaba <wakaba@suikawiki.org>.
 
 =head1 LICENSE
 
-Copyright 2011-2015 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2016 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

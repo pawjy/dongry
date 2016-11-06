@@ -1227,6 +1227,44 @@ sub _insert_duplicate_update_found : Test(2) {
               {v1 => 2, v2 => 422, v3 => undef}];
 } # _insert_duplicate_update_found
 
+sub _insert_duplicate_update_found_arrayref : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (v1 int unique key, v2 int, v3 blob)');
+  $db->execute ('insert into hoge (v1, v2) values (1, 2112)');
+  $db->execute ('insert into hoge (v1, v2) values (2, 422)');
+
+  my $result = $db->insert
+      ('hoge', [{v1 => 1}], duplicate => [v3 => 'updated']);
+  like $result->row_count, qr{^(?:2|3)$}; # 2 in MySQL 5.0; 3 in MySQL 5.5.
+
+  eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+             [{v1 => 1, v2 => 2112, v3 => 'updated'},
+              {v1 => 2, v2 => 422, v3 => undef}];
+} # _insert_duplicate_update_found_arrayref
+
+sub _insert_duplicate_update_found_arrayref_ref : Test(2) {
+  reset_db_set;
+  my $dsn = test_dsn 'select1';
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, writable => 1}});
+  $db->execute ('create table hoge (v1 int unique key, v2 int, V3 blob)');
+  $db->execute ('insert into hoge (v1, v2) values (1, 2112)');
+  $db->execute ('insert into hoge (v1, v2) values (2, 422)');
+
+  my $result = $db->insert
+      ('hoge', [{v1 => 1, v2 => 10}], duplicate => [v2 => 20, V3 => $db->bare_sql_fragment ('v2')]);
+  like $result->row_count, qr{^(?:2|3)$}; # 2 in MySQL 5.0; 3 in MySQL 5.5.
+
+  eq_or_diff $db->execute ('select * from hoge order by v1 asc', undef,
+                           source_name => 'master')->all->to_a,
+             [{v1 => 1, v2 => 20, V3 => '20'},
+              {v1 => 2, v2 => 422, V3 => undef}];
+} # _insert_duplicate_update_found_arrayref_ref
+
 sub _insert_duplicate_update_not_found : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'select1';
@@ -1451,7 +1489,7 @@ __PACKAGE__->runtests;
 
 =head1 LICENSE
 
-Copyright 2011-2014 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2016 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
