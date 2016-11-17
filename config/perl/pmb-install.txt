@@ -1,7 +1,6 @@
 Algorithm::Diff~1.1903
 AnyEvent~7.13
 AnyEvent::DBI~2.3
-AnyEvent::Util
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.21
 Canary::Stability~2012
@@ -13,12 +12,12 @@ Class::Data::Inheritable~0.08
 Class::Factory::Util~1.7
 Class::Singleton~1.5
 Cwd~3.62
-DBD::mysql~4.038
+DBD::mysql~4.039
 DBI~1.636
 DBIx::RewriteDSN~0.05
 Data::Dumper~2.161
 Data::MessagePack~1.00
-DateTime~1.40
+DateTime~1.41
 DateTime::Format::Builder~0.81
 DateTime::Format::MySQL~0.06
 DateTime::Format::Strptime~1.68
@@ -37,7 +36,7 @@ File::Slurp~9999.19
 File::Temp~0.2304
 Filter::Util::Call~1.55
 Getopt::Long~2.49
-JSON::XS~3.02
+JSON::XS~3.03
 List::MoreUtils~0.416
 List::Rubyish~0.03
 List::Util~1.46
@@ -53,14 +52,14 @@ Params::ValidationCompiler~0.18
 Path::Class~0.37
 Path::Tiny~0.098
 Role::Tiny~2.000005
-Role::Tiny::With~2.000005
+Specio::Library::Builtins~0.31
 Specio::Library::Numeric~0.31
-Specio::Library::String~0.31
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.12
 Sub::Install~0.928
 Sub::Name~0.21
 Term::ANSIColor~4.06
+Test::Builder~1.302062
 Test::Class~0.50
 Test::Differences~0.64
 Test::Fatal~0.014
@@ -71,7 +70,7 @@ Test::Tester~1.302062
 Test::mysqld~0.17
 Text::Diff~1.44
 Time::HiRes~1.9740
-Time::Local~1.24
+Time::Local~1.25
 Try::Tiny~0.27
 Types::Serialiser~1.0
 Variable::Magic~0.60
