@@ -1,7 +1,6 @@
 Algorithm::Diff~1.1903
 AnyEvent~7.13
 AnyEvent::DBI~2.3
-AnyEvent::Util
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.21
 Canary::Stability~2012
@@ -13,7 +12,7 @@ Class::Data::Inheritable~0.08
 Class::Factory::Util~1.7
 Class::Singleton~1.5
 Cwd~3.62
-DBD::mysql~4.039
+DBD::mysql~4.040
 DBI~1.636
 DBIx::RewriteDSN~0.05
 Data::Dumper~2.161
@@ -55,16 +54,16 @@ Path::Tiny~0.098
 Role::Tiny~2.000005
 Role::Tiny::With~2.000005
 Specio::Declare~0.31
-Specio::Exporter~0.31
+Specio::Library::String~0.31
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.12
 Sub::Install~0.928
 Sub::Name~0.21
 Term::ANSIColor~4.06
+Test::Builder~1.302062
 Test::Class~0.50
 Test::Differences~0.64
 Test::Fatal~0.014
-Test::More~1.302062
 Test::NoWarnings~1.04
 Test::Requires~0.10
 Test::SharedFork~0.35
