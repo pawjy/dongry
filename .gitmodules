@@ -1,26 +1,28 @@
 [submodule "modules/perl-rdb-utils"]
 	path = modules/perl-rdb-utils
-	url = git://github.com/wakaba/perl-rdb-utils
+	url = https://github.com/wakaba/perl-rdb-utils
 	track = master
 [submodule "modules/perl-json-functions-xs"]
 	path = modules/perl-json-functions-xs
-	url = git://github.com/wakaba/perl-json-functions-xs
+	url = https://github.com/wakaba/perl-json-functions-xs
 	track = master
 [submodule "modules/perl-test-moremore"]
 	path = modules/perl-test-moremore
-	url = git://github.com/wakaba/perl-test-moremore
+	url = https://github.com/wakaba/perl-test-moremore
 	track = master
 [submodule "modules/perl-ooutils"]
 	path = modules/perl-ooutils
-	url = git://github.com/wakaba/perl-ooutils
+	url = https://github.com/wakaba/perl-ooutils
 	track = master
 [submodule "t_deps/modules/anyevent-mysql-client"]
 	path = t_deps/modules/anyevent-mysql-client
-	url = git://github.com/wakaba/perl-anyevent-mysql-client
+	url = https://github.com/wakaba/perl-anyevent-mysql-client
 	track = master
 [submodule "t_deps/modules/test-x1"]
 	path = t_deps/modules/test-x1
-	url = git://github.com/wakaba/perl-test-x1
+	url = https://github.com/wakaba/perl-test-x1
+	track = master
 [submodule "modules/json-ps"]
 	path = modules/json-ps
-	url = git://github.com/wakaba/perl-json-ps
+	url = https://github.com/wakaba/perl-json-ps
+	track = master
