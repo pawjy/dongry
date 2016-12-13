@@ -363,8 +363,9 @@ I<key>.  It is interpreted as an SQL expression.  The value must be a
 
 Replaced by the value of the key/value pair whose key is equal to
 I<key>.  It is interpreted as an SQL expression.  The value must be a
-"where" construct or an C<undef> value.  If the value is C<undef>, SQL
-expression C<1 = 1>, which is always true, is inserted instead.
+valid "where" construct, or an empty hash reference.  If the value is
+an empty hash reference, SQL expression C<1 = 1>, which is always
+evaluated as true, is inserted instead.
 
 =item :I<key>:nullable
 
