@@ -6,10 +6,6 @@
 	path = modules/perl-json-functions-xs
 	url = https://github.com/wakaba/perl-json-functions-xs
 	track = master
-[submodule "modules/perl-test-moremore"]
-	path = modules/perl-test-moremore
-	url = https://github.com/wakaba/perl-test-moremore
-	track = master
 [submodule "modules/perl-ooutils"]
 	path = modules/perl-ooutils
 	url = https://github.com/wakaba/perl-ooutils
@@ -25,4 +21,8 @@
 [submodule "modules/json-ps"]
 	path = modules/json-ps
 	url = https://github.com/wakaba/perl-json-ps
+	track = master
+[submodule "t_deps/modules/test-moremore"]
+	path = t_deps/modules/test-moremore
+	url = https://github.com/wakaba/perl-test-moremore
 	track = master
