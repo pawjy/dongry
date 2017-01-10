@@ -58,7 +58,6 @@ Sub::Identify~0.12
 Sub::Install~0.928
 Sub::Name~0.21
 Term::ANSIColor~4.06
-Test::Builder~1.302073
 Test::Class~0.50
 Test::Differences~0.64
 Test::Fatal~0.014
@@ -70,7 +69,7 @@ Test::mysqld~0.20
 Text::Diff~1.44
 Time::HiRes~1.9741
 Time::Local~1.25
-Try::Tiny~0.27
+Try::Tiny~0.28
 Types::Serialiser~1.0
 Variable::Magic~0.60
 XSLoader~0.24
