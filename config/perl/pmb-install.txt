@@ -1,11 +1,12 @@
 Algorithm::Diff~1.1903
 AnyEvent~7.13
 AnyEvent::DBI~2.3
+AnyEvent::Handle
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.21
 Canary::Stability~2012
 Capture::Tiny~0.44
-Carp~1.38
+Carp::Heavy~1.38
 Class::Accessor::Fast~0.34
 Class::Accessor::Lite~0.08
 Class::Data::Inheritable~0.08
@@ -52,7 +53,9 @@ Params::ValidationCompiler~0.23
 Path::Class~0.37
 Path::Tiny~0.104
 Role::Tiny~2.000005
-Specio::Exporter~0.36
+Role::Tiny::With~2.000005
+Scalar::Util~1.47
+Specio::Library::Builtins~0.36
 Specio::Library::String~0.36
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.12
