@@ -12,7 +12,7 @@ Class::Data::Inheritable~0.08
 Class::Factory::Util~1.7
 Class::Singleton~1.5
 Cwd~3.62
-DBD::mysql~4.041
+DBD::mysql~4.042
 DBI~1.636
 DBIx::RewriteDSN~0.05
 Data::Dumper~2.161
@@ -23,6 +23,7 @@ DateTime::Format::MySQL~0.06
 DateTime::Format::Strptime~1.73
 DateTime::Locale~1.14
 DateTime::TimeZone~2.10
+Devel::CheckLib~1.07
 Devel::StackTrace~2.02
 Digest::SHA~5.96
 Dist::CheckConflicts~0.11
@@ -36,6 +37,7 @@ File::Slurp~9999.19
 File::Temp~0.2304
 Filter::Util::Call~1.57
 Getopt::Long~2.49
+IO::CaptureOutput~1.1104
 JSON::XS~3.03
 List::MoreUtils~0.416
 List::Rubyish~0.03
@@ -52,8 +54,9 @@ Params::ValidationCompiler~0.23
 Path::Class~0.37
 Path::Tiny~0.104
 Role::Tiny~2.000005
-Specio::Declare~0.36
-Specio::Library::Builtins~0.36
+Scalar::Util~1.47
+Specio::Exporter~0.36
+Specio::Library::Numeric~0.36
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.12
 Sub::Install~0.928
@@ -62,6 +65,7 @@ Term::ANSIColor~4.06
 Test::Class~0.50
 Test::Differences~0.64
 Test::Fatal~0.014
+Test::More~1.302078
 Test::NoWarnings~1.04
 Test::Requires~0.10
 Test::SharedFork~0.35
