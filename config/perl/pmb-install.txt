@@ -1,7 +1,7 @@
 Algorithm::Diff~1.1903
 AnyEvent~7.13
 AnyEvent::DBI~2.3
-AnyEvent::Handle
+AnyEvent::Util
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.21
 Canary::Stability~2012
