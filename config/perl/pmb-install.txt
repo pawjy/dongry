@@ -1,6 +1,7 @@
 Algorithm::Diff~1.1903
 AnyEvent~7.13
 AnyEvent::DBI~2.3
+AnyEvent::Handle
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.21
 Canary::Stability~2012
@@ -62,7 +63,6 @@ Params::ValidationCompiler~0.24
 Path::Class~0.37
 Path::Tiny~0.104
 Role::Tiny~2.000005
-Role::Tiny::With~2.000005
 Scalar::Util~1.47
 Specio~0.36
 Specio::Declare~0.36
