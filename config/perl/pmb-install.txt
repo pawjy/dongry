@@ -5,7 +5,7 @@ AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.21
 Canary::Stability~2012
 Capture::Tiny~0.46
-Carp::Heavy~1.38
+Carp~1.38
 Class::Accessor::Fast~0.34
 Class::Accessor::Lite~0.08
 Class::Data::Inheritable~0.08
@@ -28,7 +28,7 @@ Devel::CheckLib~1.10
 Devel::StackTrace~2.02
 Digest::SHA~5.96
 Dist::CheckConflicts~0.11
-Encode~2.88
+Encode~2.89
 Eval::Closure~0.14
 Exception::Class~1.42
 Exporter::Lite~0.08
@@ -61,9 +61,8 @@ Params::Validate~1.26
 Params::ValidationCompiler~0.24
 Path::Class~0.37
 Path::Tiny~0.104
-Role::Tiny~2.000005
-Scalar::Util~1.47
-Specio::Declare~0.36
+Role::Tiny::With~2.000005
+Specio::Library::String~0.36
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Install~0.928
@@ -72,7 +71,6 @@ Term::ANSIColor~4.06
 Test::Class~0.50
 Test::Differences~0.64
 Test::Fatal~0.014
-Test::More~1.302083
 Test::NoWarnings~1.04
 Test::Requires~0.10
 Test::SharedFork~0.35
