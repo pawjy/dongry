@@ -1,7 +1,6 @@
 Algorithm::Diff~1.1903
 AnyEvent~7.14
 AnyEvent::DBI~2.3
-AnyEvent::Handle
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.21
 Canary::Stability~2012
@@ -23,7 +22,7 @@ DateTime~1.43
 DateTime::Format::Builder~0.81
 DateTime::Format::MySQL~0.06
 DateTime::Format::Strptime~1.73
-DateTime::Locale::Base~1.16
+DateTime::Locale~1.16
 DateTime::TimeZone~2.13
 Devel::CheckLib~1.11
 Devel::StackTrace~2.02
@@ -38,7 +37,7 @@ ExtUtils::Config~0.008
 ExtUtils::Helpers~0.026
 ExtUtils::InstallPaths~0.011
 File::Copy::Recursive~0.38
-File::ShareDir~1.102
+File::ShareDir~1.104
 File::ShareDir::Install~0.11
 File::Slurp~9999.19
 File::Temp~0.2304
@@ -63,7 +62,8 @@ Params::ValidationCompiler~0.24
 Path::Class~0.37
 Path::Tiny~0.104
 Role::Tiny~2.000005
-Specio~0.37
+Scalar::Util~1.48
+Specio::Declare~0.37
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Install~0.928
