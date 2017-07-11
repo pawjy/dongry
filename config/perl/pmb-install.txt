@@ -59,8 +59,7 @@ Params::ValidationCompiler~0.24
 Path::Class~0.37
 Path::Tiny~0.104
 Role::Tiny~2.000005
-Scalar::Util~1.48
-Specio::Declare~0.38
+Specio~0.38
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Install~0.928
@@ -69,7 +68,6 @@ Term::ANSIColor~4.06
 Test::Class~0.50
 Test::Differences~0.64
 Test::Fatal~0.014
-Test::More~1.302086
 Test::NoWarnings~1.04
 Test::Requires~0.10
 Test::SharedFork~0.35
