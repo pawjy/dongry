@@ -2,3 +2,11 @@
 - "../../modules/perl-json-ps" tests
 - "../../modules/perl-ooutils" tests
 - "../../modules/test-x1" tests
+
+- "../../t_deps/modules/promised-mysqld" build tests
+- "../../t_deps/modules/promise" build tests
+- "../../t_deps/modules/promised-command" build tests
+- "../../t_deps/modules/promise.2" build tests
+- "../../t_deps/modules/streams" build tests
+- "../../t_deps/modules/promised-file" build tests
+- "../../t_deps/modules/anyevent-mysql-client.2" build tests

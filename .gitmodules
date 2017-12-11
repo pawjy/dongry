@@ -26,3 +26,23 @@
 	path = t_deps/modules/test-moremore
 	url = https://github.com/wakaba/perl-test-moremore
 	track = master
+[submodule "t_deps/modules/promised-mysqld"]
+	path = t_deps/modules/promised-mysqld
+	url = https://github.com/wakaba/perl-promised-mysqld
+	track = master
+[submodule "t_deps/modules/promise"]
+	path = t_deps/modules/promise
+	url = https://github.com/wakaba/perl-promise
+	track = master
+[submodule "t_deps/modules/promised-command"]
+	path = t_deps/modules/promised-command
+	url = https://github.com/wakaba/perl-promised-command
+	track = master
+[submodule "t_deps/modules/streams"]
+	path = t_deps/modules/streams
+	url = https://github.com/manakai/perl-streams
+	track = master
+[submodule "t_deps/modules/promised-file"]
+	path = t_deps/modules/promised-file
+	url = https://github.com/wakaba/perl-promised-file
+	track = master
