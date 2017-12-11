@@ -1,14 +1,12 @@
-package test::Dongry::SQL::order;
 use strict;
 use warnings;
-use Path::Class;
-use lib file (__FILE__)->dir->parent->subdir ('lib')->stringify;
-use Test::Dongry;
-use base qw(Test::Class);
+use Path::Tiny;
+use lib glob path (__FILE__)->parent->parent->parent->child ('t_deps/lib');
+use StandaloneTests;
 use Dongry::SQL;
 
-sub _order : Test(15) {
-  for (
+{
+  for my $v (
     [undef, ''],
     ['' => ''],
     [[] => ''],
@@ -25,24 +23,31 @@ sub _order : Test(15) {
     [['' => -1] => '`` DESC'],
     [[abc => 1, abc => -1] => '`abc` ASC, `abc` DESC'],
   ) {
-    eq_or_diff order $_->[0], $_->[1];
+    test {
+      my $c = shift;
+      is_deeply order $v->[0], $v->[1];
+      done $c;
+    } n => 1, name => ['order', $v->[1]];
   }
-} # _order
+}
 
-sub _order_bad : Test(3) {
-  for (
-    [fioi => 'hoge'],
-    [fioi => 'foo', abc => -1],
-    [xyz => 1, fioi => 'foo', abc => -1],
-  ) {
-    dies_here_ok {
-      order $_;
+for my $v (
+  [fioi => 'hoge'],
+  [fioi => 'foo', abc => -1],
+  [xyz => 1, fioi => 'foo', abc => -1],
+) {
+  test {
+    my $c = shift;
+    eval {
+      order $v;
     };
-  }
-} # _order_bad
+    ok $@;
+    done $c;
+  } n => 1, name => 'order bad';
+}
 
-sub _reverse_order_struct : Test(15) {
-  for (
+{
+  for my $v (
     [undef, undef],
     ['' => []],
     [[] => []],
@@ -59,35 +64,42 @@ sub _reverse_order_struct : Test(15) {
     [['' => -1] => ['' => 1]],
     [[foo => 1, 'bar'] => [foo => -1, bar => -1]],
   ) {
-    eq_or_diff reverse_order_struct $_->[0], $_->[1];
+    test {
+      my $c = shift;
+      is_deeply reverse_order_struct $v->[0], $v->[1];
+      done $c;
+    } n => 1, name => 'reverse order struct';
   }
-} # _reverse_order_struct
+}
 
-sub _reverse_order_struct_non_destructive : Test(2) {
+test {
+  my $c = shift;
   my $order = [foo => 1, bar => -1];
-  eq_or_diff reverse_order_struct $order, [foo => -1, bar => 1];
-  eq_or_diff $order, [foo => 1, bar => -1];
-} # _reverse_order_struct_non_destructive
+  is_deeply reverse_order_struct $order, [foo => -1, bar => 1];
+  is_deeply $order, [foo => 1, bar => -1];
+  done $c;
+} n => 2, name => 'reverse_order_struct_non_destructive';
 
-sub _reverse_order_struct_bad : Test(3) {
-  for (
-    [fioi => 'hoge'],
-    [fioi => 'foo', abc => -1],
-    [xyz => 1, fioi => 'foo', abc => -1],
-  ) {
-    dies_here_ok {
-      reverse_order_struct $_;
+for my $v (
+  [fioi => 'hoge'],
+  [fioi => 'foo', abc => -1],
+  [xyz => 1, fioi => 'foo', abc => -1],
+) {
+  test {
+    my $c = shift;
+    eval {
+      reverse_order_struct $v;
     };
-  }
-} # _reverse_order_struct_bad
+    ok $@;
+    done $c;
+  } n => 1, name => 'reverse_order_struct_bad';
+}
 
-__PACKAGE__->runtests;
-
-1;
+RUN;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2017 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

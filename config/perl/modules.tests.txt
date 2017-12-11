@@ -1,5 +1,7 @@
+Carp
 Data::Dumper
 DateTime::Format::MySQL
+Exporter::Lite
 List::Rubyish
 Path::Class
 Path::Tiny

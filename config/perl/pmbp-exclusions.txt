@@ -10,3 +10,4 @@
 - "../../t_deps/modules/streams" build tests
 - "../../t_deps/modules/promised-file" build tests
 - "../../t_deps/modules/anyevent-mysql-client.2" build tests
+- "../../modules/web-encodings" build tests

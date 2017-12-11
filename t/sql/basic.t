@@ -1,24 +1,22 @@
-package test::Dongry::SQL::basic;
 use strict;
 use warnings;
-use Path::Class;
-use lib file (__FILE__)->dir->parent->subdir ('lib')->stringify;
-use Test::Dongry;
-use base qw(Test::Class);
-use Dongry::SQL;
+use Path::Tiny;
+use lib glob path (__FILE__)->parent->parent->parent->child ('t_deps/lib');
+use StandaloneTests;
+use Dongry::SQL ();
 
-sub _version : Test(2) {
+test {
+  my $c = shift;
   ok $Dongry::SQL::VERSION;
   ok $Dongry::SQL::BareFragment::VERSION;
-} # _version
+  done $c;
+} n => 2, name => 'version';
 
-__PACKAGE__->runtests;
-
-1;
+RUN;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2017 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

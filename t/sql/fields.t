@@ -1,18 +1,16 @@
-package test::Dongry::SQL::fields;
 use strict;
 use warnings;
-use Path::Class;
-use lib file (__FILE__)->dir->parent->subdir ('lib')->stringify;
-use Test::Dongry;
-use base qw(Test::Class);
+use Path::Tiny;
+use lib glob path (__FILE__)->parent->parent->parent->child ('t_deps/lib');
+use StandaloneTests;
 use Dongry::SQL;
 
 sub bare_sql_fragment ($) {
   return bless \('' . $_[0]), 'Dongry::SQL::BareFragment';
 } # bare_sql_fragment
 
-sub _fields_valid : Test(42) {
-  for (
+{
+  for my $v (
     [undef, '*'],
     ['abc', '`abc`'],
     ['ab `\\c', '`ab ``\\c`'],
@@ -68,31 +66,38 @@ sub _fields_valid : Test(42) {
       as => 'ho`ge'}
          => qq<GLength(GeomFromText(CONCAT('LineString(20.2422211100 -10.2111110000,', X(`lat``lon`), ' ', Y(`lat``lon`),')'))) AS `ho``ge`>],
   ) {
-    eq_or_diff fields $_->[0], $_->[1];
+    test {
+      my $c = shift;
+      is_deeply fields $v->[0], $v->[1];
+      done $c;
+    } n => 1, name => ['fields valid', $v->[1]];
   }
-} # _fields_valid
+}
 
-sub _fields_invalid : Test(5) {
-  for (
+{
+  for my $v (
     [],
     {},
     {-hoge => 1},
     {count => 1},
     [bless {}, 'hoge'],
   ) {
-    dies_here_ok {
-      fields $_;
-    };
+    test {
+      my $c = shift;
+      eval {
+        fields $v;
+      };
+      ok $@;
+      done $c;
+    } n => 1, name => 'fields invalid';
   }
-} # _fields_invalid
+}
 
-__PACKAGE__->runtests;
-
-1;
+RUN;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2017 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

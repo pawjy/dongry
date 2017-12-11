@@ -46,3 +46,7 @@
 	path = t_deps/modules/promised-file
 	url = https://github.com/wakaba/perl-promised-file
 	track = master
+[submodule "modules/web-encodings"]
+	path = modules/web-encodings
+	url = https://github.com/manakai/perl-web-encodings
+	track = master

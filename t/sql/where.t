@@ -1,19 +1,15 @@
-package test::Dongry::SQL::where;
 use strict;
 use warnings;
-use Path::Class;
-use lib file (__FILE__)->dir->parent->subdir ('lib')->stringify;
-use Test::Dongry;
-use base qw(Test::Class);
+use Path::Tiny;
+use lib glob path (__FILE__)->parent->parent->parent->child ('t_deps/lib');
+use StandaloneTests;
 use Dongry::SQL qw(where);
 use Dongry::Type::DateTime;
-use Encode;
 use Data::Dumper;
 
 $Dongry::SQL::SortKeys = 1;
 
-sub _where_valid_hashref : Test(58) {
-  for (
+for my $v (
       [{foo => undef} => ['`foo` IS NULL', []]],
       [{foo => ''} => ['`foo` = ?', ['']]],
       [{foo => '0'} => ['`foo` = ?', ['0']]],
@@ -85,14 +81,17 @@ sub _where_valid_hashref : Test(58) {
            => ['`foo` > ? AND `foo` <= ?', [89, 120]]],
       [{foo => {-le => 120, -in => [10, 20]}}
            => ['`foo` IN (?, ?) AND `foo` <= ?', [10, 20, 120]]],
-  ) {
-    eq_or_diff [where ($_->[0])], $_->[1];
-  }
-} # _where_valid_hashref
+) {
+  test {
+    my $c = shift;
+    is_deeply [where ($v->[0])], $v->[1];
+    done $c;
+  } n => 1, name => 'where_valid_hashref';
+}
 
-sub _where_no_sort : Test(5) {
+{
   local $Dongry::SQL::SortKeys = 0;
-  for (
+  for my $v (
     [{foo => 12, bar => 23} =>
      [
        ['`foo` = ? AND `bar` = ?', [12, 23]],
@@ -121,29 +120,35 @@ sub _where_no_sort : Test(5) {
        ['`bar` = ? AND `foo` > ? AND `foo` < ?', [23, 20, 50]],
      ]],
   ) {
-    my $got = Dumper [where ($_->[0])];
-    my @expected = map { Dumper $_ } @{$_->[1]};
-    ok ((grep { $got eq $_ } @expected), $got);
+    test {
+      my $c = shift;
+      my $got = Dumper [where ($v->[0])];
+      my @expected = map { Dumper $_ } @{$v->[1]};
+      ok ((grep { $got eq $_ } @expected), $got);
+      done $c;
+    } n => 1, name => 'where_no_sort';
   }
-} # _where_no_sort
+}
 
-sub _where_bad_operator : Test(6) {
-  for (
+for my $v (
       {foo => {}},
       {foo => {-hoge => 1243}},
       {foo => {eq => 1243}},
       {foo => {'-' => 1243}},
       {foo => {-0 => 1243}},
       {foo => {0 => 1243}},
-  ) {
-    dies_here_ok {
-      where $_;
+) {
+  test {
+    my $c = shift;
+    eval {
+      where $v;
     };
-  }
-} # _where_bad_operator
+    ok $@;
+    done $c;
+  } n => 1, name => 'where_bad_operator';
+}
 
-sub _where_undef_value : Test(11) {
-  for (
+for my $v (
       {foo => {-le => undef}},
       {foo => {-ge => undef}},
       {foo => {-lt => undef}},
@@ -155,15 +160,18 @@ sub _where_undef_value : Test(11) {
       {foo => {-in => undef}},
       {foo => {-in => [undef]}},
       {foo => {-in => [124, undef]}},
-  ) {
-    dies_here_ok {
-      where $_;
+) {
+  test {
+    my $c = shift;
+    eval {
+      where $v;
     };
-  }
-} # _where_undef_value
+    ok $@;
+    done $c;
+  } n => 1, name => 'where_undef_value';
+}
 
-sub _where_ref_value : Test(18) {
-  for (
+for my $v (
       {foo => \'abc'},
       {foo => ['abc']},
       {foo => bless ['abc'], 'test::hoge'},
@@ -182,45 +190,57 @@ sub _where_ref_value : Test(18) {
       {foo => {-in => [['abc']]}},
       {foo => {-in => [124, \'abc']}},
       {foo => {-in => [124, \'abc', bless {}, 'test::hofe']}},
-  ) {
-    dies_here_ok {
-      where $_;
+) {
+  test {
+    my $c = shift;
+    eval {
+      where $v;
     };
-  }
-} # _where_ref_value
+    ok $@;
+    done $c;
+  } n => 1, name => 'where_ref_value';
+}
 
-sub _where_empty_value : Test(3) {
-  for (
-      {foo => {-in => []}},
-      {foo => {-in => bless [], 'List::Rubyish'}},
-      {foo => {-in => bless [], 'DBIx::MoCo::List'}},
-  ) {
-    dies_here_ok {
-      where $_;
+for my $v (
+  {foo => {-in => []}},
+  {foo => {-in => bless [], 'List::Rubyish'}},
+  {foo => {-in => bless [], 'DBIx::MoCo::List'}},
+) {
+  test {
+    my $c = shift;
+    eval {
+      where $v;
     };
-  }
-} # _where_empty_value
+    ok $@;
+    done $c;
+  } n => 1, name => 'where_empty_value';
+}
 
-sub _where_bad_value : Test(3) {
-  for (
-      {foo => {-in => 'abc'}},
-      {foo => {-in => {}}},
-      {foo => {-in => bless {}, 'test::hofe'}},
-  ) {
-    dies_ok {
-      where $_;
+for my $v (
+  {foo => {-in => 'abc'}},
+  {foo => {-in => {}}},
+  {foo => {-in => bless {}, 'test::hofe'}},
+) {
+  test {
+    my $c = shift;
+    eval {
+      where $v;
     };
-  }
-} # _where_bad_value
+    ok $@;
+    done $c;
+  } n => 1, name => 'where_bad_value';
+}
 
-sub _where_empty : Test(1) {
-  dies_here_ok {
+test {
+  my $c = shift;
+  eval {
     where {};
   };
-} # _where_empty
+  ok $@;
+  done $c;
+} n => 1, name => 'where_empty';
 
-sub _where_named : Test(25) {
-  for (
+for my $v (
     [[' '] => [' ', []]],
     [['hoge fuga'] => ['hoge fuga', []]],
     [['hoge :fuga', fuga => 'abc'] => ['hoge ?', ['abc']]],
@@ -232,8 +252,8 @@ sub _where_named : Test(25) {
     [['hoge fuga ?'] => ['hoge fuga ?', []]],
     [['hoge fuga = ?', fuga => 'abc'] => ['hoge fuga = ? ', ['abc']]],
     [['hoge fuga = ?', fuga => "\x{500}"] => ['hoge fuga = ? ', ["\x{500}"]]],
-    [['hoge fuga = ?', fuga => encode 'utf-8', "\x{500}"]
-         => ['hoge fuga = ? ', [encode 'utf-8', "\x{500}"]]],
+    [['hoge fuga = ?', fuga => encode_web_utf8 "\x{500}"]
+         => ['hoge fuga = ? ', [encode_web_utf8 "\x{500}"]]],
     [['hoge fu_ga = ?', fu_ga => 'abc'] => ['hoge fu_ga = ? ', ['abc']]],
     [['hoge `fuga` = ?', fuga => 'abc'] => ['hoge `fuga` = ? ', ['abc']]],
     [['hoge fuga < ?', fuga => 151] => ['hoge fuga < ? ', [151]]],
@@ -249,118 +269,162 @@ sub _where_named : Test(25) {
     [['fuga IN (:foo)', foo => [1, 2]] => ['fuga IN (?, ?)', [1, 2]]],
     [['fuga IN (:foo)', foo => [1, 2, 4]] => ['fuga IN (?, ?, ?)', [1, 2, 4]]],
     [['hoge = ?and', hoge => 'abc'] => ['hoge = ? and', ['abc']]],
-  ) {
-    eq_or_diff [where $_->[0]], $_->[1];
-  }
-} # _where_named
+) {
+  test {
+    my $c = shift;
+    is_deeply [where $v->[0]], $v->[1];
+    done $c;
+  } n => 1, name => 'where_named';
+}
 
-sub _where_named_not_specified : Test(2) {
-  dies_here_ok { where [] };
-  dies_here_ok { where [''] };
-} # _where_named_not_specified
-
-sub _where_named_not_defined : Test(10) {
-  dies_here_ok { where [':hoge'] };
-  dies_here_ok { where [':hoge', fuga => 1] };
-  dies_here_ok { where ['hoge fuga = ?', fuga => undef] };
-  dies_here_ok { where ['(:hoge)', hoge => [1, undef]] };
-  dies_here_ok { where [':hoge' => 124] };
-  dies_here_ok { where [':hoge and :foo', foo => (), hoge => 124] };
-  dies_here_ok { where [':hoge:id', hoge => undef] };
-  dies_here_ok { where [':hoge:id', 'hoge:id' => 333] };
-  dies_here_ok { where [':hoge:keyword', hoge => undef] };
-  dies_here_ok { where [':hoge:keyword', 'hoge:keyword' => 333] };
-} # _where_named_not_defined
-
-sub _where_named_ref : Test(12) {
-  for (
-    [':hoge', hoge => \undef],
-    [':hoge', hoge => \'abc'],
-    [':hoge', hoge => {foo => 'bar'}],
-    [':hoge', hoge => bless [], 'test::hoge'],
-    ['(:hoge)', hoge => [undef]],
-    ['(:hoge)', hoge => [12, 44, \'']],
-    ['(:hoge)', hoge => [12, 44, [foo => 443]]],
-    ['(:hoge)', hoge => [12, 44, {foo => 52}]],
-    ['(:hoge)', hoge => [12, 44, bless {}, 'test::hogexs']],
-    [':hoge:id', hoge => \undef],
-    [':hoge:keyword', hoge => \undef],
-    [':hoge:nullable', hoge => \undef],
-  ) {
-    dies_here_ok {
-      where $_;
+for my $v (
+  [],
+  [''],
+) {
+  test {
+    my $c = shift;
+    eval {
+      where $v;
     };
-  }
-} # _where_named_ref
+    ok $@;
+    done $c;
+  } n => 1, name => 'where_named_not_specified';
+}
 
-sub _where_named_unused : Test(2) {
-  dies_here_ok {
+for my $v (
+  [':hoge'],
+  [':hoge', fuga => 1],
+  ['hoge fuga = ?', fuga => undef],
+  ['(:hoge)', hoge => [1, undef]],
+  [':hoge' => 124],
+  [':hoge and :foo', foo => (), hoge => 124],
+  [':hoge:id', hoge => undef],
+  [':hoge:id', 'hoge:id' => 333],
+  [':hoge:keyword', hoge => undef],
+  [':hoge:keyword', 'hoge:keyword' => 333],
+) {
+  test {
+    my $c = shift;
+    eval {
+      where $v;
+    };
+    ok $@;
+    done $c;
+  } n => 1, name => 'where_named_not_defined';
+}
+
+for my $v (
+  [':hoge', hoge => \undef],
+  [':hoge', hoge => \'abc'],
+  [':hoge', hoge => {foo => 'bar'}],
+  [':hoge', hoge => bless [], 'test::hoge'],
+  ['(:hoge)', hoge => [undef]],
+  ['(:hoge)', hoge => [12, 44, \'']],
+  ['(:hoge)', hoge => [12, 44, [foo => 443]]],
+  ['(:hoge)', hoge => [12, 44, {foo => 52}]],
+  ['(:hoge)', hoge => [12, 44, bless {}, 'test::hogexs']],
+  [':hoge:id', hoge => \undef],
+  [':hoge:keyword', hoge => \undef],
+  [':hoge:nullable', hoge => \undef],
+) {
+  test {
+    my $c = shift;
+    eval {
+      where $v;
+    };
+    ok $@;
+    done $c;
+  } n => 1, name => 'where_named_ref';
+}
+
+test {
+  my $c = shift;
+  eval {
     where ['hoge', hoge => 123];
   };
-  dies_here_ok {
+  ok $@;
+  done $c;
+} n => 1, name => 'unused';
+
+test {
+  my $c = shift;
+  eval {
     where ['hoge = :fuga', fuga => 123, foo => 51];
   };
-} # _where_named_unused
+  ok $@;
+  done $c;
+} n => 1, name => 'where_named_unused';
 
-sub _where_named_id : Test(7) {
-  for (
-    [[':foo:id = 124', foo => ''] => ['`` = 124', []]],
-    [[':foo:id = 124', foo => '123'] => ['`123` = 124', []]],
-    [[':foo:id = 124', foo => 'abc'] => ['`abc` = 124', []]],
-    [[':foo:id = 124', foo => '`\\%'] => ['```\\%` = 124', []]],
-    [[':foo:id = 124', foo => "\x{5001}"] => ["`\x{5001}` = 124", []]],
-    [[':foo:id = 124', foo => encode 'utf-8', "\x{5001}"]
-         => [(encode 'utf-8', "`\x{5001}` = 124"), []]],
-    [[':foo:id = :foo', foo => '`\\%'] => ['```\\%` = ?', ['`\\%']]],
-  ) {
-    eq_or_diff [where $_->[0]], $_->[1];
-  }
-} # _where_named_id
+for my $v (
+  [[':foo:id = 124', foo => ''] => ['`` = 124', []]],
+  [[':foo:id = 124', foo => '123'] => ['`123` = 124', []]],
+  [[':foo:id = 124', foo => 'abc'] => ['`abc` = 124', []]],
+  [[':foo:id = 124', foo => '`\\%'] => ['```\\%` = 124', []]],
+  [[':foo:id = 124', foo => "\x{5001}"] => ["`\x{5001}` = 124", []]],
+  [[':foo:id = 124', foo => encode_web_utf8 "\x{5001}"]
+         => [(encode_web_utf8 "`\x{5001}` = 124"), []]],
+  [[':foo:id = :foo', foo => '`\\%'] => ['```\\%` = ?', ['`\\%']]],
+) {
+  test {
+    my $c = shift;
+    is_deeply [where $v->[0]], $v->[1];
+    done $c;
+  } n => 1, name => 'where_named_id';
+}
 
-sub _where_named_keyword : Test(3) {
-  for (
-    [[':foo:keyword = 124', foo => 'abc'] => ['abc = 124', []]],
-    [[':foo:keyword = 124', foo => 'AbC'] => ['AbC = 124', []]],
-    [[':foo:keyword = 124', foo => 'A12b_C'] => ['A12b_C = 124', []]],
-  ) {
-    eq_or_diff [where $_->[0]], $_->[1];
-  }
-} # _where_named_keyword
+for my $v (
+  [[':foo:keyword = 124', foo => 'abc'] => ['abc = 124', []]],
+  [[':foo:keyword = 124', foo => 'AbC'] => ['AbC = 124', []]],
+  [[':foo:keyword = 124', foo => 'A12b_C'] => ['A12b_C = 124', []]],
+) {
+  test {
+    my $c = shift;
+    is_deeply [where $v->[0]], $v->[1];
+    done $c;
+  } n => 1, name => 'where_named_keyword';
+}
 
-sub _where_named_keyword_bad : Test(7) {
-  for (
-    [':hoge:keyword', hoge => ''],
-    [':hoge:keyword', hoge => '120'],
-    [':hoge:keyword', hoge => '_hoge'],
-    [':hoge:keyword', hoge => 'a-bc'],
-    [':hoge:keyword', hoge => "\x{65000}"],
-    [':hoge:keyword', hoge => 'abc def'],
-    [':hoge:keyword', hoge => '  aAD'],
-  ) {
-    dies_here_ok {
-      where $_;
+for my $v (
+  [':hoge:keyword', hoge => ''],
+  [':hoge:keyword', hoge => '120'],
+  [':hoge:keyword', hoge => '_hoge'],
+  [':hoge:keyword', hoge => 'a-bc'],
+  [':hoge:keyword', hoge => "\x{65000}"],
+  [':hoge:keyword', hoge => 'abc def'],
+  [':hoge:keyword', hoge => '  aAD'],
+) {
+  test {
+    my $c = shift;
+    eval {
+      where $v;
     };
-  }
-} # _where_named_keyword_bad
+    ok $@;
+    done $c;
+  } n => 1, name => 'where_named_keyword_bad';
+}
 
-sub _where_nullable : Test(3) {
-  for (
-    [['x = :foo:nullable', foo => 'abc'] => ['x = ?', ['abc']]],
-    [['x = :foo:nullable', foo => ''] => ['x = ?', ['']]],
-    [['x = :foo:nullable', foo => undef] => ['x = NULL', []]],
-  ) {
-    eq_or_diff [where $_->[0]], $_->[1];
-  }
-} # _where_nullable
+for my $v (
+  [['x = :foo:nullable', foo => 'abc'] => ['x = ?', ['abc']]],
+  [['x = :foo:nullable', foo => ''] => ['x = ?', ['']]],
+  [['x = :foo:nullable', foo => undef] => ['x = NULL', []]],
+) {
+  test {
+    my $c = shift;
+    is_deeply [where $v->[0]], $v->[1];
+    done $c;
+  } n => 1, name => 'where_nullable';
+}
 
-sub _where_named_unknown_instruction : Test(1) {
-  dies_here_ok {
+test {
+  my $c = shift;
+  eval {
     where ['hoge :fuga:fuga', fuga => 'abc'];
   };
-} # _where_named_unknown_instruction
+  ok $@;
+  done $c;
+} n => 1, name => 'where_named_unknown_instruction';
 
-sub _where_named_sub : Test(3) {
-  for (
+for my $v (
     [['foo = ? AND :bar:sub',
       foo => 1254,
       bar => {hoge => 1, fuga => {'!=', 2}}]
@@ -371,13 +435,15 @@ sub _where_named_sub : Test(3) {
          => ['foo = ? AND (`fuga` != ? AND `hoge` = ?)', [1254, 2, 1]]],
     [['foo = ? AND :bar:optsub', foo => 1254, bar => {}]
          => ['foo = ? AND (1 = 1)', [1254]]],
-  ) {
-    eq_or_diff [where $_->[0]], $_->[1];
-  }
-} # _where_named_sub
+) {
+  test {
+    my $c = shift;
+    is_deeply [where $v->[0]], $v->[1];
+    done $c;
+  } n => 1, name => 'where_named_sub';
+}
 
-sub _where_named_sub_bad_value : Test(17) {
-  for (
+for my $v (
     [':foo:sub' => undef],
     [':foo:sub' => 'abc'],
     [':foo:sub' => \'xyz'],
@@ -395,26 +461,38 @@ sub _where_named_sub_bad_value : Test(17) {
     [':foo:optsub' => ['hoge => :abc', abc => 123]],
     [':foo:optsub' => bless {}, 'test:foo'],
     [':foo:optsub' => {foo => {-unknown => 12}}],
-  ) {
-    dies_here_ok {
-      where $_;
+) {
+  test {
+    my $c = shift;
+    eval {
+      where $v;
     };
-  }
-} # _where_named_sub_bad_value
+    ok $@;
+    done $c;
+  } n => 1, name => 'where_named_sub_bad_value';
+}
 
-sub _where_bad_values : Test(8) {
-  dies_here_ok { where undef };
-  dies_here_ok { where '' };
-  dies_here_ok { where 0 };
-  dies_here_ok { where 'foo' };
-  dies_here_ok { where \'foo' };
-  dies_here_ok { where bless {}, 'test::hoge' };
-  dies_here_ok { where bless [], 'test::foo' };
-  dies_here_ok { where bless [], 'List::Rubyish' };
-} # _where_bad_values
+for my $v (
+  undef,
+  '',
+  0,
+  'foo',
+  \'foo',
+  (bless {}, 'test::hoge'),
+  (bless [], 'test::foo'),
+  (bless [], 'List::Rubyish'),
+) {
+  test {
+    my $c = shift;
+    eval {
+      where $v;
+    };
+    ok $@;
+    done $c;
+  } n => 1, name => 'where_bad_values';
+}
 
-sub _where_hashref_parsed : Test(17) {
-  for (
+for my $v (
     [{foo => undef},
      {type => {foo => 'timestamp_as_DateTime'}},
      ['`foo` = ?', ['0000-00-00 00:00:00']]],
@@ -472,43 +550,47 @@ sub _where_hashref_parsed : Test(17) {
       hoge => {foo => DateTime->new (year => 2001, month => 12, day => 3)}],
      {type => {foo => 'timestamp_as_DateTime'}},
      ['1 AND (`foo` = ?)', ['2001-12-03 00:00:00']]],
-  ) {
-    eq_or_diff [where $_->[0], $_->[1]] => $_->[2];
-  }
-} # _where_hashref_parsed
+) {
+  test {
+    my $c = shift;
+    is_deeply [where $v->[0], $v->[1]] => $v->[2];
+    done $c;
+  } n => 1, name => 'where_hashref_parsed';
+}
 
-sub _where_hashref_unknown_type : Test(4) {
-  dies_here_ok {
-    where {foo => 'abc'}, {type => {foo => 'as_unknown'}};
-  };
-  dies_here_ok {
-    where {foo => {-ne => 'abc'}}, {type => {foo => 'as_unknown'}};
-  };
-  dies_here_ok {
-    where {foo => {-in => ['abc']}}, {type => {foo => 'as_unknown'}};
-  };
-  dies_here_ok {
-    where [':hoge:sub', hoge => {foo => {-in => ['abc']}}],
-        {type => {foo => 'as_unknown'}};
-  };
-} # _where_hashref_unknown_type
+for my $v (
+  [{foo => 'abc'}, {type => {foo => 'as_unknown'}}],
+  [{foo => {-ne => 'abc'}}, {type => {foo => 'as_unknown'}}],
+  [{foo => {-in => ['abc']}}, {type => {foo => 'as_unknown'}}],
+  [[':hoge:sub', hoge => {foo => {-in => ['abc']}}],
+        {type => {foo => 'as_unknown'}}],
+) {
+  test {
+    my $c = shift;
+    eval {
+      &where (@$v);
+    };
+    ok $@;
+    done $c;
+  } n => 1, name => 'where_hashref_unknown_type';
+}
 
-sub _where_hashref_type_error : Test(3) {
-  dies_ok {
-    where {foo => 'abc def'}, {type => {foo => 'timestamp_as_DateTime'}};
-  };
-  dies_ok {
-    where {foo => {-eq => 'abc def'}},
-        {type => {foo => 'timestamp_as_DateTime'}};
-  };
-  dies_ok {
-    where {foo => {-in => ['abc def']}},
-        {type => {foo => 'timestamp_as_DateTime'}};
-  };
-} # _where_hashref_type_error
+for my $v (
+  [{foo => 'abc def'}, {type => {foo => 'timestamp_as_DateTime'}}],
+  [{foo => {-eq => 'abc def'}}, {type => {foo => 'timestamp_as_DateTime'}}],
+  [{foo => {-in => ['abc def']}}, {type => {foo => 'timestamp_as_DateTime'}}],
+) {
+  test {
+    my $c = shift;
+    eval {
+      &where (@$v);
+    };
+    ok $@;
+    done $c;
+  } n => 1, name => 'where_hashref_type_error';
+}
 
-sub _where_named_parsed : Test(6) {
-  for (
+for my $v (
     [['foo = :foo',
       foo => DateTime->new (year => 2001, month => 12, day => 3)],
      {type => {foo => 'timestamp_as_DateTime'}},
@@ -532,45 +614,52 @@ sub _where_named_parsed : Test(6) {
       hoge2 => DateTime->new (year => 2010, month => 10, day => 2)],
      {type => {hoge => 'timestamp_as_DateTime', foo => 'as_unknown'}},
      ['? < foo AND foo < ?', ['2001-10-03 00:00:00', '2010-10-02 00:00:00']]],
-  ) {
-    eq_or_diff [where $_->[0], $_->[1]] => $_->[2];
-  }
-} # _where_hashref_parsed
+) {
+  test {
+    my $c = shift;
+    is_deeply [where $v->[0], $v->[1]] => $v->[2];
+    done $c;
+  } n => 1, name => 'where_hashref_parsed';
+}
 
-sub _where_named_parsed_type_error : Test(3) {
-  dies_ok {
-    where ['foo = :foo', foo => 'abc'],
-        {type => {foo => 'timestamp_as_DateTime'}};
-  };
-  dies_ok {
-    where ['foo = :foo', foo => {-lt => 'abc'}],
-        {type => {foo => 'timestamp_as_DateTime'}};
-  };
-  dies_ok {
-    where ['foo IN (:foo)', foo => ['abc']],
-        {type => {foo => 'timestamp_as_DateTime'}};
-  };
-} # _where_named_parsed_type_error
+for my $v (
+  [['foo = :foo', foo => 'abc'], {type => {foo => 'timestamp_as_DateTime'}}],
+  [['foo = :foo', foo => {-lt => 'abc'}],
+   {type => {foo => 'timestamp_as_DateTime'}}],
+  [['foo IN (:foo)', foo => ['abc']],
+   {type => {foo => 'timestamp_as_DateTime'}}],
+) {
+  test {
+    my $c = shift;
+    eval {
+      &where (@$v);
+    };
+    ok $@;
+    done $c;
+  } n => 1, name => 'where_named_parsed_type_error';
+}
 
-sub _where_no_modification : Test(1) {
+test {
+  my $c = shift;
   my $where = {foo => 'bar', hoge => {-lt => 120}};
   where $where;
-  eq_or_diff $where, {foo => 'bar', hoge => {-lt => 120}};
-} # _where_no_modification
+  is_deeply $where, {foo => 'bar', hoge => {-lt => 120}};
+  done $c;
+} n => 1, name => 'where_no_modification';
 
-sub _where_no_modification_parsed : Test(1) {
+test {
+  my $c = shift;
   my $where = {foo => 'bar', hoge => {-lt => \120}};
   where $where, {type => {hoge => 'as_ref'}};
-  eq_or_diff $where, {foo => 'bar', hoge => {-lt => \120}};
-} # _where_no_modification_parsed
+  is_deeply $where, {foo => 'bar', hoge => {-lt => \120}};
+  done $c;
+} n => 1, name => 'where_no_modification_parsed';
 
-__PACKAGE__->runtests;
-
-1;
+RUN;
 
 =head1 LICENSE
 
-Copyright 2011-2015 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2017 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
