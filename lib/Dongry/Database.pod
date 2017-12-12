@@ -1544,7 +1544,7 @@ repository <https://github.com/wakaba/dongry>.
 
 =head1 DEPENDENCY
 
-Perl 5.10 or later is required.  Although the module can be used in
+Perl 5.12 or later is required.  Although the module can be used in
 Perl 5.8, some tests fail due to bugs of perl.  In addition, a module
 required by the asynchronous mode does not support Perl 5.8 so that
 only the synchronous mode is available to Perl 5.8 applications.
@@ -1604,7 +1604,7 @@ Wakaba <wakaba@suikawiki.org>.
 
 =head1 LICENSE
 
-Copyright 2011-2016 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2017 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
