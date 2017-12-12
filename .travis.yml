@@ -7,7 +7,7 @@ perl:
   - "5.12"
 before_install: git submodule update --init
 install: "make test-deps"
-script: make test PROVE="./prove --verbose"
+script: "make test"
 notifications:
   email:
     - wakaba@suikawiki.org
