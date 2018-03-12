@@ -68,16 +68,13 @@ Path::Tiny~0.104
 Proc::FastSpawn~1.2
 Role::Tiny~2.000006
 Socket~2.027
-Specio::Library::Builtins~0.42
-Specio::Library::String~0.42
+Specio::Exporter~0.42
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Install~0.928
 Sub::Name~0.21
 Sub::Quote~2.005000
 Sub::Uplevel~0.2800
-TAP::Harness~3.41
-TAP::Harness::Env~3.41
 Term::ANSIColor~4.06
 Test::Class~0.50
 Test::Deep~1.127
