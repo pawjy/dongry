@@ -69,7 +69,7 @@ Path::Tiny~0.104
 Proc::FastSpawn~1.2
 Role::Tiny~2.000006
 Socket~2.027
-Specio::Exporter~0.42
+Specio::Library::Builtins~0.42
 Specio::Library::String~0.42
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
@@ -80,13 +80,13 @@ Sub::Uplevel~0.2800
 TAP::Harness~3.41
 TAP::Harness::Env~3.41
 Term::ANSIColor~4.06
-Test::Builder~1.302133
 Test::Class~0.50
 Test::Deep~1.127
 Test::Differences~0.64
 Test::Exception~0.43
 Test::Fatal~0.014
 Test::File~1.443
+Test::More~1.302133
 Test::NoWarnings~1.04
 Test::Requires~0.10
 Test::SharedFork~0.35
@@ -94,7 +94,7 @@ Test::Tester~1.302133
 Test::Warn~0.32
 Test::mysqld~0.21
 Text::Diff~1.45
-Time::HiRes~1.9755
+Time::HiRes~1.9757
 Time::Local~1.25
 Try::Tiny~0.30
 Types::Serialiser~1.0
