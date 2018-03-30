@@ -7,7 +7,7 @@ B::Hooks::EndOfScope~0.21
 CBOR::XS~1.7
 Canary::Stability~2012
 Capture::Tiny~0.46
-Carp~1.38
+Carp::Heavy~1.38
 Class::Accessor::Fast~0.51
 Class::Accessor::Lite~0.08
 Class::Data::Inheritable~0.08
@@ -67,8 +67,9 @@ Path::Class~0.37
 Path::Tiny~0.104
 Proc::FastSpawn~1.2
 Role::Tiny::With~2.000006
+Scalar::Util~1.50
 Socket~2.027
-Specio::Declare~0.42
+Specio::Exporter~0.42
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Install~0.928
@@ -82,6 +83,7 @@ Test::Differences~0.64
 Test::Exception~0.43
 Test::Fatal~0.014
 Test::File~1.443
+Test::More~1.302133
 Test::NoWarnings~1.04
 Test::Requires~0.10
 Test::SharedFork~0.35
