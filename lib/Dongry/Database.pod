@@ -39,8 +39,8 @@ Dongry.  All of the features in Dongry can be directly or indirectly
 accessible from the database object, as described in the following
 sections.
 
-In addition to the synchronous processing model, Dongry also supports
-the asynchronous event-based model by using the
+In addition to the B<deprecated> synchronous processing model, Dongry
+also supports the asynchronous event-based model by using the
 L<AnyEvent::MySQL::Client> module as its backend.  Since both modes
 can be switched or combined easily, you can transit one from the
 other, or you can partially change the processing mode, in very low
@@ -228,7 +228,8 @@ Default is false (i.e. not writable).
 =item anyevent => boolean
 
 Whether the asynchronous mode using L<AnyEvent::MySQL::Client> should
-be enabled or not.
+be enabled or not.  This option should be set to true (i.e. the
+asynchronous mode should be used).
 
 =item label => string
 
@@ -363,8 +364,9 @@ SQL statement in the error handler, as it would likely result in
 another SQL execution error, which would recursively invoke the same
 error handler.
 
-Error handling in synchronous (standard) and asynchronous
-(L<AnyEvent::MySQL::Client>) modes different in several ways.
+Error handling in synchronous (L<DBI> and L<DBD::mysql>) mode and
+asynchronous (L<AnyEvent::MySQL::Client>) mode are different in
+several ways.
 
 In the synchronous mode, errors are also handled in synchronously.  If
 the connection or an SQL statement causes an error because of a method
@@ -1544,17 +1546,14 @@ repository <https://github.com/wakaba/dongry>.
 
 =head1 DEPENDENCY
 
-Perl 5.12 or later is required.  Although the module can be used in
-Perl 5.8, some tests fail due to bugs of perl.  In addition, a module
-required by the asynchronous mode does not support Perl 5.8 so that
-only the synchronous mode is available to Perl 5.8 applications.
+Perl 5.12 or later is required.
 
-For the synchronous mode, the L<DBI> module (and L<DBD::mysql> module
-for connecting MySQL databases) is required.
+For the synchronous mode, the modules L<DBI> and L<DBD::mysql> are
+required.
 
 For the asynchronous mode, the L<AnyEvent::MySQL::Client> module in
-the <https://github.com/wakaba/perl-anyevent-mysql-client> repository
-is required.
+the GitHub repository
+<https://github.com/wakaba/perl-anyevent-mysql-client> is required.
 
 Dongry uses the L<List::Ish> module as list object implementation by
 default, but this can be configured by the
@@ -1570,9 +1569,8 @@ documentations for more information.
 The GitHub repository of Dongry contains submodules.  Submodule
 C<modules/perl-ooutils> contains the L<List::Ish> module.  Submodule
 C<modules/perl-json-functions-xs> is required by
-L<Dongry::Type::JSON>.  Submodules C<modules/perl-rdb-utils> and
-C<modules/perl-test-moremore> are added for debugging and testing
-purposes.
+L<Dongry::Type::JSON>.  The submodule C<modules/perl-rdb-utils> is
+used for debugging and testing.
 
 =head1 SEE ALSO
 
@@ -1604,7 +1602,7 @@ Wakaba <wakaba@suikawiki.org>.
 
 =head1 LICENSE
 
-Copyright 2011-2017 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2018 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
