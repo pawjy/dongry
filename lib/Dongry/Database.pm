@@ -481,88 +481,91 @@ sub execute ($$;$%) {
 
     $self->connect ($name, cb => sub {
       my ($self, $ok) = @_;
-      if ($ok->is_success) {
-        my $client = $self->{dbhs}->{$name} || bless {
-          error_text => 'Connection is lost during event loop',
-        }, 'Dongry::Database::BrokenConnection';
-        $client->statement_prepare ($self->{last_sql} = $sql)->then (sub {
-          my $x = $_[0];
-          die $x unless $x->is_success;
-          my @row;
-          return $client->statement_execute ($x->packet->{statement_id}, [map { {type => 'BLOB', value => $_}; } @{$values or []}], sub {
-            my $cols = $_[0]->column_packets;
-            my $data = $_[0]->packet->{data};
-            my $row = {map { $cols->[$_]->{name} => $data->[$_]->{value} } 0..$#$data};
-            if ($args{each_as_row_cb}) {
-              local $_ = bless {
-                db => $self,
-                table_name => $args{table_name},
-                data => $row,
-              }, 'Dongry::Table::Row';
-              $args{each_as_row_cb}->();
-            } elsif ($args{each_cb}) {
-              local $_ = $row;
-              $args{each_cb}->();
-            } else {
-              push @row, $row;
-            }
-          })->then (sub {
-            my $y = $_[0];
-            my $result;
-            if ($y->is_success) {
-              $result = bless {db => $self,
-                               table_name => $args{table_name}},
-                                   'Dongry::Database::Executed::Inserted';
-              if ($y->packet->{header} == 0) { # OK_Packet
-                $result->{row_count} = $y->packet->{affected_rows};
-              } else {
-                $result->{row_count} = @row;
-                unless ($args{each_as_row_cb} or $args{each_cb}) {
-                  $result->{data} = \@row;
-                }
-              }
-              $result->{no_each} = 1;
-              $return->_ok ($self, $result);
-            } else { # error
-              $result = bless {error_text => ''.$y, error_sql => $sql},
-                  'Dongry::Database::Executed::NotAvailable';
-              $return->_ng ($self, $result);
-            }
-          })->then (sub {
-            return $client->statement_close ($x->packet->{statement_id});
-          }, sub {
-            my $error = $_[0];
-            return $client->statement_close ($x->packet->{statement_id})->catch (sub {
-              warn $_[0];
-            })->then (sub { die $error });
-          });
-        })->catch (sub {
-          my $x = $_[0];
-          my $result = bless {error_text => ''.$x, error_sql => $sql},
-              'Dongry::Database::Executed::NotAvailable';
-          my $file_name = $onerror_args->{caller}->{file};
-          my $line = $onerror_args->{caller}->{line};
-          eval {
-            $return->_ng ($self, $result);
-          };
-          warn "Died within handler: $@" if $@;
-          $self->onerror->($self,
-                           anyevent => 1,
-                           text => $result->{error_text},
-                           file_name => $file_name,
-                           line => $line,
-                           source_name => $name,
-                           sql => $sql);
-        })->catch (sub {
-          warn "Died within handler: $_[0]";
-        })->then (sub { undef $client; undef $self; %args = (); undef $return });
-      } else { # not $ok
-        my $result = bless {error_text => "|connect| failed ($ok)", error_sql => $sql},
-            'Dongry::Database::Executed::NotAvailable';
+      unless ($ok->is_success) {
+        my $result = bless {
+          error_text => "|connect| failed ($ok)",
+          error_sql => $sql,
+        }, 'Dongry::Database::Executed::NotAvailable';
         $return->_ng ($self, $result);
         undef $return;
+        return;
       }
-    });
+      
+      my $client = $self->{dbhs}->{$name} || bless {
+        error_text => 'Connection is lost during event loop',
+      }, 'Dongry::Database::BrokenConnection';
+      $client->statement_prepare ($self->{last_sql} = $sql)->then (sub {
+        my $x = $_[0];
+        die $x unless $x->is_success;
+        my @row;
+        return $client->statement_execute ($x->packet->{statement_id}, [map { {type => 'BLOB', value => $_}; } @{$values or []}], sub {
+          my $cols = $_[0]->column_packets;
+          my $data = $_[0]->packet->{data};
+          my $row = {map { $cols->[$_]->{name} => $data->[$_]->{value} } 0..$#$data};
+          if ($args{each_as_row_cb}) {
+            local $_ = bless {
+              db => $self,
+              table_name => $args{table_name},
+              data => $row,
+            }, 'Dongry::Table::Row';
+            $args{each_as_row_cb}->();
+          } elsif ($args{each_cb}) {
+            local $_ = $row;
+            $args{each_cb}->();
+          } else {
+            push @row, $row;
+          }
+        })->then (sub { # execute
+          my $y = $_[0];
+          my $result;
+          unless ($y->is_success) {
+            $result = bless {error_text => ''.$y, error_sql => $sql},
+                'Dongry::Database::Executed::NotAvailable';
+            $return->_ng ($self, $result);
+            return;
+          }
+
+          $result = bless {
+            db => $self,
+            table_name => $args{table_name},
+          }, 'Dongry::Database::Executed::Inserted';
+          if ($y->packet->{header} == 0) { # OK_Packet
+            $result->{row_count} = $y->packet->{affected_rows};
+          } else {
+            $result->{row_count} = @row;
+            unless ($args{each_as_row_cb} or $args{each_cb}) {
+              $result->{data} = \@row;
+            }
+          }
+          $result->{no_each} = 1;
+          $return->_ok ($self, $result);
+        })->then (sub {
+          return $client->statement_close ($x->packet->{statement_id});
+        }, sub {
+          my $error = $_[0];
+          return $client->statement_close ($x->packet->{statement_id})->then (sub { die $error });
+        });
+      })->catch (sub {
+        my $x = $_[0];
+        my $result = bless {error_text => ''.$x, error_sql => $sql},
+            'Dongry::Database::Executed::NotAvailable';
+        my $file_name = $onerror_args->{caller}->{file};
+        my $line = $onerror_args->{caller}->{line};
+        eval {
+          $return->_ng ($self, $result);
+        };
+        warn "Died within handler: $@" if $@;
+        $self->onerror->($self,
+                         anyevent => 1,
+                         text => $result->{error_text},
+                         file_name => $file_name,
+                         line => $line,
+                         source_name => $name,
+                         sql => $sql);
+      })->catch (sub {
+        warn "Died within handler: $_[0]";
+      })->then (sub { undef $client; undef $self; %args = (); undef $return });
+    }); # connect
     return $return;
   } else {
     $self->connect ($name);
