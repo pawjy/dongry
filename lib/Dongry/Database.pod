@@ -271,9 +271,13 @@ the following code:
 =item $db = Dongry::Database->new (onconnect => $code)
 
 Get or set the code reference which is invoked when a new connection
-is established.  The code reference, when invoked, receives the "self"
-argument followed by zero or more key/value pairs.  The "self"
-argument is the database object.  The key/value pairs would contain:
+is established.
+
+Use of the C<onconnect> handler is B<deprecated>.
+
+The code reference, when invoked, receives the "self" argument
+followed by zero or more key/value pairs.  The "self" argument is the
+database object.  The key/value pairs would contain:
 
 =over 4
 
@@ -324,9 +328,13 @@ Example:
 
 Get or set the code reference which is invoked when an error is
 detected during various operations, such as connection to databases or
-execution of queries.  The code reference, when invoked, receives the
-"self" argument followed by zero or more key/value pairs.  The "self"
-argument is the database object.  The key/value pairs would contain:
+execution of queries.
+
+Use of the C<onerror> handler is B<deprecated>.
+
+The code reference, when invoked, receives the "self" argument
+followed by zero or more key/value pairs.  The "self" argument is the
+database object.  The key/value pairs would contain:
 
 =over 4
 
@@ -419,7 +427,7 @@ The following option is available:
 
 =over 4
 
-=item cb => code-reference
+=item cb => code-reference (DEPRECATED)
 
 The callback function invoked when the connection has been established
 (or immediately if the connection is already established).
@@ -471,7 +479,7 @@ The following option is available:
 
 =over 4
 
-=item cb => code-reference
+=item cb => code-reference (DEPRECATED)
 
 The callback function invoked when the connection has been closed (or
 immediately if the connection is already closed).
@@ -713,7 +721,7 @@ Anyway, at most one of these callbacks can be specified.
 
 The callback is not expected to throw any exception.
 
-=item cb => code-reference
+=item cb => code-reference (DEPRECATED)
 
 The callback function invoked when the SQL has been executed.
 
@@ -798,7 +806,7 @@ If this option is not specified, then a normal C<INSERT> statement is
 issued such that any duplication would be reported as an SQL execution
 error through the C<onerror> handler.
 
-=item cb => code-reference
+=item cb => code-reference (DEPRECATED)
 
 The callback function invoked after the execution of the SQL
 statement.  See the C<execute> method for more information.
@@ -920,7 +928,7 @@ C<SELECT> statement.
 The callback function invoked whenever rows are received from the
 server.  See the C<execute> method for more information.
 
-=item cb => code-reference
+=item cb => code-reference (DEPRECATED)
 
 The callback function invoked after the execution of the SQL
 statement.  See the C<execute> method for more information.
@@ -1030,7 +1038,7 @@ integer.  If the option is not specified, all the matching rows will
 be updated.  Unlike the C<select> method, the C<offset> option is not
 available for this method.
 
-=item cb => code-reference
+=item cb => code-reference (DEPRECATED)
 
 The callback function invoked after the execution of the SQL
 statement.  See the C<execute> method for more information.
@@ -1111,7 +1119,7 @@ integer.  If the option is not specified, all the matching rows will
 be deleted.  Unlike the C<select> method, the C<offset> option is not
 available for this method.
 
-=item cb => code-reference
+=item cb => code-reference (DEPRECATED)
 
 The callback function invoked after the execution of the SQL
 statement.  See the C<execute> method for more information.
@@ -1145,7 +1153,7 @@ source for which the time zone is set.
 
 The C<cb> (callback) function, if specified, is invoked after the
 execution of the SQL statement.  See the C<execute> method for more
-information.
+information.  The C<cb> function is B<deprecated>.
 
 The default time zone used by the database when this statement is not
 issued depends on the configuration and the implementation of the
