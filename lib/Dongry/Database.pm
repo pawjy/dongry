@@ -22,6 +22,7 @@ push our @CARP_NOT, qw(
   Dongry::SQL
   Dongry::Database::BrokenConnection
   AnyEvent::MySQL::Client
+  AnyEvent::MySQL::Client::Promise
 );
 
 our $ListClass ||= 'List::Ish';
@@ -225,6 +226,7 @@ sub connect ($$;%) {
         if ($onerror_args->{db}) {
           eval {
             local $onerror_args->{db}->{reconnect_disabled}->{$name} = 1;
+            local $onerror_args->{db}->{onconnect_running}->{$name} = 1;
             $onerror_args->{db}->onconnect->($onerror_args->{db}, source_name => $name);
           };
           warn "Died within handler: $@" if $@;
@@ -305,6 +307,7 @@ sub connect ($$;%) {
             #return 0;
           }, AutoCommit => 1, ReadOnly => !$source->{writable},
           AutoInactiveDestroy => 1});
+    local $self->{onconnect_running}->{$name} = 1;
     $self->onconnect->($self, source_name => $name);
     $return->_ok ($self, bless {}, 'Dongry::Database::Executed::NoResult');
     return $return;
@@ -334,10 +337,13 @@ sub disconnect ($;$%) {
     }
 
     if (defined $self->{execute_promise}->{$name}) {
-      push @then, $self->{execute_promise}->{$name} = Promise->resolve ($self->{execute_promise}->{$name})->then (sub {
+      push @then, $self->{execute_promise}->{$name} = $self->{execute_promise}->{$name}->then (sub {
         my $client = delete $self->{dbhs}->{$name};
         return $client->disconnect if defined $client;
-      })->then (sub { delete $self->{execute_promise}->{$name} });
+      })->then (sub {
+        delete $self->{execute_promise}->{$name};
+        return undef;
+      });
     } elsif ($self->{dbhs}->{$name}) {
       my $result = $self->{dbhs}->{$name}->disconnect;
       if (UNIVERSAL::can ($result, 'then') and $result->can ('then')) {
@@ -366,7 +372,7 @@ sub DESTROY {
   my $self = $_[0];
   my @p = grep { defined $_ } values %{$self->{execute_promise} or {}};
   if (@p) {
-    Promise->all (\@p)->then (sub { $self->disconnect });
+    AnyEvent::MySQL::Client::Promise->all (\@p)->then (sub { $self->disconnect });
   } else {
     $self->disconnect;
   }
@@ -484,19 +490,28 @@ sub execute ($$;$%) {
 
     # XXX retry
     # XXX transaction
+    # XXX transaction not allowed while onconnect_running
 
     if ($args{each_as_row_cb}) {
       require Dongry::Table;
       croak 'Table name is not known' if not defined $args{table_name};
     }
 
-    my $p = Promise->resolve ($self->{execute_promise}->{$name})->then (sub {
-      return $self->connect ($name);
-    })->then (undef, sub {
+    my $p;
+    if (defined $self->{execute_promise}->{$name} and
+        not $self->{onconnect_running}->{$name}) {
+      $p = $self->{execute_promise}->{$name}->then (sub {
+        return $self->connect ($name);
+      });
+    } else {
+      $p = $self->connect ($name);
+    }
+    $p = $p->then (undef, sub {
       my $error = $_[0];
       die bless {
         error_text => "|connect| failed ($error)",
         error_sql => $sql,
+        _skip_onerror => 1,
       }, 'Dongry::Database::Executed::NotAvailable';
     });
 
@@ -570,6 +585,7 @@ sub execute ($$;$%) {
         $return->_ng ($self, $result);
       };
       warn "Died within handler: $@" if $@;
+      return if $result->{_skip_onerror};
       $self->onerror->($self,
                        anyevent => 1,
                        text => $result->{error_text},
@@ -1296,7 +1312,7 @@ sub load ($$) {
 
 =head1 LICENSE
 
-Copyright 2011-2016 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2018 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
