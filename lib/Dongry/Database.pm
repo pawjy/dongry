@@ -332,8 +332,13 @@ sub disconnect ($;$%) {
       }
       delete $self->{in_transaction};
     }
-    
-    if ($self->{dbhs}->{$name}) {
+
+    if (defined $self->{execute_promise}->{$name}) {
+      push @then, $self->{execute_promise}->{$name} = Promise->resolve ($self->{execute_promise}->{$name})->then (sub {
+        my $client = delete $self->{dbhs}->{$name};
+        return $client->disconnect if defined $client;
+      })->then (sub { delete $self->{execute_promise}->{$name} });
+    } elsif ($self->{dbhs}->{$name}) {
       my $result = $self->{dbhs}->{$name}->disconnect;
       if (UNIVERSAL::can ($result, 'then') and $result->can ('then')) {
         push @then, $result;
@@ -343,7 +348,7 @@ sub disconnect ($;$%) {
     if ($self->{sources}->{$name}->{anyevent}) {
       $has_promise = 1;
     }
-  }
+  } # $name
   $return->_thenablize if $has_promise;
   if (@then) {
     (ref $then[0])->all (\@then)->then (sub {
@@ -358,7 +363,13 @@ sub disconnect ($;$%) {
 } # disconnect
 
 sub DESTROY {
-  $_[0]->disconnect;
+  my $self = $_[0];
+  my @p = grep { defined $_ } values %{$self->{execute_promise} or {}};
+  if (@p) {
+    Promise->all (\@p)->then (sub { $self->disconnect });
+  } else {
+    $self->disconnect;
+  }
 
   local $@;
   eval { die };
@@ -479,7 +490,9 @@ sub execute ($$;$%) {
       croak 'Table name is not known' if not defined $args{table_name};
     }
 
-    my $p = $self->connect ($name)->then (undef, sub {
+    my $p = Promise->resolve ($self->{execute_promise}->{$name})->then (sub {
+      return $self->connect ($name);
+    })->then (undef, sub {
       my $error = $_[0];
       die bless {
         error_text => "|connect| failed ($error)",
@@ -488,7 +501,7 @@ sub execute ($$;$%) {
     });
 
     my $client;
-    $p->then (sub {
+    $p = $p->then (sub {
       $client = $self->{dbhs}->{$name} || bless {
         error_text => 'Connection is lost during event loop',
       }, 'Dongry::Database::BrokenConnection';
@@ -569,6 +582,8 @@ sub execute ($$;$%) {
     })->then (sub {
       undef $client; undef $self; %args = (); undef $return;
     }); # $p
+
+    $self->{execute_promise}->{$name} = $p;
     
     return $return;
   } else {
