@@ -461,17 +461,17 @@ data source.  Otherwise, disconnect all the connections hold by the
 database object.  If there is no connection for the data source, the
 method does nothing.
 
-Please notice that if there is an uncommitted transaction session, it
-will be rollbacked by the invocation of this method.
+Any B<synchronous> connection is disconnected immediately.  If there
+is an uncommitted synchronous transaction, it is rollbacked.
 
-You don't have to invoke this method explicitly in synchronous mode,
-as the C<DESTROY> method for the database object will invoke this
-method automatically.  In asynchronous mode, you should explicitly
-invoke this method to gracefully shutdown the connection to the
+Any B<asynchronous> connection is disconnected once it becomes free.
+That is, any ongoing or queued SQL statement or asynchronous
+transaction is still executed after the C<disconnect> method call.
+
+The application should explicitly invoke this method to grecefully
+shutdown the connection to the server.  Otherwise some of the ongoing
+or queued statements might be discarded by the client or by the
 server.
-
-If the connection is in the asynchronous mode, any queued SQL
-statements might still be executed after the method is invoked.
 
 In the asynchronous mode, the returned object is I<thenable>.
 
@@ -508,24 +508,60 @@ of transaction object can override this behavior:
 
 =over 4
 
-=item $transaction = $db->transaction
+=item $transaction = $db->transaction (when master is in synchronous mode)
 
-Start a transaction and return the transaction object.  The
-transaction object is a "guard" object; The transaction is effective
-as long as the object is live.
+If the source C<master> is in the synchronous mode, the method starts
+a transaction and returns the synchronous transaction object for the
+transaction.  The synchronous transaction object is a "guard" object;
+The transaction is effective as long as the object is live.
 
-This method is not supported in asynchronous mode yet.
+Once you get a synchronous transaction object, you can invoke SQL
+operations as usual, through various methods of Dongry.  In addition,
+the C<lock> option for C<select> and other retrieval methods becomes
+available in the transaction.
+
+Within a transaction you can only use the C<master> data source.  The
+default data source is C<master>, not C<default>, within a
+transaction.
+
+=item $db->transaction->then (sub { $transaction = $_[0] }) (when master is in asynchronous mode)
+
+If the source C<master> is in the asynchronous mode, the method
+returns a promise that is fulfillwed after a transaction is started.
+The promise is fulfilled with an asynchronous transaction object for
+the transaction.
 
 =back
 
-Once you get a transaction object, you can invoke SQL operations as
-usual, through various methods of Dongry.  In addition, the C<lock>
-option for C<select> and other retrieval methods will take effect in
-transaction.  After execution of zero or more SQL statements, you have
-to commit or rollback the transaction to save or discard the
-modifications, using a method of the transaction object:
+Once you get an B<asynchronous> transaction object, you can invoke SQL
+operations using the methods of the asynchronous transaction object:
 
 =over 4
+
+=item $result = $transaction->execute (...)
+
+=item $result = $transaction->select (...)
+
+=item $result = $transaction->insert (...)
+
+=item $result = $transaction->update (...)
+
+=item $result = $transaction->delete (...)
+
+Send an SQL statement.  These methods are equivalent to the methods of
+the Dongry database object but SQL statements are associated with the
+transaction.
+
+The C<source_name> option is not allowed.  They are always assumed as
+C<master>.
+
+The C<select> method supports the C<lock> option.
+
+=back
+
+After execution of zero or more SQL statements, you have to commit or
+rollback the transaction to save or discard the modifications, using a
+method of the synchronous or asynchronous transaction object:
 
 =item $transaction->commit (%opts)
 
@@ -554,27 +590,31 @@ not be useful for debugging.
 
 Exactly one of C<commit> and C<rollback> methods must be invoked to
 terminate the transaction.  Once one of them are invoked, the
-transaction object lost its effect, even if it has not been destroyed
-by Perl.  This is different from usual "guard" objects, including the
-"force source" object described below.  After this time you can start
-another transaction session by calling the C<< $db->transaction >>
-method again.  A new transaction cannot be initiated while there is
-another transaction.
+synchronous or asynchronous transaction object lost its effect, even
+if it has not been destroyed by Perl.  This is different from usual
+"guard" objects, including the "force source" object described below.
 
 If you forgot to commit or rollback the changes, they will be
-discarded when the transaction object is destroyed by Perl.  Don't
-rely on this behavior since it is not guaranteed by Perl exactly when
-an object is destroyed.  It means that exactly when the transaction
-terminates is unclear unless you explicitly call the C<rollback>
-method.
+discarded when the synchronous or asynchronous transaction object is
+destroyed by Perl.  Don't rely on this behavior since it is not
+guaranteed by Perl exactly when an object is destroyed and the
+rollback statement might not be successfully sent to the server
+depending on how the event loop and object destruction interact
+together.
 
-Within a transaction you can only use the C<master> data source.  The
-default data source is C<master>, not C<default>, within a
-transaction.
+After the C<commit> or C<rollback> method is invoked on a
+B<synchronous> transaction object, you can start another synchronous
+transaction session by calling the C<< $db->transaction >> method
+again.  A new synchronous transaction cannot be initiated while there
+is another synchronous transaction.
 
-Transactions are not supported in asynchronous (or
-L<AnyEvent::MySQL::Client>) mode for now.  They are to be supported in
-future revision.
+During there is an B<asynchronous> transaction object, the Dongry
+database object's statement methods are also available but they are
+I<not> associated with the transaction.  Such statements are sent to
+the server after the conclusion of the transaction.  Likewise, a new
+asynchronous transaction can be started even when there is anothor
+ongoing transaction.
+
 
 When you just want to use a particular data source for some
 operations, you can use the "force source" feature:
