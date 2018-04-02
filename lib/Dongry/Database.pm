@@ -307,8 +307,10 @@ sub connect ($$;%) {
             #return 0;
           }, AutoCommit => 1, ReadOnly => !$source->{writable},
           AutoInactiveDestroy => 1});
-    local $self->{onconnect_running}->{$name} = 1;
-    $self->onconnect->($self, source_name => $name);
+    {
+      local $self->{onconnect_running}->{$name} = 1;
+      $self->onconnect->($self, source_name => $name);
+    }
     $return->_ok ($self, bless {}, 'Dongry::Database::Executed::NoResult');
     return $return;
   }
@@ -392,12 +394,13 @@ sub transaction ($;%) {
   croak "Can't start new transaction while a source is forced"
       if $self->{force_source_name};
 
-  $self->connect ('master');
-  if ($self->{sources}->{master}->{anyevent}) {
-    croak "|transaction| is not supported in asynchronous mode yet";
+  my $source_name = 'master';
+  if ($self->{sources}->{$source_name}->{anyevent}) {
+    return $self->_ae_transaction_start ($source_name);
   } else {
+    $self->connect ($source_name);
     $self->{in_transaction} = 1;
-    $self->{dbhs}->{master}->begin_work ($args{cb});
+    $self->{dbhs}->{$source_name}->begin_work ($args{cb});
     return bless {db => $self}, 'Dongry::Database::Transaction';
   }
 } # transaction
@@ -409,6 +412,7 @@ sub force_source_name ($$) {
       if $self->{force_source_name};
 
   if ($self->{sources}->{$_[0]} and $self->{sources}->{$_[0]}->{anyevent}) {
+    # croak if $self->{ae_transaction_promise}->{...}
     croak "|force_source_name| is not supported in asynchronous mode";
   }
 
@@ -489,8 +493,6 @@ sub execute ($$;$%) {
     $return->_thenablize;
 
     # XXX retry
-    # XXX transaction
-    # XXX transaction not allowed while onconnect_running
 
     if ($args{each_as_row_cb}) {
       require Dongry::Table;
@@ -498,22 +500,32 @@ sub execute ($$;$%) {
     }
 
     my $p;
-    if (defined $self->{execute_promise}->{$name} and
-        not $self->{onconnect_running}->{$name}) {
-      $p = $self->{execute_promise}->{$name}->then (sub {
-        return $self->connect ($name);
-      });
+    if ($args{_ae_transaction}) {
+      if ($self->{onconnect_running}->{$name}) {
+        return Promise->reject (bless {
+          error_text => "Transaction is not allowed within onconnect handler",
+          error_sql => $sql,
+        }, 'Dongry::Database::Executed::NotAvailable');
+      }
+      $p = $self->{ae_transaction_promise}->{$name}->[0];
     } else {
-      $p = $self->connect ($name);
+      if (defined $self->{execute_promise}->{$name} and
+          not $self->{onconnect_running}->{$name}) {
+        $p = $self->{execute_promise}->{$name}->then (sub {
+          return $self->connect ($name);
+        });
+      } else {
+        $p = $self->connect ($name);
+      }
+      $p = $p->then (undef, sub {
+        my $error = $_[0];
+        die bless {
+          error_text => "|connect| failed ($error)",
+          error_sql => $sql,
+          _skip_onerror => 1,
+        }, 'Dongry::Database::Executed::NotAvailable';
+      });
     }
-    $p = $p->then (undef, sub {
-      my $error = $_[0];
-      die bless {
-        error_text => "|connect| failed ($error)",
-        error_sql => $sql,
-        _skip_onerror => 1,
-      }, 'Dongry::Database::Executed::NotAvailable';
-    });
 
     my $client;
     $p = $p->then (sub {
@@ -599,7 +611,11 @@ sub execute ($$;$%) {
       undef $client; undef $self; %args = (); undef $return;
     }); # $p
 
-    $self->{execute_promise}->{$name} = $p;
+    if ($args{_ae_transaction}) {
+      $self->{ae_transaction_promise}->{$name}->[0] = $p;
+    } else {
+      $self->{execute_promise}->{$name} = $p;
+    }
     
     return $return;
   } else {
@@ -645,6 +661,88 @@ sub execute ($$;$%) {
   }
 } # execute
 
+sub _ae_transaction_start ($$) {
+  my ($self, $source_name) = @_;
+
+  if ($self->{onconnect_running}->{$source_name}) {
+    return Promise->reject (bless {
+      error_text => "Transaction is not allowed within onconnect handler",
+      error_sql => 'begin',
+    }, 'Dongry::Database::Executed::NotAvailable');
+  }
+  
+  my $p;
+  if (defined $self->{execute_promise}->{$source_name}) {
+    $p = $self->{execute_promise}->{$source_name}->then (sub {
+      return $self->connect ($source_name);
+    });
+  } else {
+    $p = $self->connect ($source_name);
+  }
+
+  my ($r, $s);
+  $r = Promise->new (sub { ($s) = @_ });
+  $self->{execute_promise}->{$source_name} = $r;
+  
+  return $p->then (sub {
+    my $client = $self->{dbhs}->{$source_name} || bless {
+      error_text => 'Connection is lost during event loop',
+    }, 'Dongry::Database::BrokenConnection';
+    die "ae_transaction_promise $source_name is busy" # assert
+        if defined $self->{ae_transaction_promise}->{$source_name};
+    my $q = $client->query ('begin')->then (sub {
+      return bless {db => $self}, 'Dongry::Database::AETransaction';
+    }, sub {
+      my $x = $_[0];
+      my $result;
+      if (UNIVERSAL::isa ($x, 'Dongry::Database::Executed')) {
+        $result = $x;
+      } else {
+        $result = bless {error_text => ''.$x, error_sql => 'begin'},
+            'Dongry::Database::Executed::NotAvailable';
+      }
+      die $result;
+    });
+
+    $self->{ae_transaction_promise}->{$source_name} = [$q, $s];
+    return $q;
+  });
+} # _ae_transaction_start
+
+sub _ae_transaction_end ($$$) {
+  my ($self, $source_name, $query) = @_;
+  my $v = $self->{ae_transaction_promise}->{$source_name};
+  return $v->[0]->then (sub {
+    my $client = $self->{dbhs}->{$source_name} || bless {
+      error_text => 'Connection is lost during event loop',
+    }, 'Dongry::Database::BrokenConnection';
+    return $client->query ($query)->then (sub {
+      delete $self->{ae_transaction_promise}->{$source_name};
+      my $result = bless {}, 'Dongry::Database::Executed::NoResult';
+      $v->[1]->();
+      return $result;
+    }, sub {
+      my $x = $_[0];
+      delete $self->{ae_transaction_promise}->{$source_name};
+      my $result;
+      if (UNIVERSAL::isa ($x, 'Dongry::Database::Executed')) {
+        $result = $x;
+      } else {
+        $result = bless {error_text => ''.$x, error_sql => $query},
+            'Dongry::Database::Executed::NotAvailable';
+      }
+      delete $self->{dbhs}->{$source_name};
+      return $client->disconnect->then (sub {
+        $v->[1]->();
+        die $result;
+      }, sub {
+        $v->[1]->();
+        die $result;
+      });
+    });
+  });
+} # _ae_transaction_end
+
 # ------ Structured SQL executions ------
 
 # XXX promise not supported
@@ -654,7 +752,8 @@ sub set_tz ($;$%) {
   $self->execute ('SET time_zone = ?', [$tz],
                   source_name => $args{source_name},
                   even_if_read_only => 1,
-                  cb => $args{cb});
+                  cb => $args{cb},
+                  _ae_transaction => $args{_ae_transaction});
   return undef;
 } # set_tz
 
@@ -663,7 +762,7 @@ sub has_table ($$;%) {
   my ($self, $name, %args) = @_;
   my $row = $self->execute('SHOW TABLES LIKE :table', {
     table => Dongry::SQL::like ($name),
-  }, source_name => $args{source_name})->first;
+  }, source_name => $args{source_name}, _ae_transaction => $args{_ae_transaction})->first;
   return $row && [values %$row]->[0] eq $name;
 } # has_table
 
@@ -754,7 +853,8 @@ sub insert ($$$;%) {
   }; # $cb
 
   my $return = $self->execute
-      ($sql, \@values, source_name => $args{source_name}, cb => $cb);
+      ($sql, \@values, source_name => $args{source_name}, cb => $cb,
+       _ae_transaction => $args{_ae_transaction});
 
   return unless defined wantarray;
   return $return if $return->is_error or $return->can ('then');
@@ -789,7 +889,8 @@ sub select ($$$;%) {
   $sql .= sprintf ' LIMIT %d,%d', ($args{offset} || 0), ($args{limit} || 1)
       if defined $args{limit} or defined $args{offset};
   if ($args{lock}) {
-    carp "Lock used outside of transaction" unless $self->{in_transaction};
+    carp "Lock used outside of transaction"
+        unless $self->{in_transaction} or $args{_ae_transaction};
     $sql .= ' FOR UPDATE' if $args{lock} eq 'update';
     $sql .= ' LOCK IN SHARE MODE' if $args{lock} eq 'share';
     $args{must_be_writable} = 1;
@@ -802,7 +903,8 @@ sub select ($$$;%) {
        each_cb => $args{each_cb},
        table_name => $table_name,
        each_as_row_cb => $args{each_as_row_cb},
-       cb => $args{cb});
+       cb => $args{cb},
+       _ae_transaction => $args{_ae_transaction});
   return unless defined wantarray;
 
   $return->{table_name} = $table_name
@@ -844,7 +946,8 @@ sub update ($$$%) {
 
   return $self->execute
      ($sql, [@bound_value, @$where_bind], source_name => $args{source_name},
-      cb => $args{cb});
+      cb => $args{cb},
+      _ae_transaction => $args{_ae_transaction});
 } # update
 
 sub delete ($$$;%) {
@@ -860,7 +963,8 @@ sub delete ($$$;%) {
 
   return $self->execute
       ($sql, $where_bind, source_name => $args{source_name},
-       cb => $args{cb});
+       cb => $args{cb},
+       _ae_transaction => $args{_ae_transaction});
 } # delete
 
 sub bare_sql_fragment ($$) {
@@ -1192,6 +1296,81 @@ sub row_count ($) {
 } # row_count
 
 # ------ Transaction ------
+
+package Dongry::Database::AETransaction;
+our $VERSION = '1.0';
+
+sub commit ($) {
+  return Promise->reject (bless {
+    error_text => 'Transaction object is invalid', error_sql => 'commit',
+  }, 'Dongry::Database::Executed::NotAvailable') unless defined $_[0]->{db};
+  my $db = delete $_[0]->{db};
+  return $db->_ae_transaction_end ('master', 'commit');
+} # commit
+
+sub rollback ($) {
+  return Promise->reject (bless {
+    error_text => 'Transaction object is invalid', error_sql => 'rollback',
+  }, 'Dongry::Database::Executed::NotAvailable') unless defined $_[0]->{db};
+  my $db = delete $_[0]->{db};
+  return $db->_ae_transaction_end ('master', 'rollback');
+} # rollback
+
+sub execute ($@) {
+  return Promise->reject (bless {
+    error_text => 'Transaction object is invalid',
+  }, 'Dongry::Database::Executed::NotAvailable') unless defined $_[0]->{db};
+  return shift->{db}->execute (@_, _ae_transaction => 1, source_name => 'master');
+} # execute
+
+sub insert ($@) {
+  return Promise->reject (bless {
+    error_text => 'Transaction object is invalid',
+  }, 'Dongry::Database::Executed::NotAvailable') unless defined $_[0]->{db};
+  return shift->{db}->insert (@_, _ae_transaction => 1, source_name => 'master');
+} # insert
+
+sub select ($@) {
+  return Promise->reject (bless {
+    error_text => 'Transaction object is invalid',
+  }, 'Dongry::Database::Executed::NotAvailable') unless defined $_[0]->{db};
+  return shift->{db}->select (@_, _ae_transaction => 1, source_name => 'master');
+} # select
+
+sub update ($@) {
+  return Promise->reject (bless {
+    error_text => 'Transaction object is invalid',
+  }, 'Dongry::Database::Executed::NotAvailable') unless defined $_[0]->{db};
+  return shift->{db}->update (@_, _ae_transaction => 1, source_name => 'master');
+} # update
+
+sub delete ($@) {
+  return Promise->reject (bless {
+    error_text => 'Transaction object is invalid',
+  }, 'Dongry::Database::Executed::NotAvailable') unless defined $_[0]->{db};
+  return shift->{db}->delete (@_, _ae_transaction => 1, source_name => 'master');
+} # delete
+
+sub debug_info ($) {
+  if (not defined $_[0]->{db}) {
+    return '{DBTransaction: AE, invalid}';
+  } else {
+    return '{DBTransaction: AE}';
+  }
+} # debug_info
+
+sub DESTROY {
+  if (defined $_[0]->{db}) {
+    $_[0]->rollback;
+    die "Transaction is rollbacked since it is not explicitly committed",
+        Carp::shortmess();
+  }
+
+  local $@;
+  eval { die };
+  warn "Possible memory leak detected (".(ref $_[0]).")\n"
+      if $@ =~ /during global destruction/;
+} # DESTROY
 
 package Dongry::Database::Transaction;
 our $VERSION = '1.0';
