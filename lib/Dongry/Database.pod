@@ -563,6 +563,8 @@ After execution of zero or more SQL statements, you have to commit or
 rollback the transaction to save or discard the modifications, using a
 method of the synchronous or asynchronous transaction object:
 
+=over 4
+
 =item $transaction->commit (%opts)
 
 Commit the transaction.  Changes will be persisted by the database.
