@@ -17,7 +17,8 @@ BEGIN {
 push our @CARP_NOT, qw(
   DBI DBI::st DBI::db
   Dongry::Database::Executed Dongry::Database::Executed::Inserted
-  Dongry::Database::Transaction Dongry::Database::ForceSource
+  Dongry::Database::Transaction Dongry::Database::AETransaction
+  Dongry::Database::ForceSource
   Dongry::Table Dongry::Table::Row Dongry::Query
   Dongry::SQL
   Dongry::Database::BrokenConnection
