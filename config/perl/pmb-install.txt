@@ -64,11 +64,9 @@ Path::Class~0.37
 Path::Tiny~0.104
 Proc::FastSpawn~1.2
 Role::Tiny~2.000006
-Role::Tiny::With~2.000006
-Scalar::Util~1.50
 Socket~2.027
-Specio::Library::Builtins~0.42
-Specio::Library::Numeric~0.42
+Specio~0.42
+Specio::Declare~0.42
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Install~0.928
@@ -81,7 +79,7 @@ Test::Fatal~0.014
 Test::NoWarnings~1.04
 Test::Requires~0.10
 Test::Tester~1.302138
-Test::mysqld~1.0010
+Test::mysqld~1.0011
 Text::Diff~1.45
 Time::HiRes~1.9758
 Time::Local~1.28
