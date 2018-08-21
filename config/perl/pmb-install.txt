@@ -66,7 +66,7 @@ Proc::FastSpawn~1.2
 Role::Tiny~2.000006
 Scalar::Util~1.50
 Socket~2.027
-Specio::Exporter~0.42
+Specio::Library::String~0.42
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Install~0.928
