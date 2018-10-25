@@ -66,7 +66,7 @@ Path::Tiny~0.108
 Proc::FastSpawn~1.2
 Role::Tiny::With~2.000006
 Socket~2.027
-Specio::Library::String~0.42
+Specio::Exporter~0.42
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Install~0.928
@@ -76,6 +76,7 @@ Term::ANSIColor~4.06
 Test::Class~0.50
 Test::Differences~0.64
 Test::Fatal~0.014
+Test::More~1.302140
 Test::NoWarnings~1.04
 Test::Requires~0.10
 Test::Tester~1.302140
