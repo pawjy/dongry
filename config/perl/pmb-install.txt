@@ -2,7 +2,7 @@ Algorithm::Diff~1.1903
 AnyEvent~7.14
 AnyEvent::DBI~3.04
 AnyEvent::Fork~1.31
-AnyEvent::Util
+AnyEvent::Handle
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.24
 CBOR::XS~1.71
@@ -65,11 +65,11 @@ Params::ValidationCompiler~0.30
 Path::Class~0.37
 Path::Tiny~0.108
 Proc::FastSpawn~1.2
-Role::Tiny~2.000006
 Role::Tiny::With~2.000006
+Scalar::Util~1.50
 Socket~2.027
 Specio::Exporter~0.43
-Specio::Library::String~0.43
+Specio::Library::Numeric~0.43
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Install~0.928
@@ -79,7 +79,6 @@ Term::ANSIColor~4.06
 Test::Class~0.50
 Test::Differences~0.64
 Test::Fatal~0.014
-Test::More~1.302140
 Test::NoWarnings~1.04
 Test::Requires~0.10
 Test::Tester~1.302140
