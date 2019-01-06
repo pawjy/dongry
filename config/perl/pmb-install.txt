@@ -7,7 +7,7 @@ B::Hooks::EndOfScope~0.24
 CBOR::XS~1.71
 Canary::Stability~2012
 Capture::Tiny~0.48
-Carp::Heavy~1.50
+Carp~1.50
 Class::Accessor::Fast~0.51
 Class::Accessor::Lite~0.08
 Class::Data::Inheritable~0.08
@@ -42,7 +42,7 @@ File::Path~2.16
 File::ShareDir~1.116
 File::ShareDir::Install~0.13
 File::Slurp~9999.25
-File::Temp~0.2308
+File::Temp~0.2309
 Filter::Util::Call~1.59
 Getopt::Long~2.5
 IO::FDPass~1.2
@@ -64,17 +64,15 @@ Params::ValidationCompiler~0.30
 Path::Class~0.37
 Path::Tiny~0.108
 Proc::FastSpawn~1.2
-Role::Tiny~2.000006
-Scalar::Util~1.50
+Role::Tiny::With~2.000006
 Socket~2.027
-Specio::Exporter~0.43
+Specio::Library::String~0.43
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Install~0.928
 Sub::Name~0.21
 Sub::Quote~2.005001
 Term::ANSIColor~4.06
-Test::Builder~1.302141
 Test::Class~0.50
 Test::Differences~0.64
 Test::Fatal~0.014
