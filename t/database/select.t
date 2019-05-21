@@ -740,6 +740,96 @@ sub _select_sources : Test(5) {
   };
 } # _select_sources
 
+sub _select_master_only : Test(5) {
+  reset_db_set;
+  my $dsn1 = test_dsn 'dsn1';
+  my $dsn2 = test_dsn 'dsn2';
+  my $dsn3 = test_dsn 'dsn3';
+  my $db1 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1}});
+  my $db2 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn2, writable => 1}});
+  my $db3 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn3, writable => 1}});
+  $db1->execute ('create table foo (id int)');
+  $db2->execute ('create table foo (id int)');
+  $db3->execute ('create table foo (id int)');
+  $db1->execute ('insert into foo (id) values (1)');
+  $db2->execute ('insert into foo (id) values (2)');
+  $db3->execute ('insert into foo (id) values (3)');
+  
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn1},
+                   master => {dsn => $dsn2},
+                   heavy => {dsn => $dsn3}},
+       master_only => 1);
+
+  my $result1 = $db->select ('foo', {id => {'>=', 0}});
+  is $result1->first->{id}, 2;
+
+  my $result2 = $db->select ('foo', {id => {'>=', 0}},
+                             source_name => 'default');
+  is $result2->first->{id}, 1;
+
+  my $result3 = $db->select ('foo', {id => {'>=', 0}},
+                             source_name => 'master');
+  is $result3->first->{id}, 2;
+
+  my $result4 = $db->select ('foo', {id => {'>=', 0}},
+                             source_name => 'heavy');
+  is $result4->first->{id}, 3;
+  
+  dies_here_ok {
+    my $result5 = $db->select ('foo', {id => {'>=', 0}},
+                               source_name => 'notfound');
+  };
+} # _select_master_only
+
+sub _select_master_only_false : Test(5) {
+  reset_db_set;
+  my $dsn1 = test_dsn 'dsn1';
+  my $dsn2 = test_dsn 'dsn2';
+  my $dsn3 = test_dsn 'dsn3';
+  my $db1 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn1, writable => 1}});
+  my $db2 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn2, writable => 1}});
+  my $db3 = Dongry::Database->new
+      (sources => {master => {dsn => $dsn3, writable => 1}});
+  $db1->execute ('create table foo (id int)');
+  $db2->execute ('create table foo (id int)');
+  $db3->execute ('create table foo (id int)');
+  $db1->execute ('insert into foo (id) values (1)');
+  $db2->execute ('insert into foo (id) values (2)');
+  $db3->execute ('insert into foo (id) values (3)');
+  
+  my $db = Dongry::Database->new
+      (sources => {default => {dsn => $dsn1},
+                   master => {dsn => $dsn2},
+                   heavy => {dsn => $dsn3}},
+       master_only => 0);
+
+  my $result1 = $db->select ('foo', {id => {'>=', 0}});
+  is $result1->first->{id}, 1;
+
+  my $result2 = $db->select ('foo', {id => {'>=', 0}},
+                             source_name => 'default');
+  is $result2->first->{id}, 1;
+
+  my $result3 = $db->select ('foo', {id => {'>=', 0}},
+                             source_name => 'master');
+  is $result3->first->{id}, 2;
+
+  my $result4 = $db->select ('foo', {id => {'>=', 0}},
+                             source_name => 'heavy');
+  is $result4->first->{id}, 3;
+  
+  dies_here_ok {
+    my $result5 = $db->select ('foo', {id => {'>=', 0}},
+                               source_name => 'notfound');
+  };
+} # _select_master_false
+
 sub _select_must_be_writable_yes : Test(1) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
@@ -2359,7 +2449,7 @@ __PACKAGE__->runtests;
 
 =head1 LICENSE
 
-Copyright 2011-2014 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2019 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

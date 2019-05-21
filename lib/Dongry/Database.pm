@@ -60,6 +60,7 @@ sub load ($$) {
            ($def->{get_onconnect} or sub { undef })->(),
        schema => $def->{schema} ||
            ($def->{get_schema} or sub { undef })->(),
+       master_only => $def->{master_only},
        table_name_normalizer => $def->{table_name_normalizer} ||
            ($def->{get_table_name_normalizer} or sub { undef })->());
 } # load
@@ -446,10 +447,12 @@ sub execute ($$;$%) {
   my $name = $args{source_name} ||
       ($self->{force_source_name}
          ? $self->{force_source_name}
-         : ((!$self->{in_transaction} &&
-             !$args{must_be_writable} &&
-             $sql =~ /$ReadOnlyQueryPattern/o)
-                ? 'default' : 'master'));
+         : $self->{master_only}
+           ? 'master'
+           : ((!$self->{in_transaction} &&
+               !$args{must_be_writable} &&
+               $sql =~ /$ReadOnlyQueryPattern/o)
+                  ? 'default' : 'master'));
   if ($name ne 'master' and $self->{in_transaction}) {
     croak "Data source |$name| cannot be used in transaction";
   }

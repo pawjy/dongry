@@ -74,7 +74,7 @@ sub _load_empty_def : Test(5) {
   ng $db->{table_name_normalizer};
 } # _load_empty_def
 
-sub _load_static_def : Test(5) {
+sub _load_static_def : Test(6) {
   local $Dongry::Database::Registry->{test2}
       = {sources => {foo => {dsn => 123}},
          onerror => 123,
@@ -87,7 +87,25 @@ sub _load_static_def : Test(5) {
   is $db->{onconnect}, 154;
   eq_or_diff $db->{schema}, {hoge => {foo => 5}};
   is $db->{table_name_normalizer}->(), 12;
+  ok ! $db->{master_only};
 } # _load_static_def
+
+sub _load_static_def2 : Test(6) {
+  local $Dongry::Database::Registry->{test22}
+      = {sources => {foo => {dsn => 123}},
+         onerror => 123,
+         onconnect => 154,
+         schema => {hoge => {foo => 5}},
+         table_name_normalizer => sub { 12 },
+         master_only => 1};
+  my $db = Dongry::Database->load ('test22');
+  eq_or_diff $db->{sources}, {foo => {dsn => 123}};
+  is $db->{onerror}, 123;
+  is $db->{onconnect}, 154;
+  eq_or_diff $db->{schema}, {hoge => {foo => 5}};
+  is $db->{table_name_normalizer}->(), 12;
+  ok $db->{master_only};
+} # _load_static_def2
 
 sub _load_dynamic_def : Test(5) {
   local $Dongry::Database::Registry->{test3}
@@ -245,7 +263,7 @@ __PACKAGE__->runtests;
 
 =head1 LICENSE
 
-Copyright 2011-2012 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2019 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

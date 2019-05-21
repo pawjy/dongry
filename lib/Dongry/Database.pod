@@ -94,9 +94,10 @@ database object from the registry by the short name for the object.
 Create and return a new instance of the L<Dongry::Database> database
 object.
 
-Options C<sources>, C<onconnect>, C<onerror>, C<schema>, and
-C<table_name_normalizer> can be specified as key/value pairs.  See
-following subsections for their semantics and acceptable values.
+Options C<sources>, C<master_only>, C<onconnect>, C<onerror>,
+C<schema>, and C<table_name_normalizer> can be specified as key/value
+pairs.  See following subsections for their semantics and acceptable
+values.
 
 Example:
 
@@ -134,16 +135,17 @@ C<< %{$reg->{Registry}} >> hash (for a local registry).
 The hash key is the short database name and the hash value is the hash
 reference containing options used to instantiate the database object.
 Following options allowed for the C<new> method is also applicable
-here: C<sources>, C<onconnect>, C<onerror>, C<schema>, and
-C<table_name_normalizer>.
+here: C<sources>, C<master_only>, C<onconnect>, C<onerror>, C<schema>,
+and C<table_name_normalizer>.
 
-Alteranatively, these values can be specified as code reference which
-is invoked to get the actual value when an object is initialized, by
-prefixing C<get_> to the hash key (i.e. C<get_schema> for C<schema>).
-The code reference will be invoked without any argument.  The code
-reference must return a value that is allowed for the option
-(e.g. C<get_onconnect> code reference must return an C<onconnect>
-handler code reference).
+Alteranatively, some of these values can be specified as code
+reference which is invoked to get the actual value when an object is
+initialized, by prefixing C<get_> to the hash key,
+i.e. C<get_sources>, C<get_onconnect>, C<get_onerror>, C<get_schema>,
+and C<get_table_name_normalizer>.  The code reference will be invoked
+without any argument.  The code reference must return a value that is
+allowed for the option (e.g. C<get_onconnect> code reference must
+return an C<onconnect> handler code reference).
 
 Then, you can use the short database name as the argument to the
 C<load> method to get the instance initialized with the specified
@@ -175,20 +177,47 @@ Example:
 =head2 Connections
 
 A database object can have multiple (physically different) connections
-to a (logically same) database.  Such a connection is identified by
-short identifier known as I<data source name>, such as C<default> and
-C<master>.  You can any non-false string as a data source name.
-However, names C<default> and C<master> are sometimes handled in a
-special way, as described in this and following subsections.
+to databases.  A connection is identified by a short string known as
+I<data source name>, e.g. C<default> and C<master>.
 
-The C<default> data source is selected for read-only operations by
-default.  The C<master> data source is selected for other operations
-by default.  Operations in a transaction are always executed with the
-C<master> data source.  These two data sources would be useful for
-accessing databases operated in popular master-slave configuration.
-In addition, you can define your custom data sources such as C<heavy>
-or C<batch> to send some of queries to alternative slaves.  It might
-also be useful to define synchronous and asyncrhonous data sources.
+Multiple connections can be used to adopt to different database server
+deployment strategies, such as:
+
+=over 4
+
+=item A single database server.
+
+In this case, the only data source name C<master> should be used.
+
+=item A master-slave database server pair.
+
+In this case, the data source name C<master> should be used for the
+master server and C<default> for the slave server.  Then the
+C<default> data source name is used for read-only SQL statements and
+the C<master> for any other, unless explicitly specified.
+
+=item A master-slave database server pair with additional servers for "heavy" queries.
+
+In this case, in addition to C<master> and C<default> data source
+names, any application-specific non-false short string, such as
+C<heavy> or C<batch>, can be used to identify additional servers.
+Then such additional source names can be specified to SQL executions
+as options.
+
+=item A complex set of database servers.
+
+In this case, any application-specific non-false short string can be
+used as data source names, but the appropriate data source name must
+be specified for all SQL executions explicitly.
+
+=back
+
+Operations in a transaction are always executed with the C<master>
+data source name.
+
+It might also be useful to define synchronous and asyncrhonous data
+source names for transitional applications that are only partially
+operated in terms of L<AnyEvent>.
 
 =over 4
 
@@ -1652,7 +1681,7 @@ Wakaba <wakaba@suikawiki.org>.
 
 =head1 LICENSE
 
-Copyright 2011-2018 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2019 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
