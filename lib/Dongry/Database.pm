@@ -382,7 +382,7 @@ sub DESTROY {
 
   local $@;
   eval { die };
-  warn "Possible memory leak detected (".(ref $_[0]).")\n"
+  warn "$$: Reference to " . $_[0]->debug_info . " is not discarded before global destruction\n"
       if $@ =~ /during global destruction/;
 } # DESTROY
 
@@ -1176,6 +1176,8 @@ sub debug_info ($) {
     my $v = $self->$name;
     push @info, $name . ' = ' . $v if defined $v;
   }
+  push @info, 'file = ' . $_[0]->{caller}->{file} if defined $_[0]->{caller}->{file};
+  push @info, 'line = ' . $_[0]->{caller}->{line} if defined $_[0]->{caller}->{line};
   return sprintf '{DBExecuted: %s}', join '; ', @info;
 } # debug_info
 
@@ -1184,10 +1186,7 @@ sub DESTROY {
 
   local $@;
   eval { die };
-  warn sprintf "Possible memory leak detected (%s created at %s line %s)\n",
-      $_[0],
-      defined $_[0]->{caller}->{file} ? $_[0]->{caller}->{file} : '(unknown)',
-      defined $_[0]->{caller}->{line} ? $_[0]->{caller}->{line} : '(unknown)'
+  warn "$$: Reference to " . $_[0]->debug_info . " is not discarded before global destruction\n"
       if $@ =~ /during global destruction/;
 } # DESTROY
 
@@ -1369,7 +1368,7 @@ sub DESTROY {
 
   local $@;
   eval { die };
-  warn "Possible memory leak detected (".(ref $_[0]).")\n"
+  warn "$$: Reference to " . $_[0]->debug_info . " is not discarded before global destruction\n"
       if $@ =~ /during global destruction/;
 } # DESTROY
 
@@ -1410,7 +1409,7 @@ sub DESTROY {
 
   local $@;
   eval { die };
-  warn "Possible memory leak detected (".(ref $_[0]).")\n"
+  warn "$$: Reference to " . $_[0]->debug_info . " is not discarded before global destruction\n"
       if $@ =~ /during global destruction/;
 } # DESTROY
 
@@ -1435,7 +1434,7 @@ sub DESTROY {
 
   local $@;
   eval { die };
-  warn "Possible memory leak detected (".(ref $_[0]).")\n"
+  warn "$$: Reference to " . $_[0]->debug_info . " is not discarded before global destruction\n"
       if $@ =~ /during global destruction/;
 } # DESTROY
 
