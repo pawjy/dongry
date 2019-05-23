@@ -1,6 +1,6 @@
 =head1 NAME
 
-Dongry::Database - Dongry database object
+Dongry::Database - Dongry MySQL database client object
 
 =head1 SYNOPSIS
 

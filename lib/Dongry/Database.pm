@@ -1,7 +1,7 @@
 package Dongry::Database;
 use strict;
 use warnings;
-our $VERSION = '5.0';
+our $VERSION = '6.0';
 use Carp;
 use Carp::Heavy;
 use Scalar::Util qw(weaken);
@@ -117,8 +117,9 @@ sub onerror ($) {
 } # onerror
 
 sub _get_caller () {
-  return scalar Carp::caller_info
-      (Carp::short_error_loc() || Carp::long_error_loc());
+  return [caller ((sub { Carp::short_error_loc })->() - 1)];
+  # [1] file
+  # [2] line
 } # _get_caller
 
 sub connect ($$;%) {
@@ -240,8 +241,8 @@ sub connect ($$;%) {
         $onerror_args->{db}->{dbhs}->{$name} = bless {
           error_text => "$dsn: $error_text",
         }, 'Dongry::Database::BrokenConnection';
-        my $file_name = $onerror_args->{caller}->{file};
-        my $line = $onerror_args->{caller}->{line};
+        my $file_name = $onerror_args->{caller}->[1];
+        my $line = $onerror_args->{caller}->[2];
         eval {
           $onerror_args->{db}->onerror->($onerror_args->{db},
                                          anyevent => 1,
@@ -481,15 +482,17 @@ sub execute ($$;$%) {
     $comment =~ s{\*/}{\* /}g;
     $sql .= ' /* ' . $comment . ' */';
   }
+  my $caller;
   if ($EmbedCallerInSQL) {
-    my $caller = _get_caller;
-    my $text = $name . ' at ' . $caller->{file} . ' line ' . $caller->{line};
+    $caller //= _get_caller;
+    my $text = $name . ' at ' . $caller->[1] . ' line ' . $caller->[2];
     $text =~ s{\*/}{\* /}g;
     $sql .= ' /* ' . $text . ' */';
   }
 
   if ($self->{sources}->{$name}->{anyevent}) {
-    my $onerror_args = {caller => _get_caller};
+    $caller //= _get_caller;
+    my $onerror_args = {caller => $caller};
     my $return = bless {
       cb => $args{cb},
       caller => $onerror_args->{caller},
@@ -595,8 +598,8 @@ sub execute ($$;$%) {
             'Dongry::Database::Executed::NotAvailable';
       }
       
-      my $file_name = $onerror_args->{caller}->{file};
-      my $line = $onerror_args->{caller}->{line};
+      my $file_name = $onerror_args->{caller}->[1];
+      my $line = $onerror_args->{caller}->[2];
       eval {
         $return->_ng ($self, $result);
       };
@@ -1027,7 +1030,7 @@ use overload bool => sub { 1 }, '""' => sub {
   my $text = $_[0]->debug_info;
   if (defined $_[0]->{caller}) {
     return sprintf "%s at %s line %s.\n",
-      $text, $_[0]->{caller}->{file}, $_[0]->{caller}->{line};
+      $text, $_[0]->{caller}->[1], $_[0]->{caller}->[2];
   } else {
     return $text;
   }
@@ -1179,8 +1182,8 @@ sub debug_info ($) {
     my $v = $self->$name;
     push @info, $name . ' = ' . $v if defined $v;
   }
-  push @info, 'file = ' . $_[0]->{caller}->{file} if defined $_[0]->{caller}->{file};
-  push @info, 'line = ' . $_[0]->{caller}->{line} if defined $_[0]->{caller}->{line};
+  push @info, 'file = ' . $_[0]->{caller}->[1] if defined $_[0]->{caller}->[1];
+  push @info, 'line = ' . $_[0]->{caller}->[2] if defined $_[0]->{caller}->[2];
   return sprintf '{DBExecuted: %s}', join '; ', @info;
 } # debug_info
 
@@ -1494,7 +1497,7 @@ sub load ($$) {
 
 =head1 LICENSE
 
-Copyright 2011-2018 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2019 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
