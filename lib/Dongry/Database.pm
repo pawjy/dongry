@@ -1,7 +1,7 @@
 package Dongry::Database;
 use strict;
 use warnings;
-our $VERSION = '5.0';
+our $VERSION = '6.0';
 use Carp;
 use Carp::Heavy;
 use Scalar::Util qw(weaken);
