@@ -24,7 +24,7 @@ DateTime~1.51
 DateTime::Format::Builder~0.82
 DateTime::Format::MySQL~0.06
 DateTime::Format::Strptime~1.76
-DateTime::Locale::Base~1.24
+DateTime::Locale~1.24
 DateTime::TimeZone~2.36
 Devel::CheckLib~1.13
 Devel::StackTrace~2.04
@@ -61,13 +61,16 @@ Params::ValidationCompiler~0.30
 Path::Class~0.37
 Path::Tiny~0.108
 Proc::FastSpawn~1.2
+Role::Tiny~2.000006
 Role::Tiny::With~2.000006
 Socket~2.029
+Specio::Declare~0.43
 Specio::Library::Builtins~0.43
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Quote~2.006003
 Term::ANSIColor~4.06
+Test::Builder~1.302164
 Test::Class~0.50
 Test::Differences~0.67
 Test::Fatal~0.014
