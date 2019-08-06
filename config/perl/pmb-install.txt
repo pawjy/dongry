@@ -24,7 +24,7 @@ DateTime~1.51
 DateTime::Format::Builder~0.82
 DateTime::Format::MySQL~0.06
 DateTime::Format::Strptime~1.76
-DateTime::Locale::FromData~1.24
+DateTime::Locale~1.24
 DateTime::TimeZone~2.36
 Devel::CheckLib~1.13
 Devel::StackTrace~2.04
