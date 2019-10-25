@@ -2,6 +2,7 @@ Algorithm::Diff~1.1903
 AnyEvent~7.17
 AnyEvent::DBI~3.04
 AnyEvent::Fork~1.31
+AnyEvent::Util
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.24
 CBOR::XS~1.71
@@ -49,7 +50,7 @@ JSON::XS~4.02
 List::MoreUtils~0.428
 List::MoreUtils::XS~0.428
 List::Rubyish~0.03
-List::Util~1.52
+List::Util~1.53
 MRO::Compat~0.13
 Module::Implementation~0.09
 Module::Runtime~0.016
@@ -61,9 +62,10 @@ Params::ValidationCompiler~0.30
 Path::Class~0.37
 Path::Tiny~0.108
 Proc::FastSpawn~1.2
-Role::Tiny~2.001003
+Role::Tiny~2.001004
+Scalar::Util~1.53
 Socket~2.029
-Specio::Library::Numeric~0.44
+Specio::Exporter~0.44
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Quote~2.006006
@@ -71,7 +73,6 @@ Term::ANSIColor~4.06
 Test::Class~0.50
 Test::Differences~0.67
 Test::Fatal~0.014
-Test::More~1.302168
 Test::NoWarnings~1.04
 Test::Requires~0.10
 Test::Tester~1.302168
