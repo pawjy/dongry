@@ -2,7 +2,6 @@ Algorithm::Diff~1.1903
 AnyEvent~7.17
 AnyEvent::DBI~3.04
 AnyEvent::Fork~1.31
-AnyEvent::Handle
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.24
 CBOR::XS~1.71
@@ -63,8 +62,8 @@ Path::Class~0.37
 Path::Tiny~0.108
 Proc::FastSpawn~1.2
 Role::Tiny~2.001004
+Scalar::Util~1.53
 Socket~2.029
-Specio::Declare~0.44
 Specio::Library::Builtins~0.44
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
