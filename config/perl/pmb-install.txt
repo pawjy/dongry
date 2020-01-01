@@ -7,7 +7,7 @@ B::Hooks::EndOfScope~0.24
 CBOR::XS~1.71
 Canary::Stability~2013
 Capture::Tiny~0.48
-Carp~1.50
+Carp::Heavy~1.50
 Class::Accessor::Fast~0.51
 Class::Accessor::Lite~0.08
 Class::Data::Inheritable~0.08
@@ -61,12 +61,9 @@ Params::ValidationCompiler~0.30
 Path::Class~0.37
 Path::Tiny~0.108
 Proc::FastSpawn~1.2
-Role::Tiny~2.001004
 Role::Tiny::With~2.001004
-Scalar::Util~1.53
 Socket~2.029
-Specio::Library::Builtins~0.45
-Specio::Library::Numeric~0.45
+Specio::Declare~0.45
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Quote~2.006006
