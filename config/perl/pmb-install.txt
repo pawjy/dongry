@@ -68,6 +68,7 @@ Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Quote~2.006006
 Term::ANSIColor~4.06
+Test::Builder~1.302170
 Test::Class~0.50
 Test::Differences~0.67
 Test::Fatal~0.014
