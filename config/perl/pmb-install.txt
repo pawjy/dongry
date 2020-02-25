@@ -26,7 +26,7 @@ DateTime~1.51
 DateTime::Format::Builder~0.82
 DateTime::Format::MySQL~0.06
 DateTime::Format::Strptime~1.76
-DateTime::Locale::FromData~1.25
+DateTime::Locale~1.25
 DateTime::TimeZone~2.38
 Devel::CheckLib~1.14
 Devel::StackTrace~2.04
@@ -64,7 +64,7 @@ Params::ValidationCompiler~0.30
 Path::Class~0.37
 Path::Tiny~0.112
 Proc::FastSpawn~1.2
-Role::Tiny~2.001004
+Role::Tiny::With~2.001004
 Scalar::Util~1.54
 Socket~2.029
 Specio::Declare~0.45
