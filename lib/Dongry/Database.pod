@@ -1238,6 +1238,20 @@ database:
     $self->set_tz ('+00:00', source_name => $args{source_name});
   });
 
+=item $db->uuid_short ($n, source_name => $source_name)->then (...)
+
+Get the result of the C<UUID_SHORT()> function, repeatedly invoked
+I<$n> times.  This method is equivalent to the C<execute> method with
+SQL statement C<SELECT UUID_SHORT()> where the function is repeated as
+specified by the argument.
+
+This method does not work in the synchronous mode.
+
+In the asynchronous mode, the returned object is I<thenable>.
+
+The C<source_name> option, defaulted to the C<master>, specifies the
+data source over which the SQL statement is executed.
+
 =back
 
 =head2 Schema-aware operations
@@ -1681,7 +1695,7 @@ Wakaba <wakaba@suikawiki.org>.
 
 =head1 LICENSE
 
-Copyright 2011-2019 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2020 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

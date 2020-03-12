@@ -974,6 +974,15 @@ sub delete ($$$;%) {
        _ae_transaction => $args{_ae_transaction});
 } # delete
 
+sub uuid_short ($$;%) {
+  my ($self, $n, %args) = @_;
+  croak "Bad ID count $n" if $n < 1;
+  my $sql = 'SELECT ' . join ', ', map { 'UUID_SHORT() AS `'.$_.'`' } 1..$n;
+  return $self->execute ($sql, {}, source_name => $args{source_name} // 'master')->then (sub {
+    return [values %{$_[0]->all->[0]}];
+  });
+} # uuid_short
+
 sub bare_sql_fragment ($$) {
   return bless \('' . $_[1]), 'Dongry::SQL::BareFragment';
 } # bare_sql_fragment
@@ -1497,7 +1506,7 @@ sub load ($$) {
 
 =head1 LICENSE
 
-Copyright 2011-2019 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2020 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
