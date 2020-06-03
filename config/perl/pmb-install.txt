@@ -64,8 +64,6 @@ Path::Class~0.37
 Path::Tiny~0.114
 Proc::FastSpawn~1.2
 Role::Tiny~2.001004
-Role::Tiny::With~2.001004
-Scalar::Util~1.55
 Socket~2.029
 Specio::Library::Builtins~0.46
 Specio::Library::String~0.46
@@ -76,7 +74,6 @@ Term::ANSIColor~5.01
 Test::Class~0.50
 Test::Differences~0.67
 Test::Fatal~0.014
-Test::More~1.302175
 Test::NoWarnings~1.04
 Test::Tester~1.302175
 Test::mysqld~1.0013
