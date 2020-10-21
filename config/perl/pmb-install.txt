@@ -26,7 +26,7 @@ DateTime::Format::Builder~0.83
 DateTime::Format::MySQL~0.06
 DateTime::Format::Strptime~1.77
 DateTime::Locale~1.28
-DateTime::TimeZone~2.42
+DateTime::TimeZone~2.43
 Devel::CheckLib~1.14
 Devel::StackTrace~2.04
 Digest::SHA~6.02
@@ -39,7 +39,7 @@ Exporter::Tiny~1.002002
 ExtUtils::ParseXS~3.35
 File::Copy::Recursive~0.45
 File::Path~2.17
-File::ShareDir~1.116
+File::ShareDir~1.118
 File::ShareDir::Install~0.13
 File::Slurp~9999.32
 File::Temp~0.2311
@@ -47,8 +47,8 @@ Filter::Util::Call~1.60
 Getopt::Long~2.52
 IO::FDPass~1.2
 JSON::XS~4.02
-List::MoreUtils~0.428
-List::MoreUtils::XS~0.428
+List::MoreUtils~0.430
+List::MoreUtils::XS~0.430
 List::Rubyish~0.03
 List::Util~1.55
 MRO::Compat~0.13
@@ -64,9 +64,10 @@ Path::Class~0.37
 Path::Tiny~0.114
 Proc::FastSpawn~1.2
 Role::Tiny~2.001004
+Role::Tiny::With~2.001004
 Socket~2.030
 Specio::Declare~0.46
-Specio::Library::Builtins~0.46
+Specio::Library::String~0.46
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Quote~2.006006
@@ -74,7 +75,6 @@ Term::ANSIColor~5.01
 Test::Class~0.50
 Test::Differences~0.67
 Test::Fatal~0.016
-Test::More~1.302181
 Test::NoWarnings~1.04
 Test::Tester~1.302181
 Test::mysqld~1.0013
