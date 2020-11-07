@@ -8,7 +8,7 @@ B::Hooks::EndOfScope~0.24
 CBOR::XS~1.71
 Canary::Stability~2013
 Capture::Tiny~0.48
-Carp::Heavy~1.50
+Carp~1.50
 Class::Accessor::Fast~0.51
 Class::Accessor::Lite~0.08
 Class::Data::Inheritable~0.08
@@ -26,7 +26,7 @@ DateTime::Format::Builder~0.83
 DateTime::Format::MySQL~0.06
 DateTime::Format::Strptime~1.77
 DateTime::Locale::FromData~1.28
-DateTime::TimeZone~2.43
+DateTime::TimeZone~2.44
 Devel::CheckLib~1.14
 Devel::StackTrace~2.04
 Digest::SHA~6.02
@@ -38,7 +38,7 @@ Exporter::Lite~0.08
 Exporter::Tiny~1.002002
 ExtUtils::ParseXS~3.35
 File::Copy::Recursive~0.45
-File::Path~2.17
+File::Path~2.18
 File::ShareDir~1.118
 File::ShareDir::Install~0.13
 File::Slurp~9999.32
@@ -46,7 +46,7 @@ File::Temp~0.2311
 Filter::Util::Call~1.60
 Getopt::Long~2.52
 IO::FDPass~1.2
-JSON::XS~4.02
+JSON::XS~4.03
 List::MoreUtils~0.430
 List::MoreUtils::XS~0.430
 List::Rubyish~0.03
@@ -66,11 +66,12 @@ Proc::FastSpawn~1.2
 Role::Tiny~2.001004
 Scalar::Util~1.55
 Socket~2.030
-Specio::Declare~0.46
+Specio::Exporter~0.46
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Quote~2.006006
 Term::ANSIColor~5.01
+Test::Builder~1.302183
 Test::Class~0.50
 Test::Differences~0.67
 Test::Fatal~0.016
