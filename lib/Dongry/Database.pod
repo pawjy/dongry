@@ -235,8 +235,8 @@ It is a hash reference containg following key/value pairs:
 =item dsn => string (REQUIRED)
 
 The "dsn" string used to connect the database.  See L<DBI> and
-<http://search.cpan.org/dist/DBD-mysql/lib/DBD/mysql.pm#connect> for
-more information.
+<https://metacpan.org/pod/distribution/DBD-mysql/lib/DBD/mysql.pm#connect>
+for more information.
 
 =item username => string
 
@@ -1247,7 +1247,9 @@ specified by the argument.
 
 This method does not work in the synchronous mode.
 
-In the asynchronous mode, the returned object is I<thenable>.
+In the asynchronous mode, the returned object is I<thenable>.  It is
+to be fulfilled with an array reference of the obtained values
+(i.e. I<$n> UUID short numbers).
 
 The C<source_name> option, defaulted to the C<master>, specifies the
 data source over which the SQL statement is executed.
@@ -1672,7 +1674,7 @@ L<DBI>, L<DBD::mysql>.
 L<AnyEvent::MySQL::Client>
 <https://github.com/wakaba/perl-anyevent-mysql-client>.
 
-MySQL Reference Manuals <http://dev.mysql.com/doc/index.html>.
+MySQL Reference Manuals <https://dev.mysql.com/doc/>.
 
 L<DBIx::ShowSQL>
 <https://github.com/wakaba/perl-rdb-utils/blob/master/lib/DBIx/ShowSQL.pm>.
@@ -1695,7 +1697,7 @@ Wakaba <wakaba@suikawiki.org>.
 
 =head1 LICENSE
 
-Copyright 2011-2020 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2021 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
