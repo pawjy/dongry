@@ -3,12 +3,13 @@ AnyEvent~7.17
 AnyEvent::DBI~3.04
 AnyEvent::FileLock~0.06
 AnyEvent::Fork~1.31
+AnyEvent::Handle
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.24
 CBOR::XS~1.83
 Canary::Stability~2013
 Capture::Tiny~0.48
-Carp::Heavy~1.50
+Carp~1.50
 Class::Accessor::Fast~0.51
 Class::Accessor::Lite~0.08
 Class::Data::Inheritable~0.08
@@ -24,8 +25,8 @@ Data::MessagePack~1.01
 DateTime~1.54
 DateTime::Format::Builder~0.83
 DateTime::Format::MySQL~0.06
-DateTime::Format::Strptime~1.78
-DateTime::Locale~1.31
+DateTime::Format::Strptime~1.79
+DateTime::Locale~1.32
 DateTime::TimeZone~2.47
 Devel::CheckLib~1.14
 Devel::StackTrace~2.04
@@ -33,7 +34,7 @@ Digest::SHA~6.02
 Dist::CheckConflicts~0.11
 Encode~3.08
 Eval::Closure~0.14
-Exception::Class~1.44
+Exception::Class~1.45
 Exporter::Lite~0.08
 Exporter::Tiny~1.002002
 ExtUtils::ParseXS~3.35
@@ -63,7 +64,6 @@ Params::ValidationCompiler~0.30
 Path::Class~0.37
 Path::Tiny~0.118
 Proc::FastSpawn~1.2
-Role::Tiny~2.002004
 Role::Tiny::With~2.002004
 Socket~2.031
 Specio::Library::Numeric~0.47
@@ -74,6 +74,7 @@ Term::ANSIColor~5.01
 Test::Class~0.52
 Test::Differences~0.67
 Test::Fatal~0.016
+Test::More~1.302183
 Test::NoWarnings~1.04
 Test::Tester~1.302183
 Test::mysqld~1.0013
