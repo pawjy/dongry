@@ -3,13 +3,12 @@ AnyEvent~7.17
 AnyEvent::DBI~3.04
 AnyEvent::FileLock~0.06
 AnyEvent::Fork~1.31
-AnyEvent::IO
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.24
 CBOR::XS~1.83
 Canary::Stability~2013
 Capture::Tiny~0.48
-Carp~1.50
+Carp::Heavy~1.50
 Class::Accessor::Fast~0.51
 Class::Accessor::Lite~0.08
 Class::Data::Inheritable~0.08
@@ -65,9 +64,8 @@ Path::Class~0.37
 Path::Tiny~0.118
 Proc::FastSpawn~1.2
 Role::Tiny::With~2.002004
-Scalar::Util~1.56
-Socket~2.031
-Specio::Library::Numeric~0.47
+Socket~2.032
+Specio::Exporter~0.47
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Quote~2.006006
