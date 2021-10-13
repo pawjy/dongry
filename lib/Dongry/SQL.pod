@@ -143,6 +143,9 @@ Define the alias name for the value (in SQL, C<... AS name>).
 Add the C<DISTINCT> keyword in the function argument (in SQL,
 C<function(DISTINCT args)>).
 
+Note that this parameter cannot be specified when the C<-column>
+parameter is specified.
+
 =item delta => seconds
 
 Add the specified numbers of seconds to the argument (in SQL,
@@ -473,7 +476,7 @@ Wakaba <wakaba@suikawiki.org>.
 
 =head1 LICENSE
 
-Copyright 2011-2015 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2021 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

@@ -63,7 +63,11 @@ sub fields ($) {
           if defined $_[0]->{as} and not $NoAsInFields;
       return $v;
     } elsif ($func eq '-column') {
-      my $v = quote $_[0]->{$func};
+      my $v = '';
+      if ($_[0]->{distinct}) {
+        croak "Both |-column| and |distinct| parameters are specified in fields";
+      }
+      $v .= quote $_[0]->{$func};
       $v .= ' AS ' . quote $_[0]->{as}
           if defined $_[0]->{as} and not $NoAsInFields;
       return $v;
@@ -346,7 +350,7 @@ our $VERSION = '1.0';
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2021 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

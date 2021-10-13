@@ -81,6 +81,7 @@ sub bare_sql_fragment ($) {
     {-hoge => 1},
     {count => 1},
     [bless {}, 'hoge'],
+    {-column => 'hoge', distinct => 1},
   ) {
     test {
       my $c = shift;
@@ -97,7 +98,7 @@ RUN;
 
 =head1 LICENSE
 
-Copyright 2011-2017 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2021 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
