@@ -29,7 +29,6 @@ pmbp-update: git-submodules pmbp-upgrade
 	perl local/bin/pmbp.pl $(PMBP_OPTIONS) --update
 pmbp-install: pmbp-upgrade
 	perl local/bin/pmbp.pl $(PMBP_OPTIONS) --install \
-            --install-commands "mysqld" \
             --create-perl-command-shortcut perl
 
 ## ------ Tests ------
@@ -39,7 +38,7 @@ PROVE = ./prove
 test: test-deps test-main
 
 test-deps: deps
-	perl local/bin/pmbp.pl $(PMBP_OPTIONS) --install \
+	perl local/bin/pmbp.pl $(PMBP_OPTIONS) \
             --install-commands "mysqld" \
             --create-perl-command-shortcut prove
 
