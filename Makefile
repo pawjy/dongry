@@ -39,6 +39,7 @@ test: test-deps test-main
 
 test-deps: deps
 	perl local/bin/pmbp.pl $(PMBP_OPTIONS) \
+	    --install \
             --install-commands "mysqld" \
             --create-perl-command-shortcut prove
 
