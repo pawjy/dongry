@@ -52,7 +52,7 @@ __PACKAGE__->runtests;
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2022 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
