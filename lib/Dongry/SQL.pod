@@ -99,26 +99,26 @@ apply to this function.
 
 =item -x => column-name
 
-The SQL C<X()> function.  The column name used as the argument value
-must be specified as the value.  Option C<as> applies to this
+The SQL C<ST_X()> function.  The column name used as the argument
+value must be specified as the value.  Option C<as> applies to this
 function.
 
 =item -y => column-name
 
-The SQL C<Y()> function.  The column name used as the argument value
-must be specified as the value.  Option C<as> applies to this
+The SQL C<ST_Y()> function.  The column name used as the argument
+value must be specified as the value.  Option C<as> applies to this
 function.
 
 =item -distance => column-name, lat => number, lon => number
 
 Geographical distance between the location represented by a
 C<GEOMETRY> column and the specified location.  It is a shorthand of
-SQL function C<< GLength(GeomFromText(CONCAT('LineString(lon lat,',
-X(column), ' ', Y(column),')'))) >>, where I<lat> and I<lon> are
-values for keys C<lat> and C<lon>, representing the location by its
-latitude and longitude as decimal fractional numbers, and I<column> is
-the value for the key C<-distance>.  Options C<lat> and C<lon> must be
-specified.
+SQL function C<< ST_Length(ST_GeomFromText(CONCAT('LineString(lon
+lat,', X(column), ' ', Y(column),')'))) >>, where I<lat> and I<lon>
+are values for keys C<lat> and C<lon>, representing the location by
+its latitude and longitude as decimal fractional numbers, and
+I<column> is the value for the key C<-distance>.  Options C<lat> and
+C<lon> must be specified.
 
 =item -column => column-name
 
@@ -476,7 +476,7 @@ Wakaba <wakaba@suikawiki.org>.
 
 =head1 LICENSE
 
-Copyright 2011-2021 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2022 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

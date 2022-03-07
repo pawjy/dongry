@@ -41,8 +41,23 @@ sub fields ($) {
     }
   } elsif (ref $_[0] eq 'HASH') {
     my $func = [grep { /^-/ } keys %{$_[0]}]->[0] || '';
-    if ($func =~ /\A-(count|min|max|sum|date|x|y)\z/) {
+    if ($func =~ /\A-(count|min|max|sum|date)\z/) {
       my $v = (uc $1) . '(';
+      $v .= 'DISTINCT ' if $_[0]->{distinct};
+      {
+        local $NoAsInFields = 1;
+        $v .= fields ($_[0]->{$func});
+      }
+      if ($func eq '-date' and $_[0]->{delta}) {
+        $v .= sprintf ' + INTERVAL %d SECOND', $_[0]->{delta};
+      }
+      $v .= ')';
+      $v .= ' AS ' . quote $_[0]->{as}
+          if defined $_[0]->{as} and not $NoAsInFields;
+      return $v;
+    } elsif ($func =~ /\A-(x|y)\z/) {
+      ## ST_X() was X(), ST_Y() was Y() in old MySQL.
+      my $v = 'ST_' . (uc $1) . '(';
       $v .= 'DISTINCT ' if $_[0]->{distinct};
       {
         local $NoAsInFields = 1;
@@ -57,7 +72,10 @@ sub fields ($) {
       return $v;
     } elsif ($func eq '-distance') {
       my $col = quote $_[0]->{$func};
-      my $v = sprintf q<GLength(GeomFromText(CONCAT('LineString(%.10f %.10f,', X(%s), ' ', Y(%s),')')))>,
+      ## ST_Length() was GLength(), GeomFromText() was
+      ## ST_GeomFromText() in old MySQL.  ST_X() was X(), ST_Y() was
+      ## Y() in old MySQL.
+      my $v = sprintf q<ST_Length(ST_GeomFromText(CONCAT('LineString(%.10f %.10f,', ST_X(%s), ' ', ST_Y(%s),')')))>,
           $_[0]->{lon}, $_[0]->{lat}, $col, $col;
       $v .= ' AS ' . quote $_[0]->{as}
           if defined $_[0]->{as} and not $NoAsInFields;
@@ -350,7 +368,7 @@ our $VERSION = '1.0';
 
 =head1 LICENSE
 
-Copyright 2011-2021 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2022 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
