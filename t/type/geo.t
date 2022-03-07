@@ -30,7 +30,7 @@ sub _geometry : Test(5) {
                              -lon => -50.45330111111}});
 
   my $result = $db->execute
-      ('select *, y(value) as lat, x(value) as lon from table1');
+      ('select *, ST_y(value) as lat, ST_x(value) as lon from table1');
   my $values = $result->first;
   is $values->{lat}, 120.4012201;
   is $values->{lon}, -50.4533011111;

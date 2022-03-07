@@ -1089,7 +1089,8 @@ sub _insert_latin1_string : Test(2) {
   my $db = Dongry::Database->new
       (sources => {master => {dsn => $dsn, writable => 1}});
 
-  $db->execute ('create table foo (id int unique key, val text) charset=latin1');
+  $db->execute ('create table foo (id int unique key, val text) charset=binary');
+  # without charset=binary this is broken in MySQL8
 
   eq_or_diff $db->insert ('foo', [{id => 2, val => "\x{a5}\x{81}\x{d5}"}])
       ->all->to_a, [{id => 2, val => "\x{a5}\x{81}\x{d5}"}];
