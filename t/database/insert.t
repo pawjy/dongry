@@ -930,7 +930,9 @@ sub _insert_duplicate_error : Test(8) {
   is $onerror_args{source_name}, 'master';
   is $onerror_args{sql}, 'INSERT INTO `foo` (`id`) VALUES (?)';
   #is $onerror_args{text}, q{DBD::mysql::st execute failed: Duplicate entry '2' for key 1}; # MySQL 5.0
-  is $onerror_args{text}, q{DBD::mysql::st execute failed: Duplicate entry '2' for key 'id'}; # MySQL 5.5
+  #is $onerror_args{text}, q{DBD::mysql::st execute failed: Duplicate entry '2' for key 'id'}; # MySQL 5.5
+  #is $onerror_args{text}, q{DBD::mysql::st execute failed: Duplicate entry '2' for key 'foo.id'}; # MySQL 8
+  like $onerror_args{text}, qr{^DBD::mysql::st execute failed: Duplicate entry '2' for key '(?:foo\.|)id'$};
   is $invoked, 1;
   like $shortmess, qr/^ at \Q@{[__FILE__]} line $messline\E\.?\n$/;
   
@@ -1087,7 +1089,8 @@ sub _insert_latin1_string : Test(2) {
   my $db = Dongry::Database->new
       (sources => {master => {dsn => $dsn, writable => 1}});
 
-  $db->execute ('create table foo (id int unique key, val text)');
+  $db->execute ('create table foo (id int unique key, val text) charset=binary');
+  # without charset=binary this is broken in MySQL8
 
   eq_or_diff $db->insert ('foo', [{id => 2, val => "\x{a5}\x{81}\x{d5}"}])
       ->all->to_a, [{id => 2, val => "\x{a5}\x{81}\x{d5}"}];
@@ -1489,7 +1492,7 @@ __PACKAGE__->runtests;
 
 =head1 LICENSE
 
-Copyright 2011-2016 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2022 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

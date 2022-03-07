@@ -15,7 +15,7 @@ $Dongry::Types->{geometry} = {
       if (exists $_[0]->{-lat} and
           exists $_[0]->{-lon}) {
         return Dongry::Database->bare_sql_fragment
-            (sprintf "GeomFromText('POINT(%.10f %.10f)')",
+            (sprintf "ST_GeomFromText('POINT(%.10f %.10f)')",
                  $_[0]->{-lon}, $_[0]->{-lat});
       } else {
         croak "One or both of |-lat| and |-lon| is not specified";
@@ -30,7 +30,7 @@ $Dongry::Types->{geometry} = {
 
 =head1 LICENSE
 
-Copyright 2011 Wakaba <w@suika.fam.cx>.
+Copyright 2011-2022 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

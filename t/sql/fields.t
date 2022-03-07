@@ -64,7 +64,7 @@ sub bare_sql_fragment ($) {
          => 'DATE(`created` + INTERVAL 0 SECOND) AS `date`'],
     [{-distance => 'lat`lon', lat => -10.211111, lon => 20.24222111,
       as => 'ho`ge'}
-         => qq<GLength(GeomFromText(CONCAT('LineString(20.2422211100 -10.2111110000,', X(`lat``lon`), ' ', Y(`lat``lon`),')'))) AS `ho``ge`>],
+         => qq<ST_Length(ST_GeomFromText(CONCAT('LineString(20.2422211100 -10.2111110000,', ST_X(`lat``lon`), ' ', ST_Y(`lat``lon`),')'))) AS `ho``ge`>],
   ) {
     test {
       my $c = shift;
@@ -81,6 +81,7 @@ sub bare_sql_fragment ($) {
     {-hoge => 1},
     {count => 1},
     [bless {}, 'hoge'],
+    {-column => 'hoge', distinct => 1},
   ) {
     test {
       my $c = shift;
@@ -97,7 +98,7 @@ RUN;
 
 =head1 LICENSE
 
-Copyright 2011-2017 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2022 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
