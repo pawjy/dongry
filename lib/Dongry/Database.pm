@@ -802,7 +802,8 @@ sub insert ($$$;%) {
               : '?'
           : 'DEFAULT'
     } @col)) . ')';
-  }
+  } # $data
+  croak "Too many values" if @values > 20000;
   
   my $sql = 'INSERT';
   if ($args{duplicate}) {
@@ -1506,7 +1507,7 @@ sub load ($$) {
 
 =head1 LICENSE
 
-Copyright 2011-2020 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2022 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

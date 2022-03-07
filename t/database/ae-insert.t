@@ -186,11 +186,43 @@ test {
   });
 } n => 5, name => 'insert promise row';
 
+test {
+  my $c = shift;
+
+  my $db = Dongry::Database->new
+      (sources => {ae => {dsn => $dsn, anyevent => 1, writable => 1}});
+
+  my $obj = {};
+  $obj->{rand ()} = rand for 1..30000;
+
+  my $invoked = 0;
+  return Promise->resolve->then (sub {
+    return $db->insert ('foo4', [$obj], source_name => 'ae');
+  })->then (sub {
+    my $result = $_[0];
+    test {
+      ok 0, $result;
+    } $c;
+  }, sub {
+    my $e = $_[0];
+    test {
+      like $e, qr{^Too many values at \Q@{[__FILE__]}\E line @{[__LINE__-9]}};
+    } $c;
+  })->then (sub {
+    return $db->disconnect;
+  })->then (sub {
+    test {
+      done $c;
+      undef $c;
+    } $c;
+  });
+} n => 1, name => 'insert large object';
+
 RUN;
 
 =head1 LICENSE
 
-Copyright 2011-2017 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2022 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
