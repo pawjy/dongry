@@ -1681,23 +1681,26 @@ L<DBIx::ShowSQL>
 
 L<Promise> <https://github.com/wakaba/perl-promise>.
 
-=head1 ACKNOWLEDGEMENTS
+=head1 AUTHOR
+
+Wakaba <wakaba@suikawiki.org>.
+
+=head1 HISTORY
 
 Design and interfaces of various features in Dongry is largely
-inspired by L<DBI>, L<AnyEvent::DBI>, L<DBIx::MoCo>,
+inspired by Perl modules L<DBI>, L<AnyEvent::DBI>, L<DBIx::MoCo>,
 L<DBIx::MoCo::Query>, L<DBIx::MoCo::ColumnMethods>,
 L<DBIx::MoCo::TableExtras>, L<SQL::Abstract>,
 L<SQL::NamedPlaceholder>, and L<List::Rubyish>.
 
 Thanks to hatz48.
 
-=head1 AUTHOR
-
-Wakaba <wakaba@suikawiki.org>.
+This Git repository was located at <https://github.com/wakaba/dongry>
+until 7 March, 2022.
 
 =head1 LICENSE
 
-Copyright 2011-2021 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2022 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
