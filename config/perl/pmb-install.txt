@@ -63,11 +63,10 @@ Path::Class~0.37
 Path::Tiny~0.122
 Proc::FastSpawn~1.2
 Role::Tiny~2.002004
-Role::Tiny::With~2.002004
 Scalar::Util~1.61
 Socket~2.032
-Specio~0.47
-Specio::Exporter~0.47
+Specio::Library::Numeric~0.47
+Specio::Library::String~0.47
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Quote~2.006006
