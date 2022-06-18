@@ -146,7 +146,7 @@ sub connect ($$;%) {
     my %connect;
     my $dsn = $source->{dsn};
     $connect{username} = $source->{username};
-    $connect{pass} = $source->{password};
+    $connect{password} = $source->{password};
     if ($dsn =~ s/^dbi:mysql://i) {
       my %dsn;
       if ($dsn =~ /[;=]/) {
@@ -250,7 +250,7 @@ sub connect ($$;%) {
                                          file_name => $file_name,
                                          line => $line,
                                          source_name => $name,
-                                         sql => $onerror_args->{db}->{last_sql});
+                                         sql => $args{_sql});
         };
         warn "Died within handler: $@" if $@;
         $return->_ng ($onerror_args->{db}, bless {
@@ -304,7 +304,7 @@ sub connect ($$;%) {
                   ->($onerror_args->{db},
                      text => $_[0],
                      source_name => $name,
-                     sql => $onerror_args->{db}->{last_sql});
+                     sql => $args{_sql});
             }
             croak $_[0];
             #return 0;
@@ -519,10 +519,10 @@ sub execute ($$;$%) {
       if (defined $self->{execute_promise}->{$name} and
           not $self->{onconnect_running}->{$name}) {
         $p = $self->{execute_promise}->{$name}->then (sub {
-          return $self->connect ($name);
+          return $self->connect ($name, _sql => $sql);
         });
       } else {
-        $p = $self->connect ($name);
+        $p = $self->connect ($name, _sql => $sql);
       }
       $p = $p->then (undef, sub {
         my $error = $_[0];
@@ -626,7 +626,7 @@ sub execute ($$;$%) {
     
     return $return;
   } else {
-    $self->connect ($name);
+    $self->connect ($name, _sql => $sql);
     my $dbh = $self->{dbhs}->{$name};
     my $sth;
     my $rows;

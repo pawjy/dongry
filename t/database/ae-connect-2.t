@@ -343,11 +343,46 @@ test {
   });
 } n => 4, name => 'connect then disconnect, multiple';
 
+test {
+  my $c = shift;
+
+  my $user = rand;
+  my $pass = rand;
+  my $dsn2 = $dsn;
+  $dsn2 =~ s/;user=[^;]+$//;
+
+  my $db = Dongry::Database->new
+      (sources => {master => {dsn => $dsn, anyevent => 1,
+                              writable => 1},
+                   test => {dsn => $dsn2, anyevent => 1,
+                            username => $user, password => $pass}});
+
+  $db->execute ((sprintf q{create user '%s'@'%s' identified by '%s'}, $user, 'localhost', $pass), undef, source_name => 'master')->then (sub {
+    return $db->execute ((sprintf q{grant all on *.* to '%s'@'%s'}, $user, 'localhost'), undef, source_name => 'master');
+  })->then (sub {
+    return $db->execute ('show tables', undef, source_name => 'test');
+  })->then (sub {
+    my $v = $_[0];
+    test {
+      ok $v;
+    } $c, name => $dsn2;
+  })->catch (sub {
+    my $e = $_[0];
+    test {
+      ok 0, $e;
+    } $c;
+  })->finally (sub {
+    return $db->disconnect;
+  })->finally (sub {
+    done $c;
+  });
+} n => 1, name => 'connected password';
+
 RUN;
 
 =head1 LICENSE
 
-Copyright 2011-2017 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2022 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
