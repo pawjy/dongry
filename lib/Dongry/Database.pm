@@ -304,7 +304,7 @@ sub connect ($$;%) {
                   ->($onerror_args->{db},
                      text => $_[0],
                      source_name => $name,
-                     sql => $args{_sql});
+                     sql => $onerror_args->{db}->{last_sql});
             }
             croak $_[0];
             #return 0;
