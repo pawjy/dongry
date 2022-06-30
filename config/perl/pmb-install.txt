@@ -65,15 +65,15 @@ Proc::FastSpawn~1.2
 Role::Tiny~2.002004
 Scalar::Util~1.62
 Socket~2.034
-Specio::Library::Builtins~0.48
+Specio::Library::String~0.48
 Sub::Exporter::Progressive~0.001013
 Sub::Identify~0.14
 Sub::Quote~2.006006
 Term::ANSIColor~5.01
+Test::Builder~1.302190
 Test::Class~0.52
 Test::Differences~0.69
 Test::Fatal~0.016
-Test::More~1.302190
 Test::NoWarnings~1.06
 Test::mysqld~1.0013
 Text::Diff~1.45
