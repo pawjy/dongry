@@ -3,7 +3,6 @@ AnyEvent~7.17
 AnyEvent::DBI~3.04
 AnyEvent::FileLock~0.06
 AnyEvent::Fork~1.32
-AnyEvent::Handle
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.26
 CBOR::XS~1.86
