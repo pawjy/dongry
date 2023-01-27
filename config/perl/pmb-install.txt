@@ -3,12 +3,13 @@ AnyEvent~7.17
 AnyEvent::DBI~3.04
 AnyEvent::FileLock~0.06
 AnyEvent::Fork~1.32
+AnyEvent::Handle
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.26
 CBOR::XS~1.86
 Canary::Stability~2013
 Capture::Tiny~0.48
-Carp~1.50
+Carp::Heavy~1.50
 Class::Accessor::Fast~0.51
 Class::Accessor::Lite~0.08
 Class::Data::Inheritable~0.09
@@ -62,6 +63,7 @@ Params::ValidationCompiler~0.31
 Path::Class~0.37
 Path::Tiny~0.144
 Proc::FastSpawn~1.2
+Role::Tiny~2.002004
 Role::Tiny::With~2.002004
 Scalar::Util~1.63
 Socket~2.036
