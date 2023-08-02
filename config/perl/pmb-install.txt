@@ -3,6 +3,7 @@ AnyEvent~7.17
 AnyEvent::DBI~3.04
 AnyEvent::FileLock~0.06
 AnyEvent::Fork~1.32
+AnyEvent::Util
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.26
 CBOR::XS~1.86
@@ -23,7 +24,7 @@ Data::Dumper~2.183
 Data::MessagePack~1.02
 DateTime~1.59
 DateTime::Format::Builder~0.83
-DateTime::Format::MySQL~0.0701
+DateTime::Format::MySQL~0.08
 DateTime::Format::Strptime~1.79
 DateTime::Locale~1.39
 DateTime::TimeZone~2.60
