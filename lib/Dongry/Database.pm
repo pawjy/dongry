@@ -147,7 +147,7 @@ sub connect ($$;%) {
     my $dsn = $source->{dsn};
     $connect{username} = $source->{username};
     $connect{password} = $source->{password};
-    if ($dsn =~ s/^dbi:mysql://i) {
+    if ($dsn =~ s/^dbi:(?:mysql|MariaDB)://i) {
       my %dsn;
       if ($dsn =~ /[;=]/) {
         for (split /;/, $dsn) {
@@ -173,21 +173,35 @@ sub connect ($$;%) {
         $connect{tls} = $source->{tls};
       } else {
         $connect{tls} = {} if delete $dsn{mysql_ssl};
+        $connect{tls} = {} if delete $dsn{mariadb_ssl};
         $connect{tls}->{key_file} = delete $dsn{mysql_ssl_client_key}
             if defined $dsn{mysql_ssl_client_key};
+        $connect{tls}->{key_file} = delete $dsn{mariadb_ssl_client_key}
+            if defined $dsn{mariadb_ssl_client_key};
         $connect{tls}->{cert_file} = delete $dsn{mysql_ssl_client_cert}
             if defined $dsn{mysql_ssl_client_cert};
+        $connect{tls}->{cert_file} = delete $dsn{mariadb_ssl_client_cert}
+            if defined $dsn{mariadb_ssl_client_cert};
         $connect{tls}->{ca_file} = delete $dsn{mysql_ssl_ca_file}
             if defined $dsn{mysql_ssl_ca_file};
+        $connect{tls}->{ca_file} = delete $dsn{mariadb_ssl_ca_file}
+            if defined $dsn{mariadb_ssl_ca_file};
         $connect{tls}->{ca_path} = delete $dsn{mysql_ssl_ca_path}
             if defined $dsn{mysql_ssl_ca_path};
+        $connect{tls}->{ca_path} = delete $dsn{mariadb_ssl_ca_path}
+            if defined $dsn{mariadb_ssl_ca_path};
         $connect{tls}->{cipher_list} = delete $dsn{mysql_ssl_cipher}
             if defined $dsn{mysql_ssl_cipher};
+        $connect{tls}->{cipher_list} = delete $dsn{mariadb_ssl_cipher}
+            if defined $dsn{mariadb_ssl_cipher};
       }
       delete $dsn{$_} for qw(host port user password dbname database
                              mysql_ssl mysql_ssl_client_key
                              mysql_ssl_client_cert mysql_ssl_ca_file
-                             mysql_ssl_ca_path mysql_ssl_cipher);
+                             mysql_ssl_ca_path mysql_ssl_cipher
+                             mariadb_ssl mariadb_ssl_client_key
+                             mariadb_ssl_client_cert mariadb_ssl_ca_file
+                             mariadb_ssl_ca_path mariadb_ssl_cipher);
       $connect{error} = "Unknown dsn parameter |@{[join ' ', keys %dsn]}|" if keys %dsn;
     } else {
       $connect{error} = "Non-MySQL database driver is specified: |$dsn|";
@@ -1507,7 +1521,7 @@ sub load ($$) {
 
 =head1 LICENSE
 
-Copyright 2011-2022 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2023 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

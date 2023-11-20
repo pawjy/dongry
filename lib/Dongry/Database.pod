@@ -28,10 +28,11 @@ Dongry::Database - Dongry MySQL database client object
 
 =head1 DESCRIPTION
 
-B<Dongry> is a lightweight Perl interface to MySQL databases.  It
-provides different levels of abstractions for applications to handle
-database operations in easy, memorable, and safe ways without stealing
-full control for how and when SQL queries are executed from them.
+B<Dongry> is a lightweight Perl interface to MySQL or MariaDB
+databases.  It provides different levels of abstractions for
+applications to handle database operations in easy, memorable, and
+safe ways without stealing full control for how and when SQL queries
+are executed from them.
 
 The C<Dongry::Database> module contains the implementation of the
 database object, which is the most fundamental and important object in
@@ -65,12 +66,13 @@ cost.
  +---+---------------+-----------------------+
  | DBI               |                       |
  | DBD::mysql        |AnyEvent::MySQL::Client|
+ | DBD::MariaDB      |                       |
  +-------------------+-----------------------+
                     |   ^
                     |   |
                     v   |
  +-------------------------------------------+
- | MySQL Database                            |
+ | MySQL or MariaDB Database                 |
  +-------------------------------------------+
    Fig. Various levels of features in Dongry
 
@@ -234,8 +236,10 @@ It is a hash reference containg following key/value pairs:
 
 =item dsn => string (REQUIRED)
 
-The "dsn" string used to connect the database.  See L<DBI> and
-<https://metacpan.org/pod/distribution/DBD-mysql/lib/DBD/mysql.pm#connect>
+The "dsn" string used to connect the database.  See L<DBI>,
+<https://metacpan.org/pod/distribution/DBD-mysql/lib/DBD/mysql.pm#connect>,
+and
+<https://metacpan.org/dist/DBD-MariaDB/view/lib/DBD/MariaDB.pod#connect>
 for more information.
 
 =item username => string
@@ -283,12 +287,12 @@ should not try to modify these values once it is set to the database
 object.
 
 TLS or SSL can be used to connect to the server by specifying
-C<mysql_*> options in C<dsn>.  However, please note that
-L<DBD::mysql>, which is used in the synchronous mode through L<DBI>,
-might not be compiled with SSL-support enabled, in which case
-L<DBD::mysql> silently ignores C<mysql_*> options (!).  Once
-connected, the application can determine whether TLS is used or not by
-the following code:
+C<mysql_*> or C<mariadb_*> options in C<dsn>.  However, please note
+that old versions of L<DBD::mysql>, which is used in the synchronous
+mode through L<DBI> with dsn C<dbi:mysql:>, might not be compiled with
+SSL-support enabled, in which case L<DBD::mysql> silently ignores
+C<mysql_*> options (!).  Once connected, the application can determine
+whether TLS is used or not by the following code:
 
   $tls_enabled = $db->execute ('SHOW STATUS LIKE "Ssl_cipher"')
       ->first->{Value} ne '';
@@ -401,9 +405,9 @@ SQL statement in the error handler, as it would likely result in
 another SQL execution error, which would recursively invoke the same
 error handler.
 
-Error handling in synchronous (L<DBI> and L<DBD::mysql>) mode and
-asynchronous (L<AnyEvent::MySQL::Client>) mode are different in
-several ways.
+Error handling in synchronous (L<DBI> and L<DBD::mysql> or
+L<DBD::MariaDB>) mode and asynchronous (L<AnyEvent::MySQL::Client>)
+mode are different in several ways.
 
 In the synchronous mode, errors are also handled in synchronously.  If
 the connection or an SQL statement causes an error because of a method
@@ -1602,11 +1606,11 @@ such as C<execute>, C<select>, C<insert>, and so on, leave the
 interpretation of byte- or character-string (or the utf8 flag) to the
 underlying layers.  The underlying L<DBI> module used in the
 synchronous mode, in turn, delegates the handling of it to the
-database driver such as L<DBD::mysql>.  See the documentation for
-database driver modules for their implementation.  The
-L<AnyEvent::MySQL::Client> module requires the input being non-utf8
-flagged byte string.  For portability, you should only use byte
-strings in queries and values.
+database driver such as L<DBD::mysql> and L<DBD::MariaDB>.  See the
+documentation for database driver modules for their implementation.
+The L<AnyEvent::MySQL::Client> module requires the input being
+non-utf8 flagged byte string.  For portability, you should only use
+byte strings in queries and values.
 
 Higher-level interfaces of Dongry, namely the schema-aware APIs of the
 table and table row objects, handles strings as defined by the data
@@ -1643,8 +1647,8 @@ repository <https://github.com/wakaba/dongry>.
 
 Perl 5.12 or later is required.
 
-For the synchronous mode, the modules L<DBI> and L<DBD::mysql> are
-required.
+For the synchronous mode, the modules L<DBI> and L<DBD::mysql> or
+L<DBD::MariaDB> are required.
 
 For the asynchronous mode, the L<AnyEvent::MySQL::Client> module in
 the GitHub repository
@@ -1669,7 +1673,7 @@ used for debugging and testing.
 
 =head1 SEE ALSO
 
-L<DBI>, L<DBD::mysql>.
+L<DBI>, L<DBD::mysql>, L<DBD::MariaDB>.
 
 L<AnyEvent::MySQL::Client>
 <https://github.com/wakaba/perl-anyevent-mysql-client>.
