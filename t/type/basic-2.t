@@ -11,7 +11,9 @@ my $dsn = test_dsn 'root';
 
 # ------ null_filled ------
 
-sub _null_filled : Test(14) {
+test {
+  my $c = shift;
+
   my $db = new_db schema => {
     table1 => {
       primary_keys => ['id'],
@@ -56,7 +58,9 @@ sub _null_filled : Test(14) {
   $row->reload;
   is $row->get ('value'), "ab\x00c";
   is $row->get_bare ('value'), "ab\x00c\x00\x00\x00\x00\x00\x00\x00\x00";
-} # _null_filled
+
+  done $c;
+} n => 14, name => '_null_filled';
 
 # ------ text_null_filled ------
 
