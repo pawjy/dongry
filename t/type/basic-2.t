@@ -99,7 +99,7 @@ test {
   $row->reload;
   is $row->get ('value'), "\x{6000}\x{2000}\x{100}";
   is $row->get_bare ('value'),
-      encode 'utf-8', "\x{6000}\x{2000}\x{100}\x00\x00\x00\x00";
+      encode_web_utf8 "\x{6000}\x{2000}\x{100}\x00\x00\x00\x00";
 
   $row->update ({value => ''});
   $row->reload;

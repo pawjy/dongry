@@ -16,6 +16,7 @@ use Test::MoreMore;
 use Test::X1;
 push @EXPORT, @Test::MoreMore::EXPORT;
 push @EXPORT, @Test::X1::EXPORT;
+push @EXPORT, @Web::Encoding::EXPORT;
 
 require DBIx::ShowSQL;
 
