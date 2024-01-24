@@ -26,10 +26,6 @@
 	path = t_deps/modules/test-moremore
 	url = https://github.com/wakaba/perl-test-moremore
 	track = master
-[submodule "t_deps/modules/promised-mysqld"]
-	path = t_deps/modules/promised-mysqld
-	url = https://github.com/wakaba/perl-promised-mysqld
-	track = master
 [submodule "t_deps/modules/promise"]
 	path = t_deps/modules/promise
 	url = https://github.com/wakaba/perl-promise
@@ -50,3 +46,15 @@
 	path = modules/web-encodings
 	url = https://github.com/manakai/perl-web-encodings
 	track = master
+[submodule "t_deps/modules/serverset"]
+	path = t_deps/modules/serverset
+	url = https://github.com/pawjy/serverset
+[submodule "t_deps/modules/web-url"]
+	path = t_deps/modules/web-url
+	url = https://github.com/manakai/perl-web-url
+[submodule "t_deps/modules/web-resource"]
+	path = t_deps/modules/web-resource
+	url = https://github.com/manakai/perl-web-resource
+[submodule "t_deps/modules/web-datetime"]
+	path = t_deps/modules/web-datetime
+	url = https://github.com/manakai/perl-web-datetime

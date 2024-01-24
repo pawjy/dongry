@@ -6,7 +6,7 @@ use lib glob path (__FILE__)->parent->parent->parent->child ('t_deps/modules/*/l
 use Test::Dongry;
 use Dongry::Database;
 
-my $dsn = test_dsn 'hoge1';
+my $dsn = test_dsn 'root';
 
 test {
   my $c = shift;
@@ -382,7 +382,7 @@ RUN;
 
 =head1 LICENSE
 
-Copyright 2011-2022 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2024 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

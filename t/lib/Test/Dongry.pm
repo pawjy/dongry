@@ -4,8 +4,10 @@ use warnings;
 use Path::Tiny;
 use lib glob path (__FILE__)->parent->parent->parent->parent->child ('lib');
 use lib glob path (__FILE__)->parent->parent->parent->parent->child ('modules/*/lib');
+use lib glob path (__FILE__)->parent->parent->parent->parent->child ('t_deps/lib');
 use lib glob path (__FILE__)->parent->parent->parent->parent->child ('t_deps/modules/*/lib');
-use Promised::Mysqld;
+use AbortController;
+use Web::Encoding;
 
 use Exporter::Lite;
 our @EXPORT;
@@ -17,29 +19,59 @@ push @EXPORT, @Test::X1::EXPORT;
 
 require DBIx::ShowSQL;
 
-my $Mysqld = Promised::Mysqld->new;
-note "Start mysqld...";
-$Mysqld->start->to_cv->recv;
-note "Mysqld started";
+use DongrySS;
+
+#note "Servers...";
+my $ac = AbortController->new;
+my $v = DongrySS->run (
+  signal => $ac->signal,
+)->to_cv->recv;
+our $ServerData = $v->{data};
 
 ## For Test::Class tests
 push @EXPORT, qw(runtests);
 sub runtests {
-  Test::Class->runtests (@_);
-  note "Stop mysqld...";
-  $Mysqld->stop->to_cv->recv;
-  undef $Mysqld;
-  note "Mysqld stopped";
+  eval {
+    #note "Tests...";
+    Test::Class->runtests (@_);
+  };
+  my $error;
+  if ($@) {
+    #note "Failed";
+    warn $@;
+    $error = 1;
+  }
+  
+  #note "Done";
+  $ac->abort;
+  $v->{done}->to_cv->recv;
+  undef $ac;
+  undef $ServerData;
+  undef $v;
+  exit 1 if $error;
 } # runtests
 
 ## For Test::X1 tests
 push @EXPORT, qw(RUN);
 sub RUN () {
-  run_tests;
-  note "Stop mysqld...";
-  $Mysqld->stop->to_cv->recv;
-  undef $Mysqld;
-  note "Mysqld stopped";
+  eval {
+    #note "Tests...";
+    run_tests;
+  };
+  my $error;
+  if ($@) {
+    #note "Failed";
+    warn $@;
+    $error = 1;
+  }
+  
+  #note "Done";
+  $ac->abort;
+  $v->{done}->to_cv->recv;
+  undef $ac;
+  undef $ServerData;
+  undef $v;
+  exit 1 if $error;
 } # RUN
 
 my $DBNumber = 1;
@@ -50,14 +82,61 @@ sub reset_db_set () {
 } # reset_db_set
 
 push @EXPORT, qw(test_dsn);
-sub test_dsn ($) {
+sub test_dsn ($;%) {
   my $name = shift || die;
+  my %args = @_;
+
+  my $dsn = {%{$ServerData->{local_dsn_options}->{root}}};
+  my $test_dsn = $ServerData->{local_dsn_options}->{test};
+  if ($name eq 'root') {
+    $test_dsn = $dsn;
+  }
   $name .= '_' . $DBNumber . '_test';
-  my $dsn = $Mysqld->get_dsn_string (dbname => $name);
+  
+  my $client = AnyEvent::MySQL::Client->new;
+  my %connect;
+  if (defined $dsn->{port}) {
+    $connect{hostname} = $dsn->{host}->to_ascii;
+    $connect{port} = $dsn->{port};
+  } else {
+    $connect{hostname} = 'unix/';
+    $connect{port} = $dsn->{mysql_socket};
+  }
+  $client->connect (
+    %connect,
+    username => $dsn->{user},
+    password => $dsn->{password},
+    database => $dsn->{dbname},
+  )->then (sub {
+    my $escaped = $dsn->{dbname} = $name . '_test';
+    $escaped =~ s/`/``/g;
+    return $client->query ("CREATE DATABASE IF NOT EXISTS `$escaped`")->then (sub {
+      die $_[0] unless $_[0]->is_success;
+      return $client->query (
+        encode_web_utf8 sprintf q{grant all on `%s`.* to '%s'@'%s'},
+        $escaped, $test_dsn->{user}, '%',
+      );
+    })->then (sub {
+      die $_[0] unless $_[0]->is_success;
+    });
+  })->finally (sub {
+    return $client->disconnect;
+  })->to_cv->recv;
 
-  $Mysqld->create_db_and_execute_sqls ($name, [])->to_cv->recv;
-
-  return $dsn;
+  if ($args{unix} or not $args{tcp}) {
+    my $dsn = {%$test_dsn,
+               dbname => $dsn->{dbname}};
+    delete $dsn->{port};
+    delete $dsn->{host};
+    my $dsns = ServerSet->dsn ('mysql', $dsn);
+    return $dsns;
+  } else {
+    my $dsn = {%$test_dsn,
+               dbname => $dsn->{dbname}};
+    delete $dsn->{mysql_socket};
+    my $dsns = ServerSet->dsn ('mysql', $dsn);
+    return $dsns;
+  }
 } # test_dsn
 
 push @EXPORT, qw(new_db);
@@ -85,7 +164,7 @@ sub new_db (%) {
 
 =head1 LICENSE
 
-Copyright 2011-2017 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2024 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
