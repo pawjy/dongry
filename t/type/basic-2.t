@@ -124,13 +124,18 @@ test {
 test {
   my $c = shift;
 
-  my $db = new_db schema => {
-    table1 => {
-      primary_keys => ['id'],
-      type => {value => 'set'},
-      _create => 'CREATE TABLE table1 (id INT, value SET("a","b","c"))',
+  my $db = Dongry::Database->new (
+    sources => {master => {dsn => $dsn, writable => 1},
+                default => {dsn => $dsn}},
+    schema => {
+      table1 => {
+        primary_keys => ['id'],
+        type => {value => 'set'},
+      },
     },
-  };
+  );
+  $db->execute ('CREATE TABLE table1 (id INT, value SET("a","b","c"))');
+
   $db->insert ('table1', [{id => 123, value => 'a,b'}]);
 
   my $row = $db->table ('table1')->find ({id => 123});
