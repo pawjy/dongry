@@ -78,8 +78,10 @@ sub _onerror_new : Test(2) {
   my $db = Dongry::Database->new (onerror => sub {
     ($onerror_self, %onerror_args) = @_;
   });
+  my $dsn = $test_dsn_1;
+  $dsn =~ s/password/X/;
   $db->source (hoge => {
-    dsn => $test_dsn_1,
+    dsn => $dsn,
     password => 'foo',
   });
   dies_here_ok { $db->connect ('hoge') };
@@ -191,13 +193,17 @@ sub _connect_wrong_username_onerror : Test(5) {
   undef $onerror_self;
 } # _connect_wrong_username
 
-sub _connect_wrong_password : Test(1) {
+sub _connect_wrong_password : Test(2) {
   my $db = Dongry::Database->new;
+  my $dsn = $test_dsn_1;
+  $dsn =~ s/password/X/;
   $db->source (hoge => {
-    dsn => $test_dsn_1,
+    dsn => $dsn,
     password => 'hoge',
   });
-  dies_here_ok { $db->connect ('hoge') };
+  my $r;
+  dies_here_ok { $r = $db->connect ('hoge') };
+  is $r, undef, $r;
 } # _connect_wrong_password
 
 sub _connect_wrong_password_onerror : Test(5) {
@@ -206,8 +212,10 @@ sub _connect_wrong_password_onerror : Test(5) {
   $db->onerror (sub {
     ($onerror_self, %onerror_args) = @_;
   });
+  my $dsn = $test_dsn_1;
+  $dsn =~ s/password/X/;
   $db->source (hoge => {
-    dsn => $test_dsn_1,
+    dsn => $dsn,
     password => 'hoge',
   });
   dies_here_ok { $db->connect ('hoge') };

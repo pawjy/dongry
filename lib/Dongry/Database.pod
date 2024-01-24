@@ -247,10 +247,18 @@ for more information.
 The user name used to connect the database.  This is optional if the
 database or the database driver module does not require user name.
 
+If both of C<username> and C<dsn>'s C<user> are specified, how they
+are used is database driver dependent.  For the
+L<AnyEvent::MySQL::Client> mode, C<username> is used if defined.
+
 =item password => string
 
 The password used to connect the database.  This is optional if the
 database or the database driver module does not require password.
+
+If both of C<password> and C<dsn>'s C<password> are specified, how
+they are used is database driver dependent.  For the
+L<AnyEvent::MySQL::Client> mode, C<password> is used if defined.
 
 =item writable => boolean
 
@@ -1704,7 +1712,7 @@ until 7 March, 2022.
 
 =head1 LICENSE
 
-Copyright 2011-2022 Wakaba <wakaba@suikawiki.org>.
+Copyright 2011-2024 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
