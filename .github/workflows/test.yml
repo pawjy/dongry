@@ -86,7 +86,8 @@
          "continue-on-error" : "${{ matrix.experimental }}",
          "env" : {
             "CIRCLE_ARTIFACTS" : "/tmp/circle-artifacts/test",
-            "PMBP_PERL_VERSION" : "${{ matrix.perl_version }}"
+            "PMBP_PERL_VERSION" : "${{ matrix.perl_version }}",
+            "TEST_MYSQL_VERSION" : "${{ matrix.env_TEST_MYSQL_VERSION }}"
          },
          "runs-on" : "ubuntu-latest",
          "steps" : [
@@ -118,14 +119,47 @@
             "matrix" : {
                "include" : [
                   {
+                     "env_TEST_MYSQL_VERSION" : "mariadb",
                      "experimental" : false,
                      "perl_version" : "latest"
                   },
                   {
+                     "env_TEST_MYSQL_VERSION" : "mysql5.6",
+                     "experimental" : false,
+                     "perl_version" : "latest"
+                  },
+                  {
+                     "env_TEST_MYSQL_VERSION" : "mysql8",
+                     "experimental" : false,
+                     "perl_version" : "latest"
+                  },
+                  {
+                     "env_TEST_MYSQL_VERSION" : "mariadb",
                      "experimental" : false,
                      "perl_version" : "5.14.2"
                   },
                   {
+                     "env_TEST_MYSQL_VERSION" : "mysql5.6",
+                     "experimental" : false,
+                     "perl_version" : "5.14.2"
+                  },
+                  {
+                     "env_TEST_MYSQL_VERSION" : "mysql8",
+                     "experimental" : false,
+                     "perl_version" : "5.14.2"
+                  },
+                  {
+                     "env_TEST_MYSQL_VERSION" : "mariadb",
+                     "experimental" : false,
+                     "perl_version" : "5.12.4"
+                  },
+                  {
+                     "env_TEST_MYSQL_VERSION" : "mysql5.6",
+                     "experimental" : false,
+                     "perl_version" : "5.12.4"
+                  },
+                  {
+                     "env_TEST_MYSQL_VERSION" : "mysql8",
                      "experimental" : false,
                      "perl_version" : "5.12.4"
                   }
