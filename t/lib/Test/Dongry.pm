@@ -20,10 +20,12 @@ push @EXPORT, @Test::X1::EXPORT;
 require DBIx::ShowSQL;
 
 use DongrySS;
+our $OldSQLMode;
 
 #note "Servers...";
 my $ac = AbortController->new;
 my $v = DongrySS->run (
+  old_sql_mode => $OldSQLMode,
   signal => $ac->signal,
 )->to_cv->recv;
 our $ServerData = $v->{data};

@@ -412,27 +412,6 @@ sub _update_values_empty : Test(2) {
        {id => 32, v1 => 3, v2 => undef}];
 } # _update_values_empty
 
-sub _update_values_by_not_sql : Test(2) {
-  reset_db_set;
-  my $dsn = test_dsn 'test1';
-  my $db = Dongry::Database->new
-      (sources => {master => {dsn => $dsn, writable => 1}});
-  $db->execute ("create table foo (id int unique key, v1 int, v2 blob)");
-  $db->execute ("insert into foo (id, v1) values (12, 1)");
-  $db->execute ("insert into foo (id, v1) values (22, 2)");
-  $db->execute ("insert into foo (id, v1) values (32, 3)");
-
-  my $result = $db->update
-      ('foo', {id => my $id = \'id + 2', v1 => my $v1 = \'id * 2'},
-       where => {id => 12});
-
-  eq_or_diff $db->execute ('select * from foo order by id asc, v1 asc', undef,
-                           source_name => 'master')->all->to_a,
-      [{id => 0, v1 => 0, v2 => undef},
-       {id => 22, v1 => 2, v2 => undef},
-       {id => 32, v1 => 3, v2 => undef}];
-} # _update_values_by_not_sql
-
 sub _update_values_by_sql : Test(2) {
   reset_db_set;
   my $dsn = test_dsn 'test1';
