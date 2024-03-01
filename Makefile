@@ -38,6 +38,10 @@ PROVE = ./prove
 test: test-deps test-main
 
 test-deps: deps
+	docker pull mariadb &
+	docker pull mysql/mysql-server &
+	docker pull mysql/mysql-server:8.0 &
+	docker pull mysql/mysql-server:5.6 &
 	perl local/bin/pmbp.pl $(PMBP_OPTIONS) \
 	    --install \
             --create-perl-command-shortcut prove
