@@ -57,6 +57,7 @@ sub run ($%) {
         mycnf => $args->{mycnf},
         mysql_version => $args->{mysql_version},
         old_sql_mode => $args->{old_sql_mode},
+        socket => 1,
       },
       _ => {},
     }; # $result->{server_params}
