@@ -4,6 +4,7 @@ AnyEvent::AIO~1.1
 AnyEvent::DBI~3.04
 AnyEvent::FileLock~0.06
 AnyEvent::Fork~1.32
+AnyEvent::Util
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.28
 CBOR::XS~1.87
@@ -20,7 +21,7 @@ Crypt::OpenSSL::RSA~0.33
 Crypt::OpenSSL::Random~0.17
 Cwd~3.75
 DBD::mysql~4.051
-DBI~1.643
+DBI~1.644
 DBIx::RewriteDSN~0.05
 Data::Dumper~2.183
 Data::MessagePack~1.02
@@ -67,6 +68,7 @@ Params::ValidationCompiler~0.31
 Path::Class~0.37
 Path::Tiny~0.146
 Proc::FastSpawn~1.2
+Role::Tiny~2.002004
 Role::Tiny::With~2.002004
 Scalar::Util~1.65
 Socket~2.038
