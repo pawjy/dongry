@@ -4,6 +4,7 @@ AnyEvent::AIO~1.1
 AnyEvent::DBI~3.04
 AnyEvent::FileLock~0.06
 AnyEvent::Fork~1.32
+AnyEvent::IO
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.28
 CBOR::XS~1.87
@@ -72,11 +73,12 @@ Role::Tiny::With~2.002004
 Scalar::Util~1.68
 Socket~2.038
 Specio::Declare~0.49
+Specio::Library::String~0.49
 Sub::Exporter::Progressive~0.001013
 Sub::Quote~2.006008
 Term::ANSIColor~5.01
-Term::Table~0.023
-Test::Builder~1.302206
+Term::Table~0.024
+Test::Builder~1.302207
 Test::Class~0.52
 Test::Differences~0.71
 Test::Fatal~0.017
