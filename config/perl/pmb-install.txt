@@ -4,7 +4,7 @@ AnyEvent::AIO~1.1
 AnyEvent::DBI~3.04
 AnyEvent::FileLock~0.06
 AnyEvent::Fork~1.32
-AnyEvent::Handle
+AnyEvent::Util
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.28
 CBOR::XS~1.87
@@ -17,6 +17,8 @@ Class::Data::Inheritable~0.10
 Class::Inspector~1.36
 Class::Singleton~1.6
 Clone~0.47
+Clone::Choose~0.010
+Clone::PP~1.08
 Convert::Scalar~1.12
 Crypt::OpenSSL::RSA~0.35
 Crypt::OpenSSL::Random~0.17
@@ -69,9 +71,11 @@ Path::Class~0.37
 Path::Tiny~0.148
 Proc::FastSpawn~1.2
 Role::Tiny~2.002004
+Role::Tiny::With~2.002004
 Scalar::Util~1.69
 Socket~2.038
-Specio~0.50
+Specio::Declare~0.51
+Specio::Library::Numeric~0.51
 Sub::Exporter::Progressive~0.001013
 Sub::Quote~2.006008
 Term::ANSIColor~5.01
