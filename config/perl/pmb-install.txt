@@ -70,10 +70,10 @@ Params::ValidationCompiler~0.31
 Path::Class~0.37
 Path::Tiny~0.148
 Proc::FastSpawn~1.2
-Role::Tiny::With~2.002004
+Role::Tiny~2.002004
 Scalar::Util~1.69
 Socket~2.038
-Specio::Library::Builtins~0.51
+Specio::Library::Numeric~0.51
 Sub::Exporter::Progressive~0.001013
 Sub::Quote~2.006008
 Term::ANSIColor~5.01
