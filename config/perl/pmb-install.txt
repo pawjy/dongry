@@ -4,7 +4,6 @@ AnyEvent::AIO~1.1
 AnyEvent::DBI~3.04
 AnyEvent::FileLock~0.06
 AnyEvent::Fork~1.32
-AnyEvent::IO
 AnyEvent::Worker~0.06
 B::Hooks::EndOfScope~0.28
 CBOR::XS~1.87
@@ -72,15 +71,15 @@ Proc::FastSpawn~1.2
 Role::Tiny~2.002004
 Scalar::Util~1.70
 Socket~2.040
-Specio::Library::String~0.53
+Specio::Library::Builtins~0.53
 Sub::Exporter::Progressive~0.001013
 Sub::Quote~2.006009
 Term::ANSIColor~5.01
 Term::Table~0.025
+Test::Builder~1.302214
 Test::Class~0.52
 Test::Differences~0.72
 Test::Fatal~0.017
-Test::More~1.302214
 Test::NoWarnings~1.06
 Test::mysqld~1.0030
 Text::Diff~1.45
