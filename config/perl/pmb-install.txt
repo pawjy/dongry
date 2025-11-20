@@ -31,7 +31,7 @@ DateTime~1.66
 DateTime::Format::Builder~0.83
 DateTime::Format::MySQL~0.08
 DateTime::Format::Strptime~1.79
-DateTime::Locale::FromData~1.45
+DateTime::Locale~1.45
 DateTime::TimeZone~2.65
 Devel::StackTrace~2.05
 Digest::SHA~6.04
@@ -77,10 +77,10 @@ Sub::Exporter::Progressive~0.001013
 Sub::Quote~2.006009
 Term::ANSIColor~5.01
 Term::Table~0.027
-Test::Builder~1.302216
 Test::Class~0.52
 Test::Differences~0.72
 Test::Fatal~0.018
+Test::More~1.302216
 Test::NoWarnings~1.06
 Test::mysqld~1.0030
 Text::Diff~1.45
