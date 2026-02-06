@@ -76,10 +76,10 @@ Sub::Exporter::Progressive~0.001013
 Sub::Quote~2.006009
 Term::ANSIColor~5.01
 Term::Table~0.028
+Test::Builder~1.302219
 Test::Class~0.52
 Test::Differences~0.72
 Test::Fatal~0.018
-Test::More~1.302219
 Test::NoWarnings~1.06
 Test::mysqld~1.0030
 Text::Diff~1.45
