@@ -10,13 +10,13 @@ B::Hooks::EndOfScope~0.28
 CBOR::XS~1.87
 Canary::Stability~2013
 Capture::Tiny~0.50
-Carp~1.50
+Carp::Heavy~1.50
 Class::Accessor::Fast~0.51
 Class::Accessor::Lite~0.08
 Class::Data::Inheritable~0.10
 Class::Inspector~1.36
 Class::Singleton~1.6
-Clone~0.47
+Clone~0.48
 Clone::PP~1.08
 Convert::Scalar~1.12
 Crypt::OpenSSL::RSA~0.37
@@ -32,7 +32,7 @@ DateTime::Format::Builder~0.83
 DateTime::Format::MySQL~0.08
 DateTime::Format::Strptime~1.80
 DateTime::Locale~1.45
-DateTime::TimeZone~2.66
+DateTime::TimeZone~2.67
 Devel::StackTrace~2.05
 Digest::SHA~6.04
 Dist::CheckConflicts~0.11
@@ -61,7 +61,7 @@ Math::BigInt~2.005003
 Method::WeakCallback~0.04
 Module::Implementation~0.09
 Module::Runtime~0.018
-Net::SSLeay
+Net::SSLeay~1.96
 Package::Stash~0.40
 Package::Stash::XS~0.30
 Params::Validate~1.31
@@ -69,6 +69,7 @@ Params::ValidationCompiler~0.31
 Path::Class~0.37
 Path::Tiny~0.150
 Proc::FastSpawn~1.2
+Role::Tiny~2.002004
 Role::Tiny::With~2.002004
 Scalar::Util~1.70
 Socket~2.040
