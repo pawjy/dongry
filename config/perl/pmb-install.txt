@@ -72,7 +72,8 @@ Proc::FastSpawn~1.2
 Role::Tiny~2.002005
 Scalar::Util~1.70
 Socket~2.041
-Specio::Library::Builtins~0.53
+Specio::Declare~0.53
+Specio::Library::String~0.53
 Sub::Exporter::Progressive~0.001013
 Sub::Quote~2.006009
 Term::ANSIColor~5.01
